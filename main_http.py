@@ -10,7 +10,7 @@ import os
 import uvicorn
 from starlette.middleware.cors import CORSMiddleware
 
-from src.server import create_server
+from src.specforge.server import create_server
 
 
 def main():

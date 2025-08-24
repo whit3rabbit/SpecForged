@@ -7,10 +7,29 @@ name = "specforge"
 version = "1.0.0"
 description = "Spec-driven development workflow with mode classification and EARS notation"
 readme = "README.md"
+license = {text = "MIT"}
 authors = [
     {name = "SpecForge Team"}
 ]
-requires-python = ">=3.10,<4"
+maintainers = [
+    {name = "SpecForge Team"}
+]
+keywords = ["mcp", "specifications", "ears", "requirements", "workflow"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: System :: Software Distribution",
+]
+requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.0.0",
     "fastmcp>=0.3.0",
@@ -19,6 +38,17 @@ dependencies = [
     "uvicorn[standard]>=0.24.0",
     "starlette>=0.32.0"
 ]
+
+[project.scripts]
+specforge = "specforge.cli:specforge_mcp"
+specforge-http = "specforge.cli:specforge_http"
+specforge-cli = "specforge.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/whit3rabbit/SpecForge"
+Documentation = "https://github.com/whit3rabbit/SpecForge#readme"
+Repository = "https://github.com/whit3rabbit/SpecForge.git"
+Issues = "https://github.com/whit3rabbit/SpecForge/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -71,6 +101,4 @@ addopts = "-v --tb=short"
 asyncio_mode = "auto"
 
 [tool.hatch.build.targets.wheel]
-packages = [
-  "src/specforge"
-]
+packages = ["src"]

@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
-from src.core.spec_manager import SpecificationManager
-from src.models import Specification, SpecStatus, WorkflowPhase, UserStory, EARSRequirement, Task
+from src.specforge.core.spec_manager import SpecificationManager
+from src.specforge.models import Specification, SpecStatus, WorkflowPhase, UserStory, EARSRequirement, Task
 
 
 @pytest.fixture

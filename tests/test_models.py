@@ -5,7 +5,7 @@ Tests for data models.
 import pytest
 from datetime import datetime
 
-from src.models import (
+from src.specforge.models import (
     UserMode,
     WorkflowPhase,
     SpecStatus,

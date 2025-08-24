@@ -1,15 +1,162 @@
-[![smithery badge](https://smithery.ai/badge/@whit3rabbit/specforge)](https://smithery.ai/server/@whit3rabbit/specforge)
-
 # SpecForge MCP Server
 
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
 
 ## Quick Start
 
-Use smithery.ai to deploy this server:
+### pipx Installation (Recommended)
 
-https://smithery.ai/server/@whit3rabbit/specforge
+Install SpecForge globally with pipx for easy MCP integration:
 
+```bash
+# Install pipx (if not already installed)
+pip install pipx
+pipx ensurepath
+
+# Install SpecForge
+pipx install specforge
+
+# Verify installation
+specforge --version
+```
+
+Once installed, configure in Claude Desktop:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
+**Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "specforge": {
+      "command": "specforge"
+    }
+  }
+}
+```
+
+#### Additional Commands
+
+- `specforge`: Run MCP server (default)
+- `specforge-http`: Run HTTP server for web integration
+- `specforge-cli`: CLI with subcommands (mcp/http modes)
+
+#### Upgrade and Uninstall
+
+```bash
+# Upgrade to latest version
+pipx upgrade specforge
+
+# Uninstall
+pipx uninstall specforge
+```
+
+### Installation in Claude Code (Local MCP)
+
+#### One-liner (Claude Code CLI)
+
+Add SpecForge to Claude Code for the current project without editing config files:
+
+```bash
+claude mcp add specforge --scope project python /absolute/path/to/SpecForge/main.py
+```
+
+Optional: add via Docker with bind mount to persist specs on host:
+
+```bash
+claude mcp add specforge --scope project \
+  docker run -i --rm \
+  --mount type=bind,src=/absolute/path/to/host/specifications,dst=/app/specifications \
+  specforge:latest \
+  python main.py
+```
+Notes:
+- Build once before using the Docker one-liner: `docker build -t specforge:latest .`
+- `--scope project` grants access to the project folder and subfolders.
+
+#### Optional: Run via Docker with bind mounts
+
+If you prefer to run the server inside Docker while persisting outputs to your host, add this Claude Desktop configuration instead. It mounts your host specs directory to the container's default `specifications/` path used by `SpecificationManager` in `src/server.py`:
+
+```json
+{
+  "mcpServers": {
+    "specforge": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--mount", "type=bind,src=/absolute/path/to/host/specifications,dst=/app/specifications",
+        "specforge:latest",
+        "python", "main.py"
+      ]
+    }
+  }
+}
+```
+Notes:
+- Build the image once: `docker build -t specforge:latest .`
+- Container WORKDIR is `/app` (see `Dockerfile`), so `SpecificationManager` writes to `/app/specifications` which is bind-mounted to your host path.
+
+### Installation
+
+#### Prerequisites
+```bash
+# Python 3.9+
+python --version
+
+# Install dependencies
+pip install -r requirements.txt
+# Or using pyproject.toml
+pip install -e .
+```
+
+#### Quick Start
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/whit3rabbit/SpecForge.git
+cd SpecForge
+```
+
+2. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Test locally**
+```bash
+python main.py
+```
+
+4. **Configure in Claude Desktop**
+
+Edit your Claude Desktop configuration:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
+**Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "specforge": {
+      "command": "python",
+      "args": ["/absolute/path/to/SpecForge/main.py"]
+    }
+  }
+}
+```
+
+5. **Restart Claude Desktop**
+
+## Example
+
+```bash
+Use specforge to create a spec for a TODO list app that supports creating, editing, completing, and filtering tasks.
+```
 
 ## Overview
 
@@ -66,89 +213,6 @@ specifications/
     ├── design.md         # Technical architecture
     └── tasks.md          # Implementation plan
 ```
-
-## Installation
-
-### Prerequisites
-```bash
-# Python 3.9+
-python --version
-
-# Install dependencies
-pip install -r requirements.txt
-# Or using pyproject.toml
-pip install -e .
-```
-
-### Quick Start
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/whit3rabbit/SpecForge.git
-cd SpecForge
-```
-
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-3. **Test locally**
-```bash
-python main.py
-```
-
-4. **Run with Docker (optional)**
-
-```bash
-# Build the image
-docker build -t specforge:latest .
-
-# Run the HTTP server (Smithery-compatible)
-docker run --rm -p 8080:8080 -v "$PWD/specifications":/app/specifications specforge:latest
-```
-
-The container starts `main_http.py` and serves the MCP HTTP app on port 8080.
-
-5. **Configure in Claude Desktop**
-
-Edit your Claude Desktop configuration:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
-**Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "specforge": {
-      "command": "python",
-      "args": ["/absolute/path/to/SpecForge/main.py"]
-    }
-  }
-}
-```
-
-6. **Restart Claude Desktop**
-
-### Configure in Windsurf and Cursor
-
-Both Windsurf and Cursor support MCP servers through their AI settings. Add SpecForge as a custom MCP server pointing to your Python entry point.
-
-Example configuration (conceptual – follow your editor's UI to add a custom MCP server):
-
-```json
-{
-  "mcpServers": {
-    "specforge": {
-      "command": "python",
-      "args": ["/absolute/path/to/SpecForge/main.py"]
-    }
-  }
-}
-```
-
-Alternatively, if your editor supports MCP over HTTP, point it at `http://localhost:8080` after running the Docker container or `python main_http.py`.
 
 ## Usage
 
@@ -437,7 +501,6 @@ SpecForge/
 ├── tests/              # Comprehensive test suite
 ├── scripts/            # Development helper scripts
 ├── main.py             # Local CLI entry point
-├── main_http.py        # HTTP server for cloud deployment
 └── requirements.txt    # Dependencies
 ```
 
@@ -445,9 +508,6 @@ SpecForge/
 ```bash
 # Run local MCP server
 python main.py
-
-# Run HTTP server (for Smithery deployment)
-python main_http.py
 
 # Install dependencies
 pip install -r requirements.txt
