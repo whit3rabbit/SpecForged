@@ -7,7 +7,7 @@ development with EARS notation, intelligent mode classification, and
 structured workflow management.
 """
 
-from src.specforge.server import run_server
+from src.specforged.server import run_server
 
 if __name__ == "__main__":
     run_server()

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "specforge"
+name = "specforged"
 version = "1.0.0"
 description = "Spec-driven development workflow with mode classification and EARS notation"
 readme = "README.md"
@@ -40,15 +40,16 @@ dependencies = [
 ]
 
 [project.scripts]
-specforge = "specforge.cli:specforge_mcp"
-specforge-http = "specforge.cli:specforge_http"
-specforge-cli = "specforge.cli:main"
+specforged = "specforged.cli:specforge_mcp"
+specforged-http = "specforged.cli:specforge_http"
+specforged-cli = "specforged.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/whit3rabbit/SpecForge"
 Documentation = "https://github.com/whit3rabbit/SpecForge#readme"
 Repository = "https://github.com/whit3rabbit/SpecForge.git"
 Issues = "https://github.com/whit3rabbit/SpecForge/issues"
+PyPI = "https://pypi.org/project/specforged/"
 
 [project.optional-dependencies]
 dev = [

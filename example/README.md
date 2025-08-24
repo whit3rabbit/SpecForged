@@ -1,7 +1,7 @@
 ## Example - TODO List App
 
 ````bash
-Use specforge to create a spec for a TODO list app that supports creating, editing, completing, and filtering tasks.
+Use specforged to create a spec for a TODO list app that supports creating, editing, completing, and filtering tasks.
 ```
 
 Here is output form Claude Code:
@@ -25,13 +25,13 @@ Here is output form Claude Code:
 > /mcp
   ⎿  (no content)
 
-> Use specforge to create a spec for a TODO list app that supports creating, editing, completing, and
+> Use specforged to create a spec for a TODO list app that supports creating, editing, completing, and
   filtering tasks.
 
 ⏺ I'll use SpecForge to create a comprehensive specification for a TODO list app. Let me start by creating
    the spec and then build out the requirements, design, and implementation plan.
 
-⏺ whit-3-rabbit-specforge - create_spec (MCP)(name: "todo-list-app", description: "A comprehensive TODO
+⏺ whit-3-rabbit-specforged - create_spec (MCP)(name: "todo-list-app", description: "A comprehensive TODO
                                              list application with task management and filtering
                                              capabilities")
   ⎿  {
@@ -41,7 +41,7 @@ Here is output form Claude Code:
 
 ⏺ Now let me add the core requirements as user stories with EARS-formatted acceptance criteria:
 
-⏺ whit-3-rabbit-specforge - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to
+⏺ whit-3-rabbit-specforged - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to
                                                  create new tasks", so_that: "I can track things I need to
                                                   do", ears_requirements: [{"condition":"WHEN the user
                                                  clicks the 'Add Task' button","system_response":"the
@@ -58,7 +58,7 @@ Here is output form Claude Code:
        "story_id": "US-001",
      … +11 lines (ctrl+r to expand)
 
-⏺ whit-3-rabbit-specforge - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to edit
+⏺ whit-3-rabbit-specforged - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to edit
                                                   existing tasks", so_that: "I can update task details or
                                                  correct mistakes", ears_requirements: [{"condition":"WHEN
                                                   the user clicks the 'Edit' button on a
@@ -75,7 +75,7 @@ Here is output form Claude Code:
        "story_id": "US-002",
      … +12 lines (ctrl+r to expand)
 
-⏺ whit-3-rabbit-specforge - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to mark
+⏺ whit-3-rabbit-specforged - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to mark
                                                   tasks as completed", so_that: "I can track my progress
                                                  and see what I've accomplished", ears_requirements:
                                                  [{"condition":"WHEN the user clicks the checkbox next to
@@ -92,7 +92,7 @@ Here is output form Claude Code:
        "story_id": "US-003",
      … +12 lines (ctrl+r to expand)
 
-⏺ whit-3-rabbit-specforge - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to
+⏺ whit-3-rabbit-specforged - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to
                                                  filter tasks by their completion status", so_that: "I can
                                                   focus on specific types of tasks", ears_requirements:
                                                  [{"condition":"WHEN the user selects the 'All'
@@ -108,7 +108,7 @@ Here is output form Claude Code:
        "story_id": "US-004",
      … +12 lines (ctrl+r to expand)
 
-⏺ whit-3-rabbit-specforge - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to
+⏺ whit-3-rabbit-specforged - add_requirement (MCP)(spec_id: "todo-list-app", as_a: "user", i_want: "to
                                                  delete tasks I no longer need", so_that: "I can keep my
                                                  task list clean and organized", ears_requirements:
                                                  [{"condition":"WHEN the user clicks the 'Delete' button
@@ -126,14 +126,14 @@ Here is output form Claude Code:
 
 ⏺ Now let me transition to the design phase and create the technical design:
 
-⏺ whit-3-rabbit-specforge - transition_workflow_phase (MCP)(spec_id: "todo-list-app", target_phase:
+⏺ whit-3-rabbit-specforged - transition_workflow_phase (MCP)(spec_id: "todo-list-app", target_phase:
                                                            "design")
   ⎿  {
        "status": "success",
        "spec_id": "todo-list-app",
      … +4 lines (ctrl+r to expand)
 
-⏺ whit-3-rabbit-specforge - update_design (MCP)(spec_id: "todo-list-app", architecture: "A client-side
+⏺ whit-3-rabbit-specforged - update_design (MCP)(spec_id: "todo-list-app", architecture: "A client-side
                                                React application with local storage persistence. The app
                                                follows a component-based architecture with centralized
                                                state management using React Context API. Components are
@@ -186,7 +186,7 @@ Here is output form Claude Code:
                                                task list\n    TL->>U: Display filtered tasks"}])
   ⎿  Error: Error executing tool update_design: 'content'
 
-⏺ whit-3-rabbit-specforge - update_design (MCP)(spec_id: "todo-list-app", architecture: "A client-side
+⏺ whit-3-rabbit-specforged - update_design (MCP)(spec_id: "todo-list-app", architecture: "A client-side
                                                React application with local storage persistence. The app
                                                follows a component-based architecture with centralized
                                                state management using React Context API. Components are
@@ -245,14 +245,14 @@ Here is output form Claude Code:
 ⏺ Now let me transition to the implementation planning phase and generate a comprehensive implementation
   plan:
 
-⏺ whit-3-rabbit-specforge - transition_workflow_phase (MCP)(spec_id: "todo-list-app", target_phase:
+⏺ whit-3-rabbit-specforged - transition_workflow_phase (MCP)(spec_id: "todo-list-app", target_phase:
                                                            "implementation_planning")
   ⎿  {
        "status": "success",
        "spec_id": "todo-list-app",
      … +4 lines (ctrl+r to expand)
 
-⏺ whit-3-rabbit-specforge - generate_implementation_plan (MCP)(spec_id: "todo-list-app")
+⏺ whit-3-rabbit-specforged - generate_implementation_plan (MCP)(spec_id: "todo-list-app")
   ⎿  {
        "status": "success",
        "spec_id": "todo-list-app",
@@ -260,7 +260,7 @@ Here is output form Claude Code:
 
 ⏺ Let me get the full specification details to show you what's been created:
 
-⏺ whit-3-rabbit-specforge - get_specification_details (MCP)(spec_id: "todo-list-app", include_content:
+⏺ whit-3-rabbit-specforged - get_specification_details (MCP)(spec_id: "todo-list-app", include_content:
                                                            true)
   ⎿  {
        "id": "todo-list-app",

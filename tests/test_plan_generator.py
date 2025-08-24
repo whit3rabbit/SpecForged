@@ -4,8 +4,8 @@ Tests for the PlanGenerator module.
 
 import pytest
 from datetime import datetime
-from src.specforge.core.plan_generator import PlanGenerator
-from src.specforge.models import Specification, UserStory, EARSRequirement, SpecStatus, WorkflowPhase
+from src.specforged.core.plan_generator import PlanGenerator
+from src.specforged.models import Specification, UserStory, EARSRequirement, SpecStatus, WorkflowPhase
 
 
 @pytest.fixture

@@ -1,5 +1,10 @@
 # SpecForge MCP Server
 
+[![PyPI version](https://badge.fury.io/py/specforged.svg)](https://badge.fury.io/py/specforged)
+[![Python Version](https://img.shields.io/pypi/pyversions/specforged.svg)](https://pypi.org/project/specforged/)
+[![Test Suite](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml/badge.svg)](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml)
+[![Deploy to Smithery](https://smithery.ai/badge/specforged)](https://smithery.ai/server/specforged)
+
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
 
 ## Quick Start
@@ -14,10 +19,10 @@ pip install pipx
 pipx ensurepath
 
 # Install SpecForge
-pipx install specforge
+pipx install specforged
 
 # Verify installation
-specforge --version
+specforged --version
 ```
 
 Once installed, configure in Claude Desktop:
@@ -29,8 +34,8 @@ Once installed, configure in Claude Desktop:
 ```json
 {
   "mcpServers": {
-    "specforge": {
-      "command": "specforge"
+    "specforged": {
+      "command": "specforged"
     }
   }
 }
@@ -38,18 +43,18 @@ Once installed, configure in Claude Desktop:
 
 #### Additional Commands
 
-- `specforge`: Run MCP server (default)
-- `specforge-http`: Run HTTP server for web integration
-- `specforge-cli`: CLI with subcommands (mcp/http modes)
+- `specforged`: Run MCP server (default)
+- `specforged-http`: Run HTTP server for web integration
+- `specforged-cli`: CLI with subcommands (mcp/http modes)
 
 #### Upgrade and Uninstall
 
 ```bash
 # Upgrade to latest version
-pipx upgrade specforge
+pipx upgrade specforged
 
 # Uninstall
-pipx uninstall specforge
+pipx uninstall specforged
 ```
 
 ### Installation in Claude Code (Local MCP)
@@ -59,20 +64,20 @@ pipx uninstall specforge
 Add SpecForge to Claude Code for the current project without editing config files:
 
 ```bash
-claude mcp add specforge --scope project python /absolute/path/to/SpecForge/main.py
+claude mcp add specforged --scope project python /absolute/path/to/SpecForge/main.py
 ```
 
 Optional: add via Docker with bind mount to persist specs on host:
 
 ```bash
-claude mcp add specforge --scope project \
+claude mcp add specforged --scope project \
   docker run -i --rm \
   --mount type=bind,src=/absolute/path/to/host/specifications,dst=/app/specifications \
-  specforge:latest \
+  specforged:latest \
   python main.py
 ```
 Notes:
-- Build once before using the Docker one-liner: `docker build -t specforge:latest .`
+- Build once before using the Docker one-liner: `docker build -t specforged:latest .`
 - `--scope project` grants access to the project folder and subfolders.
 
 #### Optional: Run via Docker with bind mounts
@@ -82,14 +87,14 @@ If you prefer to run the server inside Docker while persisting outputs to your h
 ```json
 {
   "mcpServers": {
-    "specforge": {
+    "specforged": {
       "command": "docker",
       "args": [
         "run",
         "-i",
         "--rm",
         "--mount", "type=bind,src=/absolute/path/to/host/specifications,dst=/app/specifications",
-        "specforge:latest",
+        "specforged:latest",
         "python", "main.py"
       ]
     }
@@ -97,7 +102,7 @@ If you prefer to run the server inside Docker while persisting outputs to your h
 }
 ```
 Notes:
-- Build the image once: `docker build -t specforge:latest .`
+- Build the image once: `docker build -t specforged:latest .`
 - Container WORKDIR is `/app` (see `Dockerfile`), so `SpecificationManager` writes to `/app/specifications` which is bind-mounted to your host path.
 
 ### Installation
@@ -142,7 +147,7 @@ Edit your Claude Desktop configuration:
 ```json
 {
   "mcpServers": {
-    "specforge": {
+    "specforged": {
       "command": "python",
       "args": ["/absolute/path/to/SpecForge/main.py"]
     }
@@ -155,7 +160,7 @@ Edit your Claude Desktop configuration:
 ## Example
 
 ```bash
-Use specforge to create a spec for a TODO list app that supports creating, editing, completing, and filtering tasks.
+Use specforged to create a spec for a TODO list app that supports creating, editing, completing, and filtering tasks.
 ```
 
 ## Overview
@@ -226,7 +231,7 @@ Response: Creates new specification with requirements.md, design.md, and tasks.m
 You can also explicitly reference SpecForge in your request. The classifier now recognizes the trigger word:
 
 ```
-User: Use specforge to generate a spec for payment processing
+User: Use specforged to generate a spec for payment processing
 Response: Routes to spec mode and creates the specification scaffold
 ```
 
@@ -237,7 +242,7 @@ Response: Routes to spec mode and creates the specification scaffold
 "Create a spec for payment processing"
 "Generate a specification for the login system"
 "Execute task 3.2 from user-auth spec"
-"Use specforge to draft a feature spec"
+"Use specforged to draft a feature spec"
 
 # Do mode (code/action requests) 
 "Fix the syntax error in app.js"

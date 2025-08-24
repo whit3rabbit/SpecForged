@@ -2,7 +2,7 @@
 """
 SpecForge package main entry point.
 
-Allows running the package directly with: python -m specforge
+Allows running the package directly with: python -m specforged
 """
 
 from .cli import main

@@ -3,8 +3,8 @@ Tests for the ModeClassifier.
 """
 
 import pytest
-from src.specforge.core.classifier import ModeClassifier
-from src.specforge.models import UserMode
+from src.specforged.core.classifier import ModeClassifier
+from src.specforged.models import UserMode
 
 
 def test_classifier_initialization():

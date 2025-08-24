@@ -3,7 +3,7 @@ Tests for enhanced Task model with checkbox support and hierarchical numbering.
 """
 
 import pytest
-from src.specforge.models import Task
+from src.specforged.models import Task
 
 
 def test_task_checkbox_properties():
