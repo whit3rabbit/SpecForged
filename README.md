@@ -1,49 +1,15 @@
-## Deploy with Smithery
-
-SpecForge is ready for Smithery out of the box using `smithery.yaml` and the HTTP entrypoint in `main_http.py`.
-
-### Prerequisites
-- A GitHub repository with this project (including `Dockerfile` and `smithery.yaml`)
-- Smithery account with access to connect your GitHub repo
-
-### Steps
-1. **Verify config files**
-   - `smithery.yaml` uses container runtime and sets the start command type to `http`.
-   - `main_http.py` serves the MCP app via Uvicorn and respects the `PORT` environment variable (defaults to 8080 locally).
-
-2. **Push to GitHub**
-   - Ensure your changes are committed and pushed to the branch you want to deploy.
-
-3. **Create a Smithery project**
-   - In the Smithery dashboard, create a new project from your GitHub repo.
-   - Smithery will build using your `Dockerfile` and start the app based on `smithery.yaml`.
-
-4. **Confirm service health**
-   - Once deployed, your service will be available at a public URL like:
-     `https://<your-app>.smithery.ai`
-   - The MCP HTTP transport is exposed; CORS is enabled in `main_http.py`.
-
-5. **Connect MCP clients to Smithery**
-   - Claude Desktop, Windsurf, Cursor, or other MCP-capable clients can point to the deployed HTTP endpoint.
-   - Example (conceptual):
-     ```json
-     {
-       "mcpServers": {
-         "specforge": {
-           "type": "http",
-           "url": "https://<your-app>.smithery.ai"
-         }
-       }
-     }
-     ```
-
-Notes:
-- No special environment variables are required for SpecForge by default. Smithery provides `PORT` which `main_http.py` reads.
-- If you mount or persist specs, ensure a writable directory is configured in your container (default is `/app/specifications`).
+[![smithery badge](https://smithery.ai/badge/@whit3rabbit/specforge)](https://smithery.ai/server/@whit3rabbit/specforge)
 
 # SpecForge MCP Server
 
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
+
+## Quick Start
+
+Use smithery.ai to deploy this server:
+
+https://smithery.ai/server/@whit3rabbit/specforge
+
 
 ## Overview
 
