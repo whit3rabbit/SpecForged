@@ -13,7 +13,7 @@ from src.specforged.models import (
     EARSRequirement,
     UserStory,
     Task,
-    Specification
+    Specification,
 )
 
 
@@ -39,12 +39,12 @@ def test_mode_classification():
         do_confidence=0.7,
         spec_confidence=0.1,
         primary_mode=UserMode.DO,
-        reasoning=["Matched do pattern"]
+        reasoning=["Matched do pattern"],
     )
-    
+
     assert classification.primary_mode == UserMode.DO
     assert classification.do_confidence == 0.7
-    
+
     # Test to_dict method
     result_dict = classification.to_dict()
     assert result_dict["mode"] == "do"
@@ -58,12 +58,12 @@ def test_ears_requirement():
         id="REQ-001",
         condition="WHEN user clicks login",
         system_response="validate credentials",
-        priority="HIGH"
+        priority="HIGH",
     )
-    
+
     assert requirement.id == "REQ-001"
     assert requirement.priority == "HIGH"
-    
+
     # Test EARS string generation
     ears_string = requirement.to_ears_string()
     expected = "WHEN user clicks login THE SYSTEM SHALL validate credentials"
@@ -75,20 +75,20 @@ def test_user_story():
     requirement = EARSRequirement(
         id="US-001-R01",
         condition="WHEN login attempted",
-        system_response="authenticate user"
+        system_response="authenticate user",
     )
-    
+
     story = UserStory(
         id="US-001",
         as_a="user",
         i_want="to login securely",
         so_that="my data is protected",
-        requirements=[requirement]
+        requirements=[requirement],
     )
-    
+
     assert story.id == "US-001"
     assert len(story.requirements) == 1
-    
+
     # Test markdown generation
     markdown = story.to_markdown()
     assert "User Story US-001" in markdown
@@ -109,9 +109,9 @@ def test_task():
         dependencies=["T000"],
         subtasks=["Create form", "Add validation"],
         linked_requirements=["US-001-R01"],
-        estimated_hours=8.0
+        estimated_hours=8.0,
     )
-    
+
     assert task.id == "T001"
     assert task.title == "Implement login"
     assert task.status == "in_progress"
@@ -125,20 +125,17 @@ def test_task():
 def test_specification():
     """Test Specification dataclass"""
     now = datetime.now()
-    
+
     story = UserStory(
-        id="US-001",
-        as_a="user",
-        i_want="to login",
-        so_that="I can access my account"
+        id="US-001", as_a="user", i_want="to login", so_that="I can access my account"
     )
-    
+
     task = Task(
         id="T001",
         title="Create login form",
-        description="Build the HTML form for login"
+        description="Build the HTML form for login",
     )
-    
+
     spec = Specification(
         id="login-system",
         name="Login System",
@@ -149,9 +146,9 @@ def test_specification():
         user_stories=[story],
         design={"architecture": "MVC pattern"},
         tasks=[task],
-        metadata={"priority": "high"}
+        metadata={"priority": "high"},
     )
-    
+
     assert spec.id == "login-system"
     assert spec.name == "Login System"
     assert spec.status == SpecStatus.DRAFT
@@ -168,11 +165,11 @@ def test_default_values():
     req = EARSRequirement(id="R1", condition="WHEN", system_response="SHALL")
     assert req.priority == "MEDIUM"
     assert req.acceptance_criteria == []
-    
+
     # UserStory defaults
     story = UserStory(id="US1", as_a="user", i_want="something", so_that="benefit")
     assert story.requirements == []
-    
+
     # Task defaults
     task = Task(id="T1", title="Task", description="Description")
     assert task.status == "pending"
@@ -181,16 +178,16 @@ def test_default_values():
     assert task.linked_requirements == []
     assert task.estimated_hours == 0.0
     assert task.actual_hours == 0.0
-    
+
     # Specification defaults
     now = datetime.now()
     spec = Specification(
-        id="spec1", 
-        name="Spec", 
-        created_at=now, 
+        id="spec1",
+        name="Spec",
+        created_at=now,
         updated_at=now,
         status=SpecStatus.DRAFT,
-        current_phase=WorkflowPhase.REQUIREMENTS
+        current_phase=WorkflowPhase.REQUIREMENTS,
     )
     assert spec.user_stories == []
     assert spec.design == {}

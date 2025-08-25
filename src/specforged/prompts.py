@@ -8,7 +8,7 @@ from mcp.server.fastmcp.prompts import base
 
 def setup_prompts(mcp: FastMCP):
     """Setup MCP prompts for guidance and help"""
-    
+
     @mcp.prompt()
     def spec_creation_prompt() -> list[base.Message]:
         """Prompt for creating a new specification"""
@@ -34,7 +34,7 @@ Each phase will require your approval before proceeding to the next.
 
 What would you like to create a specification for?"""
                     )
-                ]
+                ],
             )
         ]
 
@@ -70,7 +70,7 @@ Each requirement should be:
 
 What requirements would you like to define in EARS format?"""
                     )
-                ]
+                ],
             )
         ]
 
@@ -145,7 +145,7 @@ Your tasks will be generated in checkbox format:
 
 Would you like me to generate an implementation plan for your specification?"""
                     )
-                ]
+                ],
             )
         ]
 
@@ -229,6 +229,6 @@ update_implementation_plan(spec_id)
 
 Which task would you like to work on next?"""
                     )
-                ]
+                ],
             )
         ]

@@ -16,16 +16,18 @@ from .server import create_server, run_server
 def specforge_mcp():
     """Main entry point for SpecForge MCP server (for pipx)"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="SpecForge MCP Server")
-    parser.add_argument("--version", action="version", version=f"SpecForge {__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"SpecForge {__version__}"
+    )
     args = parser.parse_args()
-    
+
     print("Starting SpecForge MCP Server...")
     print("Mode Classification: Enabled")
     print("Spec Management: Ready")
     print("Workflow Phases: Requirements → Design → Planning → Execution")
-    
+
     try:
         run_server()
     except KeyboardInterrupt:
@@ -40,25 +42,27 @@ def specforge_http():
     from starlette.middleware.cors import CORSMiddleware
     from starlette.responses import JSONResponse
     from starlette.routing import Route, Mount
-    
+
     print("Starting SpecForge HTTP Server...")
     print("Mode Classification: Enabled")
-    print("Spec Management: Ready") 
+    print("Spec Management: Ready")
     print("HTTP API: Available")
 
     # Create MCP server
     mcp_server = create_server("SpecForge-HTTP")
-    
+
     # Create HTTP routes
     async def health_check(request):
         return JSONResponse({"status": "healthy", "service": "SpecForge"})
-    
+
     # Create Starlette app
-    app = Starlette(routes=[
-        Route("/health", health_check),
-        Mount("/mcp", mcp_server.get_starlette_app()),
-    ])
-    
+    app = Starlette(
+        routes=[
+            Route("/health", health_check),
+            Mount("/mcp", mcp_server.get_starlette_app()),
+        ]
+    )
+
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
@@ -67,15 +71,16 @@ def specforge_http():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Get port from environment or default
     import os
+
     port = int(os.getenv("PORT", 8000))
-    
+
     print(f"Server starting on port {port}")
     print("Health check available at /health")
     print("MCP endpoints available at /mcp/*")
-    
+
     try:
         uvicorn.run(app, host="0.0.0.0", port=port)
     except KeyboardInterrupt:
@@ -88,24 +93,27 @@ def main():
     parser = argparse.ArgumentParser(
         description="SpecForge - Specification-driven development with MCP"
     )
-    parser.add_argument("--version", action="version", version=f"SpecForge {__version__}")
-    
+    parser.add_argument(
+        "--version", action="version", version=f"SpecForge {__version__}"
+    )
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    
+
     # MCP server command
     mcp_parser = subparsers.add_parser("mcp", help="Run MCP server")
-    
-    # HTTP server command  
+
+    # HTTP server command
     http_parser = subparsers.add_parser("http", help="Run HTTP server")
     http_parser.add_argument("--port", type=int, default=8000, help="Port to run on")
-    
+
     args = parser.parse_args()
-    
+
     if args.command == "mcp":
         specforge_mcp()
     elif args.command == "http":
-        if hasattr(args, 'port'):
+        if hasattr(args, "port"):
             import os
+
             os.environ["PORT"] = str(args.port)
         specforge_http()
     else:

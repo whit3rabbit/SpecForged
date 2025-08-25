@@ -9,7 +9,7 @@ from .planning import setup_planning_tools
 
 __all__ = [
     "setup_classification_tools",
-    "setup_spec_tools", 
+    "setup_spec_tools",
     "setup_workflow_tools",
-    "setup_planning_tools"
+    "setup_planning_tools",
 ]

@@ -2,8 +2,8 @@
 """
 SpecForge MCP Server - Entry point for local CLI execution.
 
-A Model Context Protocol (MCP) server that implements specification-driven 
-development with EARS notation, intelligent mode classification, and 
+A Model Context Protocol (MCP) server that implements specification-driven
+development with EARS notation, intelligent mode classification, and
 structured workflow management.
 """
 

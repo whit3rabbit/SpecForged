@@ -10,16 +10,16 @@ from .core import (
     EARSRequirement,
     UserStory,
     Task,
-    Specification
+    Specification,
 )
 
 __all__ = [
     "UserMode",
-    "WorkflowPhase", 
+    "WorkflowPhase",
     "SpecStatus",
     "ModeClassification",
     "EARSRequirement",
     "UserStory",
     "Task",
-    "Specification"
+    "Specification",
 ]

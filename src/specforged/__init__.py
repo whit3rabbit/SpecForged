@@ -17,12 +17,15 @@ __all__ = [
 try:
     from .server import create_server, run_server
     from .cli import specforge_mcp, specforge_http
-    __all__.extend([
-        "create_server",
-        "run_server", 
-        "specforge_mcp",
-        "specforge_http",
-    ])
+
+    __all__.extend(
+        [
+            "create_server",
+            "run_server",
+            "specforge_mcp",
+            "specforge_http",
+        ]
+    )
 except ImportError:
     # Dependencies not available - likely during testing or build
     pass
