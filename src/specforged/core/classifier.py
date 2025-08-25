@@ -3,7 +3,6 @@ Mode classification logic for determining user intent.
 """
 
 import re
-from typing import List, Tuple
 
 from ..models import UserMode, ModeClassification
 

@@ -17,7 +17,8 @@ def setup_prompts(mcp: FastMCP):
                 role="assistant",
                 content=[
                     base.TextContent(
-                        text="""I'll help you create a specification following the SpecForge workflow.
+                        text="""I'll help you create a specification following
+the SpecForge workflow.
 
 First, I need to understand what you're building. Please provide:
 1. A high-level description of the feature or system
@@ -46,7 +47,8 @@ What would you like to create a specification for?"""
                 role="assistant",
                 content=[
                     base.TextContent(
-                        text="""EARS (Easy Approach to Requirements Syntax) notation helps create clear, testable requirements.
+                        text="""EARS (Easy Approach to Requirements Syntax)
+notation helps create clear, testable requirements.
 
 Format: **[Condition] THE SYSTEM SHALL [Response]**
 
@@ -82,12 +84,14 @@ What requirements would you like to define in EARS format?"""
                 role="assistant",
                 content=[
                     base.TextContent(
-                        text="""I'll help you create a comprehensive implementation plan for your specification.
+                        text="""I'll help you create a comprehensive
+implementation plan for your specification.
 
 ## Implementation Planning Process
 
 ### 1. **Automatic Plan Generation**
-Use `generate_implementation_plan(spec_id)` to create a complete task hierarchy from your requirements and design:
+Use `generate_implementation_plan(spec_id)` to create a complete task
+hierarchy from your requirements and design:
 - Analyzes user stories and EARS requirements
 - Extracts tasks from technical design components
 - Creates hierarchical task structure with dependencies
@@ -157,7 +161,8 @@ Would you like me to generate an implementation plan for your specification?"""
                 role="assistant",
                 content=[
                     base.TextContent(
-                        text="""I'll help you manage and track your implementation tasks effectively.
+                        text="""I'll help you manage and track your
+implementation tasks effectively.
 
 ## Task Management Commands
 

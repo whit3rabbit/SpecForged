@@ -2,7 +2,6 @@
 Tests for data models.
 """
 
-import pytest
 from datetime import datetime
 
 from src.specforged.models import (

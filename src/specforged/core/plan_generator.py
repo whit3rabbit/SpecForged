@@ -1,5 +1,6 @@
 """
-Implementation plan generator for creating task hierarchies from requirements and design.
+Implementation plan generator for creating task hierarchies from
+requirements and design.
 """
 
 import re
@@ -51,7 +52,10 @@ class PlanGenerator:
             # Create main task for the user story
             story_task = self._create_task(
                 title=f"Implement {story.as_a} functionality",
-                description=f"As a {story.as_a}, I want {story.i_want}, so that {story.so_that}",
+                description=(
+                    f"As a {story.as_a}, I want {story.i_want}, "
+                    f"so that {story.so_that}"
+                ),
                 linked_requirements=[story.id],
             )
 
@@ -114,7 +118,10 @@ class PlanGenerator:
         common_tasks = [
             self._create_task(
                 title="Set up project structure",
-                description="Initialize project structure, dependencies, and development environment",
+                description=(
+                    "Initialize project structure, dependencies, and "
+                    "development environment"
+                ),
             ),
             self._create_task(
                 title="Write unit tests",
@@ -133,7 +140,10 @@ class PlanGenerator:
         return common_tasks
 
     def _create_task(
-        self, title: str, description: str, linked_requirements: List[str] = None
+        self,
+        title: str,
+        description: str,
+        linked_requirements: List[str] = None,
     ) -> Task:
         """Create a new task with unique ID"""
         self.task_counter += 1

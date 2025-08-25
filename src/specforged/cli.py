@@ -18,7 +18,7 @@ def specforge_mcp():
     parser.add_argument(
         "--version", action="version", version=f"SpecForge {__version__}"
     )
-    _args = parser.parse_args()
+    parser.parse_args()
 
     print("Starting SpecForge MCP Server...")
     print("Mode Classification: Enabled")
@@ -97,11 +97,11 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # MCP server command
-    _mcp_parser = subparsers.add_parser("mcp", help="Run MCP server")
+    subparsers.add_parser("mcp", help="Run MCP server")
 
     # HTTP server command
-    _http_parser = subparsers.add_parser("http", help="Run HTTP server")
-    _http_parser.add_argument("--port", type=int, default=8000, help="Port to run on")
+    http_parser = subparsers.add_parser("http", help="Run HTTP server")
+    http_parser.add_argument("--port", type=int, default=8000, help="Port to run on")
 
     args = parser.parse_args()
 
