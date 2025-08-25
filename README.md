@@ -11,23 +11,109 @@ A Model Context Protocol (MCP) server that implements specification-driven devel
 
 🎉 **SpecForge is now available on [PyPI](https://pypi.org/project/specforged/)!**
 
-### pipx Installation (Recommended)
-
-Install SpecForge globally with pipx for easy MCP integration:
+### Quick Installation
 
 ```bash
-# Install pipx (if not already installed)
-pip install pipx
-pipx ensurepath
-
-# Install SpecForge
+# Install SpecForge globally with pipx
 pipx install specforged
 
 # Verify installation
 specforged --version
 ```
 
-Once installed, configure in Claude Desktop:
+**Choose your integration method:**
+
+- 🔥 **[Claude Code](#claude-code-recommended-for-coding)** - Best for active development and coding
+- 🔧 **[Other IDEs](#cursor-ide)** - Cursor, Windsurf, VS Code with AI extensions  
+- 💬 **[Claude Desktop](#claude-desktop-configuration)** - For chat-based specification work
+- 🐳 **[Docker](#docker-with-bind-mounts)** - Containerized deployment
+
+#### Available Commands
+
+- `specforged`: Run MCP server (default)
+- `specforged-http`: Run HTTP server for web integration  
+- `specforged-cli`: CLI with subcommands (mcp/http modes)
+
+#### Management
+
+```bash
+# Upgrade to latest version
+pipx upgrade specforged
+
+# Uninstall
+pipx uninstall specforged
+```
+
+## Installation for Development
+
+⚠️ **Important**: For local development work, you need MCP servers that can write to your project files. HTTP-based installations (like Smithery) run on remote servers and cannot write to your local project directories.
+
+### Claude Code (Recommended for Coding)
+
+The best way to use SpecForge for development is with Claude Code and pipx:
+
+```bash
+# Install SpecForge globally with pipx
+pipx install specforged
+
+# Add to Claude Code with project scope (enables team sharing)
+claude mcp add --scope=project specforge specforged
+
+# Or for personal use only
+claude mcp add specforge specforged
+```
+
+**Why project scope?** Creates a `.mcp.json` file in your project root that team members can share:
+```json
+{
+  "mcpServers": {
+    "specforge": {
+      "command": "specforged",
+      "args": [],
+      "env": {}
+    }
+  }
+}
+```
+
+**File System Access**: Claude Code will prompt for permission to write specification files to your project directory.
+
+### Cursor IDE
+
+For Cursor users, configure SpecForge as an MCP server:
+
+1. Install with pipx: `pipx install specforged`
+2. Add to Cursor's MCP configuration in settings
+3. Restart Cursor to load the server
+
+### Windsurf IDE
+
+Windsurf users can integrate SpecForge similarly:
+
+1. Install: `pipx install specforged`
+2. Configure in Windsurf's MCP settings
+3. Enable local file system access
+
+### VS Code with AI Extensions
+
+For VS Code with Continue, Codeium, or similar extensions:
+
+1. Install: `pipx install specforged`
+2. Configure MCP server in your AI extension settings
+3. Ensure the extension has workspace file permissions
+
+## Claude Desktop Configuration
+
+**Note**: Claude Desktop is designed for chat interfaces, not active development. For coding work, use Claude Code or other development-focused IDEs above.
+
+### Standard Claude Desktop Setup
+
+```bash
+# Install SpecForge globally with pipx
+pipx install specforged
+```
+
+Configure in Claude Desktop:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
@@ -43,48 +129,18 @@ Once installed, configure in Claude Desktop:
 }
 ```
 
-#### Additional Commands
+## Advanced Installation Methods
 
-- `specforged`: Run MCP server (default)
-- `specforged-http`: Run HTTP server for web integration
-- `specforged-cli`: CLI with subcommands (mcp/http modes)
+### Docker with Bind Mounts
 
-#### Upgrade and Uninstall
+For Docker users who want to persist specifications locally:
 
 ```bash
-# Upgrade to latest version
-pipx upgrade specforged
-
-# Uninstall
-pipx uninstall specforged
+# Build the Docker image
+docker build -t specforged:latest .
 ```
 
-### Installation in Claude Code (Local MCP)
-
-#### One-liner (Claude Code CLI)
-
-Add SpecForge to Claude Code for the current project without editing config files:
-
-```bash
-claude mcp add specforged --scope project python /absolute/path/to/SpecForge/main.py
-```
-
-Optional: add via Docker with bind mount to persist specs on host:
-
-```bash
-claude mcp add specforged --scope project \
-  docker run -i --rm \
-  --mount type=bind,src=/absolute/path/to/host/specifications,dst=/app/specifications \
-  specforged:latest \
-  python main.py
-```
-Notes:
-- Build once before using the Docker one-liner: `docker build -t specforged:latest .`
-- `--scope project` grants access to the project folder and subfolders.
-
-#### Optional: Run via Docker with bind mounts
-
-If you prefer to run the server inside Docker while persisting outputs to your host, add this Claude Desktop configuration instead. It mounts your host specs directory to the container's default `specifications/` path used by `SpecificationManager` in `src/server.py`:
+Configure in Claude Desktop with bind mount:
 
 ```json
 {
@@ -92,9 +148,7 @@ If you prefer to run the server inside Docker while persisting outputs to your h
     "specforged": {
       "command": "docker",
       "args": [
-        "run",
-        "-i",
-        "--rm",
+        "run", "-i", "--rm",
         "--mount", "type=bind,src=/absolute/path/to/host/specifications,dst=/app/specifications",
         "specforged:latest",
         "python", "main.py"
@@ -103,48 +157,29 @@ If you prefer to run the server inside Docker while persisting outputs to your h
   }
 }
 ```
-Notes:
-- Build the image once: `docker build -t specforged:latest .`
-- Container WORKDIR is `/app` (see `Dockerfile`), so `SpecificationManager` writes to `/app/specifications` which is bind-mounted to your host path.
 
-### Installation
+**Notes:**
+- Container writes to `/app/specifications` which maps to your local directory
+- Specifications persist on your local machine
+- Restart Claude Desktop after configuration changes
 
-#### Prerequisites
+### Manual Development Installation
+
+For development or local testing without pipx:
+
 ```bash
-# Python 3.9+
-python --version
+# Clone the repository
+git clone https://github.com/whit3rabbit/SpecForge.git
+cd SpecForge
 
 # Install dependencies
 pip install -r requirements.txt
-# Or using pyproject.toml
-pip install -e .
-```
 
-#### Quick Start
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/whit3rabbit/SpecForge.git
-cd SpecForge
-```
-
-2. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-3. **Test locally**
-```bash
+# Test locally
 python main.py
 ```
 
-4. **Configure in Claude Desktop**
-
-Edit your Claude Desktop configuration:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
-**Linux**: `~/.config/Claude/claude_desktop_config.json`
+Configure in Claude Desktop:
 
 ```json
 {
@@ -156,8 +191,6 @@ Edit your Claude Desktop configuration:
   }
 }
 ```
-
-5. **Restart Claude Desktop**
 
 ## Example
 
