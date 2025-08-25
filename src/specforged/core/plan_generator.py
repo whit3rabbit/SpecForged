@@ -229,9 +229,7 @@ class PlanGenerator:
             for t in all_tasks
             if "setup" in t.title.lower() or "structure" in t.title.lower()
         ]
-        implementation_tasks = [
-            t for t in all_tasks if "implement" in t.title.lower()
-        ]
+        implementation_tasks = [t for t in all_tasks if "implement" in t.title.lower()]
         test_tasks = [t for t in all_tasks if "test" in t.title.lower()]
 
         # Implementation tasks depend on setup tasks
@@ -273,9 +271,7 @@ class PlanGenerator:
             flat_tasks.extend(task.get_flat_task_list())
         return flat_tasks
 
-    def get_task_by_number(
-        self, tasks: List[Task], task_number: str
-    ) -> Optional[Task]:
+    def get_task_by_number(self, tasks: List[Task], task_number: str) -> Optional[Task]:
         """Find a task by its hierarchical number"""
         for task in self._flatten_tasks(tasks):
             if task.task_number == task_number:

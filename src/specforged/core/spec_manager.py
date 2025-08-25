@@ -387,9 +387,7 @@ class SpecificationManager:
             return False
 
         spec = self.specs[spec_id]
-        task = self.plan_generator.get_task_by_number(
-            spec.tasks, task_number
-        )
+        task = self.plan_generator.get_task_by_number(spec.tasks, task_number)
 
         if not task:
             return False
@@ -399,11 +397,7 @@ class SpecificationManager:
         # Update parent task status if all subtasks are complete
         if task.parent_id:
             parent_task = next(
-                (
-                    t
-                    for t in self._flatten_tasks(spec.tasks)
-                    if t.id == task.parent_id
-                ),
+                (t for t in self._flatten_tasks(spec.tasks) if t.id == task.parent_id),
                 None,
             )
             if parent_task:
@@ -420,9 +414,7 @@ class SpecificationManager:
             return False
 
         spec = self.specs[spec_id]
-        task = self.plan_generator.get_task_by_number(
-            spec.tasks, task_number
-        )
+        task = self.plan_generator.get_task_by_number(spec.tasks, task_number)
 
         if not task:
             return False
@@ -432,11 +424,7 @@ class SpecificationManager:
         # Update parent task status
         if task.parent_id:
             parent_task = next(
-                (
-                    t
-                    for t in self._flatten_tasks(spec.tasks)
-                    if t.id == task.parent_id
-                ),
+                (t for t in self._flatten_tasks(spec.tasks) if t.id == task.parent_id),
                 None,
             )
             if parent_task:

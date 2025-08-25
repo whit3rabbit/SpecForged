@@ -1,7 +1,7 @@
 """
 SpecForge - Specification-driven development with EARS notation and MCP
 
-A Model Context Protocol (MCP) server that implements intelligent mode 
+A Model Context Protocol (MCP) server that implements intelligent mode
 classification, structured workflow management, and EARS (Easy Approach to
 Requirements Syntax) notation.
 """

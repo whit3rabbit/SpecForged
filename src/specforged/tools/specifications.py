@@ -35,9 +35,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "design": f"specifications/{spec.id}/design.md",
                 "tasks": f"specifications/{spec.id}/tasks.md",
             },
-            "message": (
-                f"Specification '{name}' created. Now in requirements phase."
-            ),
+            "message": (f"Specification '{name}' created. Now in requirements phase."),
         }
 
     @mcp.tool()
@@ -83,9 +81,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             return {
                 "status": "success",
                 "story_id": story.id,
-                "user_story": (
-                    f"As a {as_a}, I want {i_want}, so that {so_that}"
-                ),
+                "user_story": (f"As a {as_a}, I want {i_want}, so that {so_that}"),
                 "ears_requirements": added_requirements,
                 "message": (
                     f"Added user story with {len(added_requirements)} "
@@ -220,19 +216,13 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         # Add summary information
         result["summary"] = {
             "user_stories": len(spec.user_stories),
-            "requirements": sum(
-                len(s.requirements) for s in spec.user_stories
-            ),
+            "requirements": sum(len(s.requirements) for s in spec.user_stories),
             "tasks_total": len(spec.tasks),
-            "tasks_completed": sum(
-                1 for t in spec.tasks if t.status == "completed"
-            ),
+            "tasks_completed": sum(1 for t in spec.tasks if t.status == "completed"),
             "tasks_in_progress": sum(
                 1 for t in spec.tasks if t.status == "in_progress"
             ),
-            "tasks_pending": sum(
-                1 for t in spec.tasks if t.status == "pending"
-            ),
+            "tasks_pending": sum(1 for t in spec.tasks if t.status == "pending"),
         }
 
         if include_content:
@@ -243,9 +233,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                     "as_a": s.as_a,
                     "i_want": s.i_want,
                     "so_that": s.so_that,
-                    "requirements": [
-                        r.to_ears_string() for r in s.requirements
-                    ],
+                    "requirements": [r.to_ears_string() for r in s.requirements],
                 }
                 for s in spec.user_stories
             ]

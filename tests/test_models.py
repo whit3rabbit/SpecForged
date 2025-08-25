@@ -96,9 +96,7 @@ def test_user_story():
     assert "**I want** to login securely" in markdown
     assert "**So that** my data is protected" in markdown
     assert "US-001-R01" in markdown
-    assert (
-        "WHEN login attempted THE SYSTEM SHALL authenticate user" in markdown
-    )
+    assert "WHEN login attempted THE SYSTEM SHALL authenticate user" in markdown
 
 
 def test_task():
@@ -172,9 +170,7 @@ def test_default_values():
     assert req.acceptance_criteria == []
 
     # UserStory defaults
-    story = UserStory(
-        id="US1", as_a="user", i_want="something", so_that="benefit"
-    )
+    story = UserStory(id="US1", as_a="user", i_want="something", so_that="benefit")
     assert story.requirements == []
 
     # Task defaults

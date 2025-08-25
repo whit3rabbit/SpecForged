@@ -93,9 +93,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "status": "success",
                 "spec_id": spec_id,
                 "total_tasks": stats["total"],
-                "message": (
-                    f"Implementation plan updated with {stats['total']} tasks"
-                ),
+                "message": (f"Implementation plan updated with {stats['total']} tasks"),
                 "stats": stats,
             }
 
@@ -380,9 +378,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 for task in spec_manager._flatten_tasks(spec.tasks):
                     # Use task.task_number to ensure hierarchical mapping
                     if not task.is_completed:
-                        ok = spec_manager.check_task(
-                            spec_id, task.task_number
-                        )
+                        ok = spec_manager.check_task(spec_id, task.task_number)
                         if ok:
                             completed.append(task.task_number)
                         else:
