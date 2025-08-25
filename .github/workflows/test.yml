@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv sync --dev
+        uv sync --extra dev
 
     - name: Run tests
       run: |
@@ -63,7 +63,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv sync --dev
+        uv sync --extra dev
 
     - name: Format check
       run: |
