@@ -2,18 +2,18 @@
 Specification management MCP tools.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, cast
 from mcp.server.fastmcp import FastMCP, Context
 
 from ..core.spec_manager import SpecificationManager
 
 
-def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
+def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     """Setup specification-related MCP tools"""
 
     @mcp.tool()
     async def create_spec(
-        name: str, description: str = "", ctx: Context = None
+        name: str, description: str = "", ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Create a new specification with requirements, design, and tasks files.
@@ -44,8 +44,8 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         as_a: str,
         i_want: str,
         so_that: str,
-        ears_requirements: List[Dict[str, str]] = None,
-        ctx: Context = None,
+        ears_requirements: Optional[List[Dict[str, str]]] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Add a user story with EARS-formatted acceptance criteria to the
@@ -95,11 +95,11 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
     @mcp.tool()
     async def update_design(
         spec_id: str,
-        architecture: str = None,
-        components: List[Dict[str, str]] = None,
-        data_models: str = None,
-        sequence_diagrams: List[Dict[str, str]] = None,
-        ctx: Context = None,
+        architecture: Optional[str] = None,
+        components: Optional[List[Dict[str, str]]] = None,
+        data_models: Optional[str] = None,
+        sequence_diagrams: Optional[List[Dict[str, str]]] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Update the technical design documentation for a specification.
@@ -158,7 +158,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         }
 
     @mcp.tool()
-    async def list_specifications(ctx: Context = None) -> Dict[str, Any]:
+    async def list_specifications(ctx: Optional[Context] = None) -> Dict[str, Any]:
         """
         List all available specifications with their current status and phase.
         """
@@ -185,7 +185,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def get_specification_details(
-        spec_id: str, include_content: bool = False, ctx: Context = None
+        spec_id: str, include_content: bool = False, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Get detailed information about a specific specification.
@@ -227,29 +227,35 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
         if include_content:
             # Include full content
-            result["user_stories"] = [
-                {
-                    "id": s.id,
-                    "as_a": s.as_a,
-                    "i_want": s.i_want,
-                    "so_that": s.so_that,
-                    "requirements": [r.to_ears_string() for r in s.requirements],
-                }
-                for s in spec.user_stories
-            ]
+            result["user_stories"] = cast(
+                Any,
+                [
+                    {
+                        "id": s.id,
+                        "as_a": s.as_a,
+                        "i_want": s.i_want,
+                        "so_that": s.so_that,
+                        "requirements": [r.to_ears_string() for r in s.requirements],
+                    }
+                    for s in spec.user_stories
+                ],
+            )
 
             result["design"] = spec.design
 
-            result["tasks"] = [
-                {
-                    "id": t.id,
-                    "title": t.title,
-                    "description": t.description,
-                    "status": t.status,
-                    "dependencies": t.dependencies,
-                    "subtasks": t.subtasks,
-                }
-                for t in spec.tasks
-            ]
+            result["tasks"] = cast(
+                Any,
+                [
+                    {
+                        "id": t.id,
+                        "title": t.title,
+                        "description": t.description,
+                        "status": t.status,
+                        "dependencies": t.dependencies,
+                        "subtasks": t.subtasks,
+                    }
+                    for t in spec.tasks
+                ],
+            )
 
         return result

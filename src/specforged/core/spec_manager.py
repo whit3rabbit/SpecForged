@@ -30,7 +30,7 @@ class SpecificationManager:
         self.plan_generator = PlanGenerator()
         self.load_specifications()
 
-    def load_specifications(self):
+    def load_specifications(self) -> None:
         """Load existing specifications from disk"""
         for spec_dir in self.base_dir.iterdir():
             if spec_dir.is_dir():
@@ -75,7 +75,7 @@ class SpecificationManager:
 
         return spec
 
-    def _ensure_standard_files(self, spec_dir: Path, spec: Specification):
+    def _ensure_standard_files(self, spec_dir: Path, spec: Specification) -> None:
         """Create requirements.md, design.md, and tasks.md if missing."""
         req_file = spec_dir / "requirements.md"
         design_file = spec_dir / "design.md"
@@ -88,7 +88,7 @@ class SpecificationManager:
         if not tasks_file.exists():
             self._save_tasks_file(spec_dir, spec)
 
-    def save_specification(self, spec_id: str):
+    def save_specification(self, spec_id: str) -> None:
         """Save specification to disk"""
         if spec_id not in self.specs:
             return
@@ -111,7 +111,7 @@ class SpecificationManager:
         # Save tasks.md
         self._save_tasks_file(spec_dir, spec)
 
-    def _save_requirements_file(self, spec_dir: Path, spec: Specification):
+    def _save_requirements_file(self, spec_dir: Path, spec: Specification) -> None:
         """Generate and save requirements.md"""
         req_file = spec_dir / "requirements.md"
         content = f"# Requirements for {spec.name}\n\n"
@@ -128,7 +128,7 @@ class SpecificationManager:
         with open(req_file, "w") as f:
             f.write(content)
 
-    def _save_design_file(self, spec_dir: Path, spec: Specification):
+    def _save_design_file(self, spec_dir: Path, spec: Specification) -> None:
         """Generate and save design.md"""
         design_file = spec_dir / "design.md"
         content = f"# Technical Design for {spec.name}\n\n"
@@ -165,7 +165,7 @@ class SpecificationManager:
         with open(design_file, "w") as f:
             f.write(content)
 
-    def _save_tasks_file(self, spec_dir: Path, spec: Specification):
+    def _save_tasks_file(self, spec_dir: Path, spec: Specification) -> None:
         """Generate and save tasks.md with checkbox format"""
         tasks_file = spec_dir / "tasks.md"
         content = "# Implementation Plan\n\n"
@@ -281,7 +281,7 @@ class SpecificationManager:
         spec_id: str,
         title: str,
         description: str,
-        dependencies: List[str] = None,
+        dependencies: Optional[List[str]] = None,
     ) -> Task:
         """Add a task to the implementation plan"""
         if spec_id not in self.specs:

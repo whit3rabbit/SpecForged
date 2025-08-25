@@ -3,6 +3,7 @@ Main SpecForge MCP Server implementation.
 """
 
 from pathlib import Path
+from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
 from .core import ModeClassifier, SpecificationManager
@@ -16,7 +17,7 @@ from .resources import setup_resources
 from .prompts import setup_prompts
 
 
-def create_server(name: str = "SpecForge", base_dir: Path = None) -> FastMCP:
+def create_server(name: str = "SpecForge", base_dir: Optional[Path] = None) -> FastMCP:
     """Create and configure the SpecForge MCP server"""
 
     # Initialize server
@@ -39,7 +40,7 @@ def create_server(name: str = "SpecForge", base_dir: Path = None) -> FastMCP:
     return mcp
 
 
-def run_server():
+def run_server() -> None:
     """Run the SpecForge MCP server"""
     print("Starting SpecForge MCP Server...")
     print("Mode Classification: Enabled")

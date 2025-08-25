@@ -6,7 +6,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 
-def setup_resources(mcp: FastMCP):
+def setup_resources(mcp: FastMCP) -> None:
     """Setup MCP resources for accessing specification files"""
 
     @mcp.resource("spec://{spec_id}/requirements")

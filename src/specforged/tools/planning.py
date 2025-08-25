@@ -2,18 +2,18 @@
 Implementation planning MCP tools for task generation and management.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from mcp.server.fastmcp import FastMCP, Context
 
 from ..core.spec_manager import SpecificationManager
 
 
-def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
+def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     """Setup planning-related MCP tools"""
 
     @mcp.tool()
     async def generate_implementation_plan(
-        spec_id: str, ctx: Context = None
+        spec_id: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Generate a comprehensive implementation plan from requirements and design.
@@ -42,15 +42,17 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
             if ctx:
                 await ctx.info(f"Generated implementation plan for {spec_id}")
-                await ctx.info(f"Created {stats['total']} tasks")
+                if stats:
+                    await ctx.info(f"Created {stats['total']} tasks")
+
+            tasks_created = stats["total"] if stats else 0
+            tasks_message = f"Implementation plan generated with {tasks_created} tasks"
 
             return {
                 "status": "success",
                 "spec_id": spec_id,
-                "tasks_created": stats["total"],
-                "message": (
-                    f"Implementation plan generated with {stats['total']} tasks"
-                ),
+                "tasks_created": tasks_created,
+                "message": tasks_message,
                 "stats": stats,
             }
 
@@ -59,7 +61,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def update_implementation_plan(
-        spec_id: str, ctx: Context = None
+        spec_id: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Update existing implementation plan based on changes to requirements or design.
@@ -89,11 +91,14 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             if ctx:
                 await ctx.info(f"Updated implementation plan for {spec_id}")
 
+            total_tasks = stats["total"] if stats else 0
+            update_message = f"Implementation plan updated with {total_tasks} tasks"
+
             return {
                 "status": "success",
                 "spec_id": spec_id,
-                "total_tasks": stats["total"],
-                "message": (f"Implementation plan updated with {stats['total']} tasks"),
+                "total_tasks": total_tasks,
+                "message": update_message,
                 "stats": stats,
             }
 
@@ -102,7 +107,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def check_task(
-        spec_id: str, task_number: str, ctx: Context = None
+        spec_id: str, task_number: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Mark a task as completed (check the checkbox).
@@ -144,6 +149,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
             # Get updated stats
             stats = spec_manager.get_completion_stats(spec_id)
+            progress_pct = stats["completion_percentage"] if stats else 0
 
             return {
                 "status": "success",
@@ -151,7 +157,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "task_number": task_number,
                 "task_title": task.title,
                 "message": f"Task {task_number} marked as completed",
-                "progress": f"{stats['completion_percentage']}%",
+                "progress": f"{progress_pct}%",
                 "stats": stats,
             }
 
@@ -160,7 +166,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def uncheck_task(
-        spec_id: str, task_number: str, ctx: Context = None
+        spec_id: str, task_number: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Mark a task as pending (uncheck the checkbox).
@@ -202,6 +208,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
             # Get updated stats
             stats = spec_manager.get_completion_stats(spec_id)
+            progress_pct = stats["completion_percentage"] if stats else 0
 
             return {
                 "status": "success",
@@ -209,7 +216,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "task_number": task_number,
                 "task_title": task.title,
                 "message": f"Task {task_number} marked as pending",
-                "progress": f"{stats['completion_percentage']}%",
+                "progress": f"{progress_pct}%",
                 "stats": stats,
             }
 
@@ -218,7 +225,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def get_task_details(
-        spec_id: str, task_number: str, ctx: Context = None
+        spec_id: str, task_number: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Get detailed information about a specific task.
@@ -269,7 +276,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def get_task_status_summary(
-        spec_id: str, ctx: Context = None
+        spec_id: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Summarize task statuses for a spec, grouped by completed,
@@ -342,7 +349,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         spec_id: str,
         task_numbers: List[str] | None = None,
         all_tasks: bool = False,
-        ctx: Context = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Mark multiple tasks as completed.
@@ -385,19 +392,20 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                             errors.append(task.task_number)
             else:
                 # Complete only specified tasks
-                for number in task_numbers:
-                    t = spec_manager.get_task_by_number(spec_id, number)
-                    if not t:
-                        errors.append(number)
-                        continue
-                    if t.is_completed:
-                        completed.append(number)  # already done, treat as success
-                        continue
-                    ok = spec_manager.check_task(spec_id, number)
-                    if ok:
-                        completed.append(number)
-                    else:
-                        errors.append(number)
+                if task_numbers:
+                    for number in task_numbers:
+                        t = spec_manager.get_task_by_number(spec_id, number)
+                        if not t:
+                            errors.append(number)
+                            continue
+                        if t.is_completed:
+                            completed.append(number)  # already done, treat as success
+                            continue
+                        ok = spec_manager.check_task(spec_id, number)
+                        if ok:
+                            completed.append(number)
+                        else:
+                            errors.append(number)
 
             stats = spec_manager.get_completion_stats(spec_id)
 
@@ -408,12 +416,14 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             msg = f"Completed {len(completed)} tasks" + (
                 f", {len(errors)} failed" if errors else ""
             )
+            progress_pct = stats["completion_percentage"] if stats else 0
+
             return {
                 "status": status,
                 "spec_id": spec_id,
                 "completed": completed,
                 "failed": errors,
-                "progress": f"{stats['completion_percentage']}%",
+                "progress": f"{progress_pct}%",
                 "stats": stats,
                 "message": msg,
             }

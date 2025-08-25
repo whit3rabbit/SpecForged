@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP, Context
 from ..core.classifier import ModeClassifier
 
 
-def setup_classification_tools(mcp: FastMCP, classifier: ModeClassifier):
+def setup_classification_tools(mcp: FastMCP, classifier: ModeClassifier) -> None:
     """Setup classification-related MCP tools"""
 
     @mcp.tool()

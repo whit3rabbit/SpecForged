@@ -3,14 +3,14 @@ Workflow and task management MCP tools.
 """
 
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from mcp.server.fastmcp import FastMCP, Context
 
 from ..core.spec_manager import SpecificationManager
 from ..models import WorkflowPhase
 
 
-def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
+def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     """Setup workflow-related MCP tools"""
 
     @mcp.tool()
@@ -18,11 +18,11 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         spec_id: str,
         title: str,
         description: str,
-        dependencies: List[str] = None,
-        subtasks: List[str] = None,
-        linked_requirements: List[str] = None,
+        dependencies: Optional[List[str]] = None,
+        subtasks: Optional[List[str]] = None,
+        linked_requirements: Optional[List[str]] = None,
         estimated_hours: float = 0.0,
-        ctx: Context = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Add an implementation task to the specification's task list.
@@ -38,7 +38,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             estimated_hours: Estimated hours for completion
         """
         try:
-            task = spec_manager.add_task(spec_id, title, description, dependencies)
+            task = spec_manager.add_task(
+                spec_id, title, description, dependencies or []
+            )
 
             # Add additional properties
             if linked_requirements:
@@ -76,7 +78,7 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def execute_task(
-        spec_id: str, task_id: str, ctx: Context = None
+        spec_id: str, task_id: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Execute a specific task from the specification.
@@ -138,7 +140,7 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def transition_workflow_phase(
-        spec_id: str, target_phase: str, ctx: Context = None
+        spec_id: str, target_phase: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Transition the specification to a new workflow phase.
@@ -178,7 +180,7 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
     @mcp.tool()
     async def bulk_check_tasks(
-        spec_id: str, task_numbers: List[str], ctx: Context = None
+        spec_id: str, task_numbers: List[str], ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Mark multiple tasks as completed (check multiple checkboxes).
@@ -217,19 +219,24 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         # Get updated stats
         stats = spec_manager.get_completion_stats(spec_id)
 
+        # Safely access stats with None check
+        progress_text = "0%"
+        if stats and "completion_percentage" in stats:
+            progress_text = f"{stats['completion_percentage']}%"
+
         return {
             "status": "success",
             "spec_id": spec_id,
             "tasks_checked": success_count,
             "total_requested": len(task_numbers),
             "results": results,
-            "progress": f"{stats['completion_percentage']}%",
+            "progress": progress_text,
             "stats": stats,
         }
 
     @mcp.tool()
     async def get_next_available_tasks(
-        spec_id: str, ctx: Context = None
+        spec_id: str, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Get tasks that are ready to be worked on (all dependencies completed).

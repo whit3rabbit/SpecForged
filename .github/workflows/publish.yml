@@ -44,9 +44,9 @@ jobs:
         uv run black --check src/ tests/
         uv run flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
 
-    # - name: Type check
-    #   run: |
-    #     uv run mypy src/
+    - name: Type check
+      run: |
+        uv run mypy src/
 
     - name: Build package
       run: |

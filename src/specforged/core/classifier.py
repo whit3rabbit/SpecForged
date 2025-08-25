@@ -10,7 +10,7 @@ from ..models import UserMode, ModeClassification
 class ModeClassifier:
     """Rule-based mode classifier for user input"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Spec mode trigger patterns with weights
         self.spec_patterns = [
             (r"\b(create|generate|write|draft)\s+(?:a\s+)?spec(?:ification)?", 0.9),
@@ -117,7 +117,7 @@ class ModeClassifier:
             reasoning.append("No strong patterns matched, defaulting to do mode")
 
         # Determine primary mode
-        primary_mode = max(scores, key=scores.get)
+        primary_mode = max(scores, key=lambda mode: scores[mode])
 
         # If confidence is too low, default to do mode
         if scores[primary_mode] < 0.4:

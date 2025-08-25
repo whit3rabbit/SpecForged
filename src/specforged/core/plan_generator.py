@@ -12,9 +12,9 @@ from ..models import Specification, Task, UserStory, EARSRequirement
 class PlanGenerator:
     """Generates implementation plans from specifications"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.task_counter = 0
-        self.subtask_counters = {}  # Track subtask counters for each parent
+        self.subtask_counters: Dict[str, int] = {}  # Track subtask counters
 
     def generate_implementation_plan(self, spec: Specification) -> List[Task]:
         """Generate a complete implementation plan from requirements and design"""
@@ -143,7 +143,7 @@ class PlanGenerator:
         self,
         title: str,
         description: str,
-        linked_requirements: List[str] = None,
+        linked_requirements: Optional[List[str]] = None,
     ) -> Task:
         """Create a new task with unique ID"""
         self.task_counter += 1
@@ -159,7 +159,7 @@ class PlanGenerator:
         parent_task: Task,
         title: str,
         description: str,
-        linked_requirements: List[str] = None,
+        linked_requirements: Optional[List[str]] = None,
     ) -> Task:
         """Create a subtask with proper parent relationship"""
         subtask = self._create_task(title, description, linked_requirements)
@@ -303,6 +303,6 @@ class PlanGenerator:
             "in_progress": in_progress,
             "pending": pending,
             "completion_percentage": round(
-                (completed / total * 100) if total > 0 else 0, 1
+                (completed / total * 100) if total > 0 else 0
             ),
         }

@@ -6,7 +6,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.prompts import base
 
 
-def setup_prompts(mcp: FastMCP):
+def setup_prompts(mcp: FastMCP) -> None:
     """Setup MCP prompts for guidance and help"""
 
     @mcp.prompt()
@@ -15,9 +15,9 @@ def setup_prompts(mcp: FastMCP):
         return [
             base.Message(
                 role="assistant",
-                content=[
-                    base.TextContent(
-                        text="""I'll help you create a specification following
+                content=base.TextContent(
+                    type="text",
+                    text="""I'll help you create a specification following
 the SpecForge workflow.
 
 First, I need to understand what you're building. Please provide:
@@ -33,9 +33,8 @@ I'll then guide you through:
 
 Each phase will require your approval before proceeding to the next.
 
-What would you like to create a specification for?"""
-                    )
-                ],
+What would you like to create a specification for?""",
+                ),
             )
         ]
 
@@ -45,9 +44,9 @@ What would you like to create a specification for?"""
         return [
             base.Message(
                 role="assistant",
-                content=[
-                    base.TextContent(
-                        text="""EARS (Easy Approach to Requirements Syntax)
+                content=base.TextContent(
+                    type="text",
+                    text="""EARS (Easy Approach to Requirements Syntax)
 notation helps create clear, testable requirements.
 
 Format: **[Condition] THE SYSTEM SHALL [Response]**
@@ -70,9 +69,8 @@ Each requirement should be:
 ✓ Complete - All conditions specified
 ✓ Consistent - No contradictions
 
-What requirements would you like to define in EARS format?"""
-                    )
-                ],
+What requirements would you like to define in EARS format?""",
+                ),
             )
         ]
 
@@ -82,9 +80,9 @@ What requirements would you like to define in EARS format?"""
         return [
             base.Message(
                 role="assistant",
-                content=[
-                    base.TextContent(
-                        text="""I'll help you create a comprehensive
+                content=base.TextContent(
+                    type="text",
+                    text="""I'll help you create a comprehensive
 implementation plan for your specification.
 
 ## Implementation Planning Process
@@ -147,9 +145,8 @@ Your tasks will be generated in checkbox format:
 ✓ **Hierarchical Structure**: Parent/subtask relationships
 ✓ **Smart Updates**: Plan refreshes when requirements change
 
-Would you like me to generate an implementation plan for your specification?"""
-                    )
-                ],
+Would you like me to generate an implementation plan for your specification?""",
+                ),
             )
         ]
 
@@ -159,9 +156,9 @@ Would you like me to generate an implementation plan for your specification?"""
         return [
             base.Message(
                 role="assistant",
-                content=[
-                    base.TextContent(
-                        text="""I'll help you manage and track your
+                content=base.TextContent(
+                    type="text",
+                    text="""I'll help you manage and track your
 implementation tasks effectively.
 
 ## Task Management Commands
@@ -232,8 +229,7 @@ get_task_status_summary(spec_id)
 update_implementation_plan(spec_id)
 ```
 
-Which task would you like to work on next?"""
-                    )
-                ],
+Which task would you like to work on next?""",
+                ),
             )
         ]

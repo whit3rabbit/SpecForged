@@ -12,7 +12,7 @@ from . import __version__
 from .server import create_server, run_server
 
 
-def specforge_mcp():
+def specforge_mcp() -> None:
     """Main entry point for SpecForge MCP server (for pipx)"""
     parser = argparse.ArgumentParser(description="SpecForge MCP Server")
     parser.add_argument(
@@ -32,7 +32,7 @@ def specforge_mcp():
         sys.exit(0)
 
 
-def specforge_http():
+def specforge_http() -> None:
     """Entry point for SpecForge HTTP server (for pipx)"""
     import uvicorn
     from starlette.applications import Starlette
@@ -49,14 +49,14 @@ def specforge_http():
     mcp_server = create_server("SpecForge-HTTP")
 
     # Create HTTP routes
-    async def health_check(request):
+    async def health_check(request) -> JSONResponse:  # type: ignore[no-untyped-def]
         return JSONResponse({"status": "healthy", "service": "SpecForge"})
 
     # Create Starlette app
     app = Starlette(
         routes=[
             Route("/health", health_check),
-            Mount("/mcp", mcp_server.get_starlette_app()),
+            Mount("/mcp", mcp_server.streamable_http_app()),
         ]
     )
 
@@ -85,7 +85,7 @@ def specforge_http():
         sys.exit(0)
 
 
-def main():
+def main() -> None:
     """Main CLI with subcommands"""
     parser = argparse.ArgumentParser(
         description="SpecForge - Specification-driven development with MCP"
