@@ -1,6 +1,6 @@
 # SpecForge MCP Server
 
-[![PyPI version](https://badge.fury.io/py/specforged.svg)](https://badge.fury.io/py/specforged)
+[![PyPI version](https://badge.fury.io/py/specforged.svg)](https://pypi.org/project/specforged/)
 [![Python Version](https://img.shields.io/pypi/pyversions/specforged.svg)](https://pypi.org/project/specforged/)
 [![Test Suite](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml/badge.svg)](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml)
 [![Deploy to Smithery](https://smithery.ai/badge/specforged)](https://smithery.ai/server/specforged)
@@ -8,6 +8,8 @@
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
 
 ## Quick Start
+
+🎉 **SpecForge is now available on [PyPI](https://pypi.org/project/specforged/)!**
 
 ### pipx Installation (Recommended)
 
