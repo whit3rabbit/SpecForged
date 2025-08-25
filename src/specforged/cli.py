@@ -7,7 +7,6 @@ Provides command-line interfaces for running SpecForge MCP server variants.
 
 import argparse
 import sys
-from pathlib import Path
 
 from . import __version__
 from .server import create_server, run_server
@@ -15,13 +14,11 @@ from .server import create_server, run_server
 
 def specforge_mcp():
     """Main entry point for SpecForge MCP server (for pipx)"""
-    import argparse
-
     parser = argparse.ArgumentParser(description="SpecForge MCP Server")
     parser.add_argument(
         "--version", action="version", version=f"SpecForge {__version__}"
     )
-    args = parser.parse_args()
+    _args = parser.parse_args()
 
     print("Starting SpecForge MCP Server...")
     print("Mode Classification: Enabled")
@@ -100,11 +97,11 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # MCP server command
-    mcp_parser = subparsers.add_parser("mcp", help="Run MCP server")
+    _mcp_parser = subparsers.add_parser("mcp", help="Run MCP server")
 
     # HTTP server command
-    http_parser = subparsers.add_parser("http", help="Run HTTP server")
-    http_parser.add_argument("--port", type=int, default=8000, help="Port to run on")
+    _http_parser = subparsers.add_parser("http", help="Run HTTP server")
+    _http_parser.add_argument("--port", type=int, default=8000, help="Port to run on")
 
     args = parser.parse_args()
 

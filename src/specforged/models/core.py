@@ -5,7 +5,7 @@ Core data models for SpecForge.
 from typing import Dict, Any, List
 from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 
 
 class UserMode(Enum):

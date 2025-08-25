@@ -6,17 +6,9 @@ import pytest
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime
 
 from src.specforged.core.spec_manager import SpecificationManager
-from src.specforged.models import (
-    Specification,
-    SpecStatus,
-    WorkflowPhase,
-    UserStory,
-    EARSRequirement,
-    Task,
-)
+from src.specforged.models import Task
 
 
 @pytest.fixture

@@ -23,7 +23,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             spec_id: The specification identifier
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         try:
             success = spec_manager.generate_implementation_plan(spec_id)
@@ -45,7 +48,9 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "status": "success",
                 "spec_id": spec_id,
                 "tasks_created": stats["total"],
-                "message": f"Implementation plan generated with {stats['total']} tasks",
+                "message": (
+                    f"Implementation plan generated with {stats['total']} tasks"
+                ),
                 "stats": stats,
             }
 
@@ -64,7 +69,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             spec_id: The specification identifier
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         try:
             success = spec_manager.update_implementation_plan(spec_id)
@@ -85,7 +93,9 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "status": "success",
                 "spec_id": spec_id,
                 "total_tasks": stats["total"],
-                "message": f"Implementation plan updated with {stats['total']} tasks",
+                "message": (
+                    f"Implementation plan updated with {stats['total']} tasks"
+                ),
                 "stats": stats,
             }
 
@@ -105,7 +115,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             task_number: The hierarchical task number (e.g., "1", "2.1", "3.2.1")
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Find the task
         task = spec_manager.get_task_by_number(spec_id, task_number)
@@ -160,7 +173,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             task_number: The hierarchical task number (e.g., "1", "2.1", "3.2.1")
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Find the task
         task = spec_manager.get_task_by_number(spec_id, task_number)
@@ -214,7 +230,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             task_number: The hierarchical task number (e.g., "1", "2.1", "3.2.1")
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Find the task
         task = spec_manager.get_task_by_number(spec_id, task_number)
@@ -255,10 +274,14 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         spec_id: str, ctx: Context = None
     ) -> Dict[str, Any]:
         """
-        Summarize task statuses for a spec, grouped by completed, in_progress, and pending.
+        Summarize task statuses for a spec, grouped by completed,
+        in_progress, and pending.
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         try:
             stats = spec_manager.get_completion_stats(spec_id)
@@ -333,12 +356,18 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             all_tasks: If True, completes all tasks in the spec
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         if not all_tasks and not task_numbers:
             return {
                 "status": "error",
-                "message": "You must specify which tasks to complete (task_numbers) or set all_tasks=true.",
+                "message": (
+                    "You must specify which tasks to complete (task_numbers) "
+                    "or set all_tasks=true."
+                ),
             }
 
         completed: List[str] = []
@@ -351,7 +380,9 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 for task in spec_manager._flatten_tasks(spec.tasks):
                     # Use task.task_number to ensure hierarchical mapping
                     if not task.is_completed:
-                        ok = spec_manager.check_task(spec_id, task.task_number)
+                        ok = spec_manager.check_task(
+                            spec_id, task.task_number
+                        )
                         if ok:
                             completed.append(task.task_number)
                         else:

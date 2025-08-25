@@ -2,7 +2,6 @@
 Tests for enhanced Task model with checkbox support and hierarchical numbering.
 """
 
-import pytest
 from src.specforged.models import Task
 
 

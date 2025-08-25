@@ -41,7 +41,7 @@ class SpecificationManager:
                             spec_data = json.load(f)
                         # Reconstruct specification object
                         self.specs[spec_data["id"]] = self._deserialize_spec(spec_data)
-                        # Ensure standard files exist without overwriting existing ones
+                        # Ensure standard files exist without overwriting
                         self._ensure_standard_files(
                             spec_dir, self.specs[spec_data["id"]]
                         )
@@ -168,7 +168,7 @@ class SpecificationManager:
     def _save_tasks_file(self, spec_dir: Path, spec: Specification):
         """Generate and save tasks.md with checkbox format"""
         tasks_file = spec_dir / "tasks.md"
-        content = f"# Implementation Plan\n\n"
+        content = "# Implementation Plan\n\n"
 
         # Get completion statistics
         stats = self.plan_generator.get_completion_stats(spec.tasks)
@@ -186,7 +186,10 @@ class SpecificationManager:
                 content += task.to_checkbox_markdown()
                 content += "\n\n"
         else:
-            content += "No tasks defined yet. Use `generate_implementation_plan` to create tasks.\n"
+            content += (
+                "No tasks defined yet. Use `generate_implementation_plan` "
+                "to create tasks.\n"
+            )
 
         with open(tasks_file, "w") as f:
             f.write(content)
@@ -274,7 +277,11 @@ class SpecificationManager:
         return requirement
 
     def add_task(
-        self, spec_id: str, title: str, description: str, dependencies: List[str] = None
+        self,
+        spec_id: str,
+        title: str,
+        description: str,
+        dependencies: List[str] = None,
     ) -> Task:
         """Add a task to the implementation plan"""
         if spec_id not in self.specs:
@@ -325,8 +332,14 @@ class SpecificationManager:
             WorkflowPhase.REQUIREMENTS: [WorkflowPhase.DESIGN],
             WorkflowPhase.DESIGN: [WorkflowPhase.IMPLEMENTATION_PLANNING],
             WorkflowPhase.IMPLEMENTATION_PLANNING: [WorkflowPhase.EXECUTION],
-            WorkflowPhase.EXECUTION: [WorkflowPhase.REVIEW, WorkflowPhase.COMPLETED],
-            WorkflowPhase.REVIEW: [WorkflowPhase.REQUIREMENTS, WorkflowPhase.COMPLETED],
+            WorkflowPhase.EXECUTION: [
+                WorkflowPhase.REVIEW,
+                WorkflowPhase.COMPLETED,
+            ],
+            WorkflowPhase.REVIEW: [
+                WorkflowPhase.REQUIREMENTS,
+                WorkflowPhase.COMPLETED,
+            ],
         }
 
         if spec.current_phase in valid_transitions:
@@ -374,7 +387,9 @@ class SpecificationManager:
             return False
 
         spec = self.specs[spec_id]
-        task = self.plan_generator.get_task_by_number(spec.tasks, task_number)
+        task = self.plan_generator.get_task_by_number(
+            spec.tasks, task_number
+        )
 
         if not task:
             return False
@@ -384,7 +399,11 @@ class SpecificationManager:
         # Update parent task status if all subtasks are complete
         if task.parent_id:
             parent_task = next(
-                (t for t in self._flatten_tasks(spec.tasks) if t.id == task.parent_id),
+                (
+                    t
+                    for t in self._flatten_tasks(spec.tasks)
+                    if t.id == task.parent_id
+                ),
                 None,
             )
             if parent_task:
@@ -401,7 +420,9 @@ class SpecificationManager:
             return False
 
         spec = self.specs[spec_id]
-        task = self.plan_generator.get_task_by_number(spec.tasks, task_number)
+        task = self.plan_generator.get_task_by_number(
+            spec.tasks, task_number
+        )
 
         if not task:
             return False
@@ -411,7 +432,11 @@ class SpecificationManager:
         # Update parent task status
         if task.parent_id:
             parent_task = next(
-                (t for t in self._flatten_tasks(spec.tasks) if t.id == task.parent_id),
+                (
+                    t
+                    for t in self._flatten_tasks(spec.tasks)
+                    if t.id == task.parent_id
+                ),
                 None,
             )
             if parent_task:

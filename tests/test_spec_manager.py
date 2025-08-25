@@ -6,7 +6,6 @@ import pytest
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime
 
 from src.specforged.core.spec_manager import SpecificationManager
 from src.specforged.models import SpecStatus, WorkflowPhase
@@ -89,10 +88,11 @@ def test_add_ears_requirement(temp_spec_dir):
 
     # Check EARS string format
     ears_string = requirement.to_ears_string()
-    assert (
-        "WHEN a user enters valid credentials THE SYSTEM SHALL authenticate and create a session"
-        == ears_string
+    expected_ears = (
+        "WHEN a user enters valid credentials THE SYSTEM SHALL "
+        "authenticate and create a session"
     )
+    assert expected_ears == ears_string
 
     # Check that requirement was added to story
     assert len(story.requirements) == 1
@@ -113,7 +113,8 @@ def test_add_task(temp_spec_dir):
 
     assert task.id == "T001"
     assert task.title == "Implement login endpoint"
-    assert task.description == "Create REST API endpoint for user authentication"
+    expected_desc = "Create REST API endpoint for user authentication"
+    assert task.description == expected_desc
     assert task.status == "pending"
     assert task.dependencies == ["T000"]
 
@@ -180,7 +181,8 @@ def test_markdown_generation(temp_spec_dir):
     content = req_file.read_text()
     assert "Test Feature" in content
     assert "**As a** user" in content
-    assert "WHEN login submitted THE SYSTEM SHALL validate credentials" in content
+    expected_ears = "WHEN login submitted THE SYSTEM SHALL validate credentials"
+    assert expected_ears in content
 
     # Check design.md
     design_file = spec_dir / "design.md"

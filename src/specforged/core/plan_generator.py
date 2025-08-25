@@ -3,8 +3,7 @@ Implementation plan generator for creating task hierarchies from requirements an
 """
 
 import re
-from typing import List, Dict, Set, Tuple, Optional
-from datetime import datetime
+from typing import List, Dict, Optional
 
 from ..models import Specification, Task, UserStory, EARSRequirement
 
@@ -183,7 +182,10 @@ class PlanGenerator:
 
     def _generate_task_description_from_ears(self, requirement: EARSRequirement) -> str:
         """Generate a detailed task description from an EARS requirement"""
-        return f"Implement functionality where {requirement.condition.lower()} the system shall {requirement.system_response.lower()}"
+        return (
+            f"Implement functionality where {requirement.condition.lower()} "
+            f"the system shall {requirement.system_response.lower()}"
+        )
 
     def _number_tasks_hierarchically(self, tasks: List[Task]) -> None:
         """Assign hierarchical numbers to tasks (1, 1.1, 1.2, 2, etc.)"""
@@ -227,7 +229,9 @@ class PlanGenerator:
             for t in all_tasks
             if "setup" in t.title.lower() or "structure" in t.title.lower()
         ]
-        implementation_tasks = [t for t in all_tasks if "implement" in t.title.lower()]
+        implementation_tasks = [
+            t for t in all_tasks if "implement" in t.title.lower()
+        ]
         test_tasks = [t for t in all_tasks if "test" in t.title.lower()]
 
         # Implementation tasks depend on setup tasks
@@ -269,7 +273,9 @@ class PlanGenerator:
             flat_tasks.extend(task.get_flat_task_list())
         return flat_tasks
 
-    def get_task_by_number(self, tasks: List[Task], task_number: str) -> Optional[Task]:
+    def get_task_by_number(
+        self, tasks: List[Task], task_number: str
+    ) -> Optional[Task]:
         """Find a task by its hierarchical number"""
         for task in self._flatten_tasks(tasks):
             if task.task_number == task_number:

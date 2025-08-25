@@ -33,7 +33,8 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             description: Detailed task description
             dependencies: List of task IDs this task depends on
             subtasks: List of subtask descriptions
-            linked_requirements: List of requirement IDs this task implements
+            linked_requirements: List of requirement IDs this task
+                implements
             estimated_hours: Estimated hours for completion
         """
         try:
@@ -55,7 +56,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
 
             # Renumber tasks to maintain hierarchy
             spec = spec_manager.specs[spec_id]
-            spec_manager.plan_generator._number_tasks_hierarchically(spec.tasks)
+            spec_manager.plan_generator._number_tasks_hierarchically(
+                spec.tasks
+            )
 
             spec_manager.save_specification(spec_id)
 
@@ -67,7 +70,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 "task_id": task.id,
                 "task_number": task.task_number,
                 "title": task.title,
-                "message": f"Task {task.task_number} added to implementation plan",
+                "message": (
+                    f"Task {task.task_number} added to implementation plan"
+                ),
             }
 
         except Exception as e:
@@ -104,7 +109,10 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
         if unmet_deps:
             return {
                 "status": "error",
-                "message": f"Cannot execute task. Unmet dependencies: {', '.join(unmet_deps)}",
+                "message": (
+                    f"Cannot execute task. Unmet dependencies: "
+                    f"{', '.join(unmet_deps)}"
+                ),
             }
 
         # Update task status
@@ -138,7 +146,8 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
     ) -> Dict[str, Any]:
         """
         Transition the specification to a new workflow phase.
-        Valid phases: requirements, design, implementation_planning, execution, review, completed
+        Valid phases: requirements, design, implementation_planning,
+        execution, review, completed
 
         Args:
             spec_id: The specification identifier
@@ -160,7 +169,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                     "spec_id": spec_id,
                     "previous_phase": spec.current_phase.value,
                     "current_phase": target_phase,
-                    "message": f"Workflow transitioned to {target_phase} phase",
+                    "message": (
+                        f"Workflow transitioned to {target_phase} phase"
+                    ),
                 }
             else:
                 return {
@@ -245,7 +256,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
                 # Check if all dependencies are completed
                 deps_completed = True
                 for dep_id in task.dependencies:
-                    dep_task = next((t for t in all_tasks if t.id == dep_id), None)
+                    dep_task = next(
+                        (t for t in all_tasks if t.id == dep_id), None
+                    )
                     if dep_task and not dep_task.is_completed:
                         deps_completed = False
                         break
@@ -266,5 +279,7 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager):
             "spec_id": spec_id,
             "available_tasks": available_tasks,
             "count": len(available_tasks),
-            "message": f"Found {len(available_tasks)} tasks ready to work on",
+            "message": (
+                f"Found {len(available_tasks)} tasks ready to work on"
+            ),
         }

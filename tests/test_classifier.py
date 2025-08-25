@@ -2,7 +2,6 @@
 Tests for the ModeClassifier.
 """
 
-import pytest
 from src.specforged.core.classifier import ModeClassifier
 from src.specforged.models import UserMode
 
