@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specforged"
-version = "0.1.0"
+version = "0.1.1"
 description = "Spec-driven development workflow with mode classification and EARS notation"
 readme = "README.md"
 license = {text = "MIT"}
@@ -107,4 +107,4 @@ addopts = "-v --tb=short"
 asyncio_mode = "auto"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/specforged"]
