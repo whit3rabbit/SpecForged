@@ -3,7 +3,6 @@
 [![PyPI version](https://badge.fury.io/py/specforged.svg)](https://pypi.org/project/specforged/)
 [![Python Version](https://img.shields.io/pypi/pyversions/specforged.svg)](https://pypi.org/project/specforged/)
 [![Test Suite](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml/badge.svg)](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml)
-[![Deploy to Smithery](https://smithery.ai/badge/specforged)](https://smithery.ai/server/specforged)
 
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
 
@@ -46,7 +45,7 @@ pipx uninstall specforged
 
 ## Installation for Development
 
-⚠️ **Important**: For local development work, you need MCP servers that can write to your project files. HTTP-based installations (like Smithery) run on remote servers and cannot write to your local project directories.
+⚠️ **Important**: For local development work, you need MCP servers that can write to your project files. HTTP-based deployments run on remote servers and cannot write to your local project directories.
 
 ### Claude Code (Recommended for Coding)
 

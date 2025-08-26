@@ -31,7 +31,7 @@ SpecForge is a Model Context Protocol (MCP) server that implements specification
 ### Entry Points
 
 - **`main.py`**: Local CLI execution (standard MCP server)
-- **`main_http.py`**: HTTP server for Smithery cloud deployment
+- **`main_http.py`**: HTTP server for cloud deployment scenarios
 
 ### Workflow Phases
 
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 # Run local MCP server
 python main.py
 
-# Run HTTP server (for testing Smithery deployment)
+# Run HTTP server (for testing cloud deployment)
 python main_http.py
 
 # Using development helper script
@@ -97,18 +97,14 @@ mypy src/
 black --check src/ tests/
 ```
 
-## Smithery Deployment
+## HTTP Deployment
 
 ### Configuration Files
-- **`Dockerfile`**: Multi-stage build with Python + uv
-- **`smithery.yaml`**: Smithery deployment configuration
+- **`Dockerfile`**: Multi-stage build with Python + uv for containerized deployment
 - **`pyproject.toml`**: Python project configuration with dependencies
 
-### Deployment Process
-1. Push code to GitHub repository
-2. Configure `smithery.yaml` (already done)
-3. Deploy at https://smithery.ai/new
-4. Server runs on configurable `PORT` environment variable
+### Notes
+HTTP deployment is available but not recommended for development work since it cannot write to local project files. For specification-driven development, use local installation methods (pipx, manual, or Docker with bind mounts).
 
 ## MCP Tools Reference
 

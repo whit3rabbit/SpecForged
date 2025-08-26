@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-SpecForge HTTP Server - Entry point for Smithery deployment.
+SpecForge HTTP Server - Entry point for HTTP deployment.
 
 Runs SpecForge as an HTTP server using Starlette and Uvicorn for
-cloud deployment via Smithery.ai platform.
+cloud deployment scenarios (though local development is recommended).
 """
 
 import os
@@ -14,7 +14,7 @@ from src.specforged.server import create_server
 
 
 def main():
-    """Run SpecForge as HTTP server for Smithery deployment"""
+    """Run SpecForge as HTTP server for cloud deployment"""
 
     # Create the MCP server
     mcp_server = create_server("SpecForge-HTTP")
@@ -33,7 +33,7 @@ def main():
         max_age=86400,
     )
 
-    # Get port from environment (Smithery requirement)
+    # Get port from environment
     port = int(os.environ.get("PORT", 8080))
 
     print(f"Starting SpecForge HTTP Server on port {port}")
