@@ -9,7 +9,7 @@ jobs:
   publish:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: pypi
       url: https://pypi.org/p/specforged
     permissions:
@@ -58,7 +58,7 @@ jobs:
         python -c "
         import zipfile, sys
         with zipfile.ZipFile(sys.argv[1]) as z:
-            assert 'src/specforged/__init__.py' in z.namelist()
+            assert 'specforged/__init__.py' in z.namelist()
             assert 'specforged-' in sys.argv[1]
         print('✓ Package structure verified')
         " dist/*.whl
