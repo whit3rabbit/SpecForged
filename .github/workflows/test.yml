@@ -80,6 +80,7 @@ jobs:
   build:
     name: Build Package
     runs-on: ubuntu-latest
+    needs: [test, lint]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -106,8 +107,8 @@ jobs:
         wheel_file = glob.glob('dist/*.whl')[0]
         with zipfile.ZipFile(wheel_file) as z:
             files = z.namelist()
-            assert 'src/specforged/__init__.py' in files, 'Missing __init__.py'
-            assert 'src/specforged/cli.py' in files, 'Missing cli.py'
+            assert 'specforged/__init__.py' in files, 'Missing __init__.py'
+            assert 'specforged/cli.py' in files, 'Missing cli.py'
             assert any('entry_points.txt' in f for f in files), 'Missing entry points'
         print('✓ Package structure verified')
         "
