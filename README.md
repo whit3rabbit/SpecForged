@@ -10,6 +10,37 @@ A Model Context Protocol (MCP) server that implements specification-driven devel
 
 🎉 **SpecForge is now available on [PyPI](https://pypi.org/project/specforged/)!**
 
+### Interactive Project Wizard
+
+The fastest way to get started with SpecForge is using the interactive project wizard:
+
+```bash
+# Install SpecForge
+pipx install specforged
+
+# Create a new project specification interactively
+specforged-cli new
+
+# Or with a specific template
+specforged-cli new --template web-app
+
+# Or with custom base directory
+specforged-cli new --base-dir ./my-specs
+```
+
+The wizard will guide you through:
+1. **Project Setup**: Name, description, and project type
+2. **Requirements Gathering**: User stories with EARS notation
+3. **Design Phase**: Architecture and component selection
+4. **Task Generation**: Automatic implementation plan creation
+
+Available project templates:
+- `web-app`: Full-stack web application
+- `rest-api`: RESTful API service
+- `cli-tool`: Command-line tool
+- `python-lib`: Python library
+- `microservice`: Microservice architecture
+
 ### Quick Installation
 
 ```bash
@@ -23,14 +54,14 @@ specforged --version
 **Choose your integration method:**
 
 - 🔥 **[Claude Code](#claude-code-recommended-for-coding)** - Best for active development and coding
-- 🔧 **[Other IDEs](#cursor-ide)** - Cursor, Windsurf, VS Code with AI extensions  
+- 🔧 **[Other IDEs](#cursor-ide)** - Cursor, Windsurf, VS Code with AI extensions
 - 💬 **[Claude Desktop](#claude-desktop-configuration)** - For chat-based specification work
 - 🐳 **[Docker](#docker-with-bind-mounts)** - Containerized deployment
 
 #### Available Commands
 
 - `specforged`: Run MCP server (default)
-- `specforged-http`: Run HTTP server for web integration  
+- `specforged-http`: Run HTTP server for web integration
 - `specforged-cli`: CLI with subcommands (mcp/http modes)
 
 #### Management
@@ -81,17 +112,47 @@ claude mcp add specforged specforged
 
 For Cursor users, configure SpecForge as an MCP server:
 
-1. Install with pipx: `pipx install specforged`
-2. Add to Cursor's MCP configuration in settings
-3. Restart Cursor to load the server
+1. **Install SpecForge**: `pipx install specforged`
+2. **Configure MCP Server**:
+   - Open Cursor settings (Cmd/Ctrl + ,)
+   - Navigate to "Advanced Settings" or search for "MCP"
+   - Create configuration file at `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global)
+   - Add server configuration:
+   ```json
+   {
+     "mcpServers": {
+       "specforged": {
+         "command": "specforged",
+         "args": []
+       }
+     }
+   }
+   ```
+3. **Restart Cursor** to load the server
+4. **Enable File Access**: Grant permission when prompted for local file system access
 
 ### Windsurf IDE
 
-Windsurf users can integrate SpecForge similarly:
+Windsurf users can integrate SpecForge through the MCP configuration:
 
-1. Install: `pipx install specforged`
-2. Configure in Windsurf's MCP settings
-3. Enable local file system access
+1. **Install SpecForge**: `pipx install specforged`
+2. **Configure MCP Server**:
+   - Navigate to "Windsurf Settings > Cascade > Plugins" or "Advanced Settings"
+   - Or manually edit the MCP configuration file at `~/.codeium/windsurf/mcp_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "specforged": {
+         "command": "specforged",
+         "args": [],
+         "env": {}
+       }
+     }
+   }
+   ```
+3. **Press the refresh button** after adding the server
+4. **Restart Windsurf** to load the server
+5. **Project-Relative Files**: SpecForge will automatically detect your project root and create specifications in `./.specifications/` (hidden folder) within your current project directory
 
 ### VS Code with AI Extensions
 
@@ -114,8 +175,8 @@ pipx install specforged
 
 Configure in Claude Desktop:
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
@@ -214,7 +275,7 @@ This server implements the EARS (Easy Approach to Requirements Syntax) notation,
 ### Intelligent Mode Classification
 Automatically determines user intent and routes to appropriate handler:
 - **Spec Mode**: Creating specifications, requirements, design documents
-- **Do Mode**: Code modifications, commands, implementation tasks  
+- **Do Mode**: Code modifications, commands, implementation tasks
 - **Chat Mode**: Questions, explanations, general discussion
 
 ### Complete Specification Workflow
@@ -245,7 +306,7 @@ Automatically determines user intent and routes to appropriate handler:
 ### File Management
 Automatically generates and maintains three key files per specification:
 ```
-specifications/
+.specifications/
 └── your-feature/
     ├── spec.json          # Specification metadata
     ├── requirements.md    # User stories & EARS criteria
@@ -255,30 +316,123 @@ specifications/
 
 ## Usage
 
-### Creating a Specification
+### Interactive Project Wizard (Recommended)
+
+The quickest way to create comprehensive specifications:
+
+```bash
+# Start interactive wizard
+specforged-cli new
+
+# Follow prompts to:
+# 1. Define project basics (name, type, tech stack)
+# 2. Add user stories with EARS requirements
+# 3. Design system architecture and components
+# 4. Generate implementation tasks automatically
+
+# Use templates for common project types
+specforged-cli new --template rest-api
+```
+
+**Wizard Features:**
+- **Guided Requirements**: Step-by-step user story creation with EARS notation help
+- **Architecture Templates**: Pre-built patterns for common project types
+- **Smart Task Generation**: Automatic breakdown from requirements to implementable tasks
+- **Progress Tracking**: Generated tasks in checkbox format for easy progress monitoring
+- **Professional Output**: Creates complete specification with requirements.md, design.md, and tasks.md
+
+### Wizard Mode via MCP (Automatic Activation)
+
+SpecForge can automatically activate wizard mode through natural language when using MCP integration:
+
+#### Auto-Activation Triggers
+
+The wizard automatically starts when:
+- **No .specifications folder exists** in your project
+- **Using "specforged" keyword** in requests
+- **First-time setup** is detected
+
+```bash
+# These phrases trigger wizard mode automatically:
+"Use specforged to create a new project specification"
+"Start specforge wizard for my application"
+"Create a new spec with specforged"
+"I need specforged to help set up my project"
+```
+
+#### Three-Phase Workflow
+
+When wizard mode activates, you'll be guided through:
+
+1. **📝 Phase 1: Requirements Gathering**
+   - Interactive user story creation
+   - EARS notation assistance and examples
+   - Creates `requirements.md` with structured stories
+   - Real-time validation and suggestions
+
+2. **🎨 Phase 2: System Design**
+   - Architecture pattern selection
+   - Component definition wizard
+   - Data model creation help
+   - Creates `design.md` with technical specifications
+
+3. **✅ Phase 3: Task Generation**
+   - Automatic breakdown from requirements to tasks
+   - Dependency analysis and ordering
+   - Creates `tasks.md` with checkbox format
+   - Progress tracking setup
+
+#### Example Wizard Session
+
+```
+User: Use specforged to create a specification for user authentication
+
+Claude: I'll start the SpecForge wizard to create a comprehensive specification.
+
+📝 Phase 1/3: Requirements Gathering
+• Created user story: "As a user, I want secure login..."
+• Added EARS requirements with validation patterns
+• Generated requirements.md ✅
+
+🎨 Phase 2/3: System Design
+• Selected MVC architecture pattern
+• Defined AuthService and UserController components
+• Created data models for User and Session entities
+• Generated design.md ✅
+
+✅ Phase 3/3: Task Generation
+• Analyzed requirements and created 12 implementation tasks
+• Established dependency relationships
+• Generated tasks.md with checkbox format ✅
+
+🎉 Complete specification created at: ./specifications/user-authentication/
+```
+
+### Manual Specification Creation (MCP)
+
+For experienced users or specific workflows, you can create specifications manually:
 
 ```
 User: Create a spec for user authentication system
 Response: Creates new specification with requirements.md, design.md, and tasks.md files
 ```
 
-You can also explicitly reference SpecForge in your request. The classifier now recognizes the trigger word:
-
-```
-User: Use specforged to generate a spec for payment processing
-Response: Routes to spec mode and creates the specification scaffold
-```
-
 ### Mode Classification Examples
 
 ```python
-# Spec mode (creates/manages specifications)
+# Spec mode - Wizard activation (high priority)
+"Use specforged to create a new project specification"
+"Start specforge wizard for user management"
+"Create a spec with specforged for payment processing"
+"I need specforged to set up my API specification"
+
+# Spec mode - Standard specification creation
 "Create a spec for payment processing"
 "Generate a specification for the login system"
 "Execute task 3.2 from user-auth spec"
-"Use specforged to draft a feature spec"
+"Add a requirement to the auth spec"
 
-# Do mode (code/action requests) 
+# Do mode (code/action requests)
 "Fix the syntax error in app.js"
 "Run the test suite"
 "Deploy to production"
@@ -350,7 +504,7 @@ THE SYSTEM SHALL authenticate and create a session
 WHILE processing a payment
 THE SYSTEM SHALL display a progress indicator
 
-WHERE two-factor authentication is enabled  
+WHERE two-factor authentication is enabled
 THE SYSTEM SHALL require a verification code
 
 IF the session expires
@@ -381,7 +535,7 @@ add_requirement(
     ]
 )
 
-# 3. Design architecture  
+# 3. Design architecture
 update_design(
     spec_id="payment-processing",
     architecture="Microservices with payment gateway integration",
@@ -403,7 +557,7 @@ check_task(spec_id="payment-processing", task_number="2.1")
 
 # 7. Bulk complete multiple tasks
 bulk_check_tasks(
-    spec_id="payment-processing", 
+    spec_id="payment-processing",
     task_numbers=["3.1", "3.2", "4.1"]
 )
 
@@ -445,7 +599,7 @@ Microservices architecture with API gateway and payment provider integration...
 ### PaymentService
 Core service handling payment orchestration...
 
-### GatewayAdapter  
+### GatewayAdapter
 Adapter pattern implementation for multiple payment providers...
 
 ## Data Models
@@ -507,7 +661,7 @@ sequenceDiagram
 The server provides MCP resources for accessing specification files:
 
 - `spec://{spec_id}/requirements` - Get requirements.md content
-- `spec://{spec_id}/design` - Get design.md content  
+- `spec://{spec_id}/design` - Get design.md content
 - `spec://{spec_id}/tasks` - Get tasks.md content
 
 ## Configuration Options
@@ -516,7 +670,7 @@ Customize the server by modifying these settings in the Python file:
 
 ```python
 # Change base directory for specifications
-spec_manager = SpecificationManager(base_dir=Path("my_specs"))
+spec_manager = SpecificationManager(base_dir=Path(".my_specs"))
 
 # Adjust mode classification weights
 classifier.spec_patterns = [
@@ -533,7 +687,7 @@ SpecForge/
 ├── src/
 │   ├── models/          # Data models and enums
 │   ├── core/           # Core business logic
-│   ├── tools/          # MCP tool implementations  
+│   ├── tools/          # MCP tool implementations
 │   ├── resources.py    # MCP resource handlers
 │   ├── prompts.py      # MCP prompt definitions
 │   └── server.py       # Main server factory
@@ -582,7 +736,7 @@ Extend the mode classifier with domain-specific patterns:
 # Add to spec_patterns for specification detection
 (r'\b(?:epic|feature)\s+definition', 0.8)
 
-# Add to do_patterns for action detection  
+# Add to do_patterns for action detection
 (r'\b(?:migrate|backup|restore)\s+database', 0.85)
 ```
 
@@ -601,9 +755,10 @@ Extend the mode classifier with domain-specific patterns:
 - Default is "do mode" when confidence is low
 
 **Files not generating**
-- Check write permissions in specifications directory
+- Check write permissions in .specifications directory
 - Ensure all phases are properly transitioned
 - Verify spec_id matches existing specification
+- Ensure project context is detected (project markers like .git, pyproject.toml found)
 
 ## License
 

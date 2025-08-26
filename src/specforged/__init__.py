@@ -75,8 +75,8 @@ __all__ = [
 ]
 
 try:
+    from .cli import specforge_http, specforge_mcp  # noqa: F401
     from .server import create_server, run_server  # noqa: F401
-    from .cli import specforge_mcp, specforge_http  # noqa: F401
 
     __all__.extend(
         [

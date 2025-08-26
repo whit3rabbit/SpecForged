@@ -5,17 +5,18 @@ Main SpecForge MCP Server implementation.
 import os
 from pathlib import Path
 from typing import Optional
+
 from mcp.server.fastmcp import FastMCP
 
-from .core import ModeClassifier, SpecificationManager, ProjectDetector
+from .core import ModeClassifier, ProjectDetector, SpecificationManager
+from .prompts import setup_prompts
+from .resources import setup_resources
 from .tools import (
     setup_classification_tools,
+    setup_planning_tools,
     setup_spec_tools,
     setup_workflow_tools,
-    setup_planning_tools,
 )
-from .resources import setup_resources
-from .prompts import setup_prompts
 
 
 def create_server(name: str = "SpecForge", base_dir: Optional[Path] = None) -> FastMCP:
@@ -38,19 +39,44 @@ def create_server(name: str = "SpecForge", base_dir: Optional[Path] = None) -> F
         if env_base and Path(env_base).is_absolute():
             # If absolute path in env var, use it as-is (legacy behavior)
             resolved_base = Path(env_base).expanduser()
+            print(f"SpecForge: Using absolute path from environment: {resolved_base}")
         else:
             # New behavior: detect project root and create specs there
-            project_detector = ProjectDetector()
-            resolved_base = project_detector.get_specifications_dir()
+            try:
+                project_detector = ProjectDetector()
+                resolved_base = project_detector.get_specifications_dir()
 
-            # Log project detection info for debugging
-            project_info = project_detector.get_project_info()
-            print(f"SpecForge: Detected project root: {project_info['project_root']}")
-            print(f"SpecForge: Using specifications directory: {resolved_base}")
+                # Log project detection info for debugging
+                project_info = project_detector.get_project_info()
+                print(
+                    f"SpecForge: Working directory: {project_info['working_directory']}"
+                )
+                print(
+                    f"SpecForge: Detected project root: {project_info['project_root']}"
+                )
+                print(f"SpecForge: Using specifications directory: {resolved_base}")
+                print(
+                    f"SpecForge: Project markers found: {project_info['detected_markers']}"
+                )
 
-            if env_base and not Path(env_base).is_absolute():
-                # If relative path in env var, use it as subdirectory name
-                resolved_base = project_detector.get_specifications_dir(env_base)
+                if env_base and not Path(env_base).is_absolute():
+                    # If relative path in env var, use it as subdirectory name
+                    resolved_base = project_detector.get_specifications_dir(env_base)
+                    print(
+                        f"SpecForge: Using relative path from environment: {env_base}"
+                    )
+                    print(f"SpecForge: Final specifications directory: {resolved_base}")
+
+            except ValueError as e:
+                print("\n❌ SpecForge: Project Detection Failed")
+                print(f"{e}")
+                print("\nFor this project, try updating your MCP config to:")
+                print(
+                    '  "env": {"SPECFORGE_BASE_DIR": '
+                    '"/Users/whit3rabbit/Documents/GitHub/SpecForge/.specifications"}'
+                )
+                print("\nServer cannot start without valid project context.")
+                raise
     else:
         resolved_base = base_dir
 

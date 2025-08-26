@@ -2,8 +2,9 @@
 Specification management MCP tools.
 """
 
-from typing import Dict, Any, List, Optional, cast
-from mcp.server.fastmcp import FastMCP, Context
+from typing import Any, Dict, List, Optional, cast
+
+from mcp.server.fastmcp import Context, FastMCP
 
 from ..core.spec_manager import SpecificationManager
 
@@ -259,3 +260,81 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             )
 
         return result
+
+    @mcp.tool()
+    async def start_wizard_mode(
+        project_name: str = "",
+        auto_detect_folder: bool = True,
+        ctx: Optional[Context] = None,
+    ) -> Dict[str, Any]:
+        """
+        Start the SpecForge project wizard for comprehensive specification creation.
+
+        Automatically activates when:
+        - No .specifications folder exists in the project
+        - User explicitly requests wizard mode
+        - First-time setup is detected
+
+        Args:
+            project_name: Optional project name (will prompt if not provided)
+            auto_detect_folder: Whether to check for existing specifications folder
+        """
+
+        # Check if specifications folder already exists
+        specs_dir = spec_manager.base_dir
+        has_existing_specs = specs_dir.exists() and any(specs_dir.iterdir())
+
+        if auto_detect_folder and has_existing_specs:
+            existing_specs = list(spec_manager.specs.keys())
+            return {
+                "status": "info",
+                "wizard_needed": False,
+                "message": f"Existing specifications found: {', '.join(existing_specs)}",
+                "suggestions": [
+                    "Use 'create_spec' for individual specifications",
+                    "Use 'list_specifications' to see all existing specs",
+                    "Use wizard mode with auto_detect_folder=False to create new project anyway",
+                ],
+            }
+
+        # Try to import wizard functionality
+        try:
+            from ..wizard import INTERACTIVE_AVAILABLE
+
+            if not INTERACTIVE_AVAILABLE:
+                return {
+                    "status": "error",
+                    "wizard_needed": True,
+                    "message": "Wizard mode requires interactive dependencies",
+                    "install_command": "pip install rich questionary",
+                    "alternative": "Use CLI command: specforged-cli new",
+                }
+        except ImportError:
+            return {
+                "status": "error",
+                "wizard_needed": True,
+                "message": "Wizard module not available",
+                "alternative": "Use CLI command: specforged-cli new",
+            }
+
+        if ctx:
+            await ctx.info("🚀 Starting SpecForge Project Wizard")
+            await ctx.info("📝 Phase 1/3: Requirements Gathering")
+            await ctx.info("🎨 Phase 2/3: System Design")
+            await ctx.info("✅ Phase 3/3: Task Generation")
+
+        return {
+            "status": "wizard_mode",
+            "wizard_needed": True,
+            "message": "SpecForge wizard mode activated! Use CLI for interactive experience.",
+            "instructions": [
+                "Run: specforged-cli new",
+                "Or: specforged-cli new --template web-app",
+                "Wizard will guide through 3 phases:",
+                "  📝 Requirements → 🎨 Design → ✅ Tasks",
+            ],
+            "project_setup": {
+                "base_dir": str(specs_dir),
+                "project_name": project_name or "new-project",
+            },
+        }

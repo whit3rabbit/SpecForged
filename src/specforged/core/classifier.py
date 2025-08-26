@@ -4,7 +4,7 @@ Mode classification logic for determining user intent.
 
 import re
 
-from ..models import UserMode, ModeClassification
+from ..models import ModeClassification, UserMode
 
 
 class ModeClassifier:
@@ -33,8 +33,19 @@ class ModeClassifier:
             (r"\bhow\s+many\s+tasks?\s+(?:are\s+)?(?:complete|done)", 0.8),
             (r"\b(?:bulk|multiple)\s+(?:check|complete)\s+tasks?", 0.9),
             (r"\bcheckbox\s+(?:format|style)", 0.75),
-            # SpecForge trigger word
-            (r"\bspecforge\b", 0.9),
+            # SpecForge trigger words (high priority for wizard mode)
+            (r"\bspecforge\b", 0.95),
+            (r"\bspecforged\b", 0.95),
+            # Wizard mode specific patterns
+            (r"\b(?:start|launch|run)\s+(?:specforge|specforged)\s+wizard", 0.98),
+            (r"\b(?:use\s+)?(?:specforge|specforged)\s+to\s+create", 0.95),
+            (
+                r"\b(?:new\s+project|create\s+project)\s+(?:with\s+)?"
+                r"(?:specforge|specforged)",
+                0.95,
+            ),
+            (r"\b(?:wizard|interactive)\s+(?:mode|setup)", 0.85),
+            (r"\b(?:specforge|specforged)\s+(?:setup|initialization)", 0.9),
         ]
 
         # Do mode patterns (code modifications, commands)

@@ -7,6 +7,7 @@ Provides command-line interfaces for running SpecForge MCP server variants.
 
 import argparse
 import sys
+from typing import Any
 
 from . import __version__
 from .server import create_server, run_server
@@ -52,7 +53,7 @@ def specforge_http() -> None:
     from starlette.applications import Starlette
     from starlette.middleware.cors import CORSMiddleware
     from starlette.responses import JSONResponse
-    from starlette.routing import Route, Mount
+    from starlette.routing import Mount, Route
 
     print("Starting SpecForge HTTP Server...")
     print("Mode Classification: Enabled")
@@ -99,6 +100,49 @@ def specforge_http() -> None:
         sys.exit(0)
 
 
+def specforge_new(args: Any) -> None:
+    """Entry point for SpecForge project wizard (for pipx)"""
+    from pathlib import Path
+
+    from .templates import TemplateManager
+    from .wizard import run_wizard
+
+    print("🚀 SpecForge Project Wizard")
+    print("Creating new specification with guided setup...")
+
+    base_dir = args.base_dir if hasattr(args, "base_dir") else "specifications"
+    template = args.template if hasattr(args, "template") else None
+
+    if template:
+        # Check if template exists
+        template_manager = TemplateManager()
+        available = template_manager.get_available_templates()
+        if template not in available:
+            print(f"❌ Template '{template}' not found.")
+            print(f"Available templates: {', '.join(available.keys())}")
+            sys.exit(1)
+        print(f"📋 Using template: {available[template]['name']}")
+
+    try:
+        spec_id = run_wizard(base_dir)
+        if spec_id:
+            print(f"\n🎉 Project specification '{spec_id}' created successfully!")
+            print(f"📁 Location: {Path(base_dir).resolve() / spec_id}")
+            print("\nNext steps:")
+            print("  1. Review generated files")
+            print("  2. Start implementing tasks")
+            print(f"  3. Use 'specforged mcp --base-dir {base_dir}' to access via MCP")
+        else:
+            print("❌ Project creation cancelled or failed.")
+            sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n❌ Wizard cancelled by user.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"❌ Error creating project: {e}")
+        sys.exit(1)
+
+
 def main() -> None:
     """Main CLI with subcommands"""
     parser = argparse.ArgumentParser(
@@ -117,6 +161,23 @@ def main() -> None:
     http_parser = subparsers.add_parser("http", help="Run HTTP server")
     http_parser.add_argument("--port", type=int, default=8000, help="Port to run on")
 
+    # New project wizard command
+    new_parser = subparsers.add_parser(
+        "new", help="Create new project specification via interactive wizard"
+    )
+    new_parser.add_argument(
+        "--base-dir",
+        type=str,
+        default="specifications",
+        help="Directory to store specifications",
+    )
+    new_parser.add_argument(
+        "--template",
+        type=str,
+        choices=["web-app", "rest-api", "cli-tool", "python-lib", "microservice"],
+        help="Use a predefined project template",
+    )
+
     args = parser.parse_args()
 
     if args.command == "mcp":
@@ -127,6 +188,8 @@ def main() -> None:
 
             os.environ["PORT"] = str(args.port)
         specforge_http()
+    elif args.command == "new":
+        specforge_new(args)
     else:
         # Default to MCP server
         specforge_mcp()

@@ -3,18 +3,18 @@ Specification management logic for handling spec workflows and file operations.
 """
 
 import json
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, Any, List, Optional
 from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from ..models import (
+    EARSRequirement,
     Specification,
     SpecStatus,
-    WorkflowPhase,
-    UserStory,
-    EARSRequirement,
     Task,
+    UserStory,
+    WorkflowPhase,
 )
 from .plan_generator import PlanGenerator
 from .project_detector import ProjectDetector

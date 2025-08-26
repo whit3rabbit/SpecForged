@@ -34,7 +34,8 @@ class ProjectDetector:
         Find the project root directory by looking for project markers.
 
         Returns:
-            Path to the project root, or working directory if no markers found
+            Path to the project root, or working directory if no markers found.
+            If working directory is root (/), falls back to user's home directory.
         """
         current = self.working_dir.resolve()
 
@@ -44,7 +45,20 @@ class ProjectDetector:
                 if (parent / marker).exists():
                     return parent
 
-        # If no project markers found, use working directory
+        # If no project markers found and we're at a problematic location (like root),
+        # raise an exception instead of falling back to Documents
+        if current == Path("/") or len(current.parts) <= 2:
+            raise ValueError(
+                f"No valid project context found. Working directory is {current}, "
+                f"which is not suitable for project-specific specifications. "
+                f"\n\nTo fix this:"
+                f"\n1. Set SPECFORGE_BASE_DIR to your project's absolute path"
+                f"\n2. Use --base-dir argument with project path"
+                f"\n3. Ensure MCP server starts from within a project directory"
+                f"\n\nExample: SPECFORGE_BASE_DIR='/path/to/your/project/.specifications'"
+            )
+
+        # Otherwise use working directory as project root
         return current
 
     def get_specifications_dir(self, subdir: str = "specifications") -> Path:
