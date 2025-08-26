@@ -6,8 +6,67 @@ classification, structured workflow management, and EARS (Easy Approach to
 Requirements Syntax) notation.
 """
 
-__version__ = "1.0.0"
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
 __author__ = "SpecForge Team"
+
+
+def _read_version_from_pyproject() -> Optional[str]:
+    """Attempt to read version from pyproject.toml in the repository root.
+
+    Tries tomllib (Py>=3.11) first. If unavailable or parsing fails, falls
+    back to a simple regex search. Returns None if not found.
+    """
+    pyproject_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    if not pyproject_path.exists():
+        return None
+
+    # Try tomllib when available (Python 3.11+)
+    try:
+        import tomllib
+
+        data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+        project = data.get("project") if isinstance(data, dict) else None
+        if isinstance(project, dict):
+            version = project.get("version")
+            if isinstance(version, str):
+                return version
+    except Exception:
+        pass
+
+    # Regex fallback for Python 3.10 or parsing issues
+    try:
+        import re
+
+        content = pyproject_path.read_text(encoding="utf-8")
+        m = re.search(r"^version\s*=\s*\"([^\"]+)\"", content, flags=re.MULTILINE)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+
+    return None
+
+
+def _resolve_version() -> str:
+    # Prefer installed package version metadata
+    try:
+        from importlib.metadata import version
+
+        return version("specforged")
+    except Exception:
+        # Not installed or metadata missing; try reading from source tree
+        v = _read_version_from_pyproject()
+        if v:
+            return v
+        # Last-resort fallback
+        return "0.0.0"
+
+
+__version__ = _resolve_version()
 
 # Conditional imports to avoid dependency issues during testing
 __all__ = [

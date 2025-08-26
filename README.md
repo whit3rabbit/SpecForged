@@ -56,17 +56,17 @@ The best way to use SpecForge for development is with Claude Code and pipx:
 pipx install specforged
 
 # Add to Claude Code with project scope (enables team sharing)
-claude mcp add --scope=project specforge specforged
+claude mcp add --scope=project specforged specforged
 
 # Or for personal use only
-claude mcp add specforge specforged
+claude mcp add specforged specforged
 ```
 
 **Why project scope?** Creates a `.mcp.json` file in your project root that team members can share:
 ```json
 {
   "mcpServers": {
-    "specforge": {
+    "specforged": {
       "command": "specforged",
       "args": [],
       "env": {}

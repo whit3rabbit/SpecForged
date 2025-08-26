@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specforged"
-version = "0.1.1"
+version = "0.1.2"
 description = "Spec-driven development workflow with mode classification and EARS notation"
 readme = "README.md"
 license = {text = "MIT"}

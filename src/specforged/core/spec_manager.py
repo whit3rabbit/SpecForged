@@ -17,6 +17,7 @@ from ..models import (
     Task,
 )
 from .plan_generator import PlanGenerator
+from .project_detector import ProjectDetector
 
 
 class SpecificationManager:
@@ -24,11 +25,89 @@ class SpecificationManager:
 
     def __init__(self, base_dir: Path = Path("specifications")):
         self.base_dir = base_dir
-        self.base_dir.mkdir(exist_ok=True)
+        self.project_detector = ProjectDetector()
+
+        # Security: Validate that base_dir is within reasonable bounds
+        self._validate_base_directory()
+
+        # Ensure the base directory exists, including any missing parents
+        self.base_dir.mkdir(parents=True, exist_ok=True)
         self.specs: Dict[str, Specification] = {}
         self.current_spec_id: Optional[str] = None
         self.plan_generator = PlanGenerator()
         self.load_specifications()
+
+    def _validate_base_directory(self) -> None:
+        """Validate that the base directory is safe to write to."""
+        try:
+            resolved_base = self.base_dir.resolve()
+
+            # Security check: Don't allow writing to system directories
+            system_dirs = {
+                Path("/"),
+                Path("/usr"),
+                Path("/usr/bin"),
+                Path("/usr/lib"),
+                Path("/bin"),
+                Path("/sbin"),
+                Path("/etc"),
+                Path("/var"),
+                Path("/sys"),
+                Path("/proc"),
+                Path("/dev"),
+            }
+
+            for sys_dir in system_dirs:
+                try:
+                    resolved_base.relative_to(sys_dir.resolve())
+                    raise ValueError(
+                        "Cannot write specifications to system directory: "
+                        f"{resolved_base}"
+                    )
+                except ValueError:
+                    # relative_to failed, which is good - not under system directory
+                    continue
+
+            # Additional check: ensure we're not trying to write to the root filesystem
+            if len(resolved_base.parts) <= 2:  # e.g., '/' or '/usr'
+                raise ValueError(
+                    f"Base directory too high in filesystem hierarchy: {resolved_base}"
+                )
+
+        except Exception as e:
+            print(f"Warning: Base directory validation failed: {e}")
+            # Continue anyway but log the warning
+
+    def _validate_file_path(self, file_path: Path) -> bool:
+        """
+        Validate that a file path is safe for operations.
+
+        Args:
+            file_path: Path to validate
+
+        Returns:
+            True if path is safe, False otherwise
+        """
+        try:
+            resolved_path = file_path.resolve()
+            resolved_base = self.base_dir.resolve()
+
+            # Check if path is within base directory
+            resolved_path.relative_to(resolved_base)
+
+            # Check file size limits (for existing files)
+            if resolved_path.exists() and resolved_path.is_file():
+                size_mb = resolved_path.stat().st_size / (1024 * 1024)
+                if size_mb > 10:  # 10MB limit
+                    print(
+                        f"Warning: File {resolved_path} is {size_mb:.1f}MB "
+                        "(exceeds 10MB limit)"
+                    )
+                    return False
+
+            return True
+        except (ValueError, OSError):
+            return False
 
     def load_specifications(self) -> None:
         """Load existing specifications from disk"""
@@ -99,8 +178,18 @@ class SpecificationManager:
 
         # Save main spec file
         spec_file = spec_dir / "spec.json"
-        with open(spec_file, "w") as f:
-            json.dump(self._serialize_spec(spec), f, indent=2, default=str)
+
+        # Validate file path before writing
+        if not self._validate_file_path(spec_file):
+            print(f"Error: Invalid file path for spec: {spec_file}")
+            return
+
+        try:
+            with open(spec_file, "w", encoding="utf-8") as f:
+                json.dump(self._serialize_spec(spec), f, indent=2, default=str)
+        except OSError as e:
+            print(f"Error writing spec file {spec_file}: {e}")
+            return
 
         # Save requirements.md
         self._save_requirements_file(spec_dir, spec)
@@ -114,6 +203,12 @@ class SpecificationManager:
     def _save_requirements_file(self, spec_dir: Path, spec: Specification) -> None:
         """Generate and save requirements.md"""
         req_file = spec_dir / "requirements.md"
+
+        # Validate file path before writing
+        if not self._validate_file_path(req_file):
+            print(f"Error: Invalid file path for requirements: {req_file}")
+            return
+
         content = f"# Requirements for {spec.name}\n\n"
         content += f"**Status:** {spec.status.value}\n"
         content += f"**Created:** {spec.created_at.strftime('%Y-%m-%d')}\n"
@@ -125,12 +220,21 @@ class SpecificationManager:
                 content += story.to_markdown()
                 content += "\n---\n\n"
 
-        with open(req_file, "w") as f:
-            f.write(content)
+        try:
+            with open(req_file, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            print(f"Error writing requirements file {req_file}: {e}")
 
     def _save_design_file(self, spec_dir: Path, spec: Specification) -> None:
         """Generate and save design.md"""
         design_file = spec_dir / "design.md"
+
+        # Validate file path before writing
+        if not self._validate_file_path(design_file):
+            print(f"Error: Invalid file path for design: {design_file}")
+            return
+
         content = f"# Technical Design for {spec.name}\n\n"
 
         if spec.design:
@@ -162,12 +266,21 @@ class SpecificationManager:
                     content += diagram["content"]
                     content += "\n```\n\n"
 
-        with open(design_file, "w") as f:
-            f.write(content)
+        try:
+            with open(design_file, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            print(f"Error writing design file {design_file}: {e}")
 
     def _save_tasks_file(self, spec_dir: Path, spec: Specification) -> None:
         """Generate and save tasks.md with checkbox format"""
         tasks_file = spec_dir / "tasks.md"
+
+        # Validate file path before writing
+        if not self._validate_file_path(tasks_file):
+            print(f"Error: Invalid file path for tasks: {tasks_file}")
+            return
+
         content = "# Implementation Plan\n\n"
 
         # Get completion statistics
@@ -191,8 +304,11 @@ class SpecificationManager:
                 "to create tasks.\n"
             )
 
-        with open(tasks_file, "w") as f:
-            f.write(content)
+        try:
+            with open(tasks_file, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError as e:
+            print(f"Error writing tasks file {tasks_file}: {e}")
 
     def _serialize_spec(self, spec: Specification) -> Dict[str, Any]:
         """Serialize specification to JSON-compatible dict"""

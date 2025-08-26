@@ -18,7 +18,13 @@ def specforge_mcp() -> None:
     parser.add_argument(
         "--version", action="version", version=f"SpecForge {__version__}"
     )
-    parser.parse_args()
+    parser.add_argument(
+        "--base-dir",
+        type=str,
+        default=None,
+        help="Directory to store specifications (e.g., . or ./specifications)",
+    )
+    args = parser.parse_args()
 
     print("Starting SpecForge MCP Server...")
     print("Mode Classification: Enabled")
@@ -26,7 +32,15 @@ def specforge_mcp() -> None:
     print("Workflow Phases: Requirements → Design → Planning → Execution")
 
     try:
-        run_server()
+        # If a base directory is explicitly provided, use it;
+        # otherwise, rely on server defaults/env
+        if args.base_dir:
+            from pathlib import Path
+
+            server = create_server(base_dir=Path(args.base_dir).expanduser().resolve())
+            server.run()
+        else:
+            run_server()
     except KeyboardInterrupt:
         print("\nSpecForge MCP Server stopped.")
         sys.exit(0)

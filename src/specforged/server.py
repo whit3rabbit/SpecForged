@@ -2,11 +2,12 @@
 Main SpecForge MCP Server implementation.
 """
 
+import os
 from pathlib import Path
 from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
-from .core import ModeClassifier, SpecificationManager
+from .core import ModeClassifier, SpecificationManager, ProjectDetector
 from .tools import (
     setup_classification_tools,
     setup_spec_tools,
@@ -25,7 +26,35 @@ def create_server(name: str = "SpecForge", base_dir: Optional[Path] = None) -> F
 
     # Initialize core managers
     classifier = ModeClassifier()
-    spec_manager = SpecificationManager(base_dir or Path("specifications"))
+
+    # Determine base directory for specifications:
+    # 1) Explicit argument (for programmatic use)
+    # 2) Environment variable with absolute path (legacy support)
+    # 3) Project-relative directory detection (new default behavior)
+    if base_dir is None:
+        env_base = os.environ.get("SPECFORGE_BASE_DIR") or os.environ.get(
+            "SPECFORGED_BASE_DIR"
+        )
+        if env_base and Path(env_base).is_absolute():
+            # If absolute path in env var, use it as-is (legacy behavior)
+            resolved_base = Path(env_base).expanduser()
+        else:
+            # New behavior: detect project root and create specs there
+            project_detector = ProjectDetector()
+            resolved_base = project_detector.get_specifications_dir()
+
+            # Log project detection info for debugging
+            project_info = project_detector.get_project_info()
+            print(f"SpecForge: Detected project root: {project_info['project_root']}")
+            print(f"SpecForge: Using specifications directory: {resolved_base}")
+
+            if env_base and not Path(env_base).is_absolute():
+                # If relative path in env var, use it as subdirectory name
+                resolved_base = project_detector.get_specifications_dir(env_base)
+    else:
+        resolved_base = base_dir
+
+    spec_manager = SpecificationManager(resolved_base)
 
     # Setup all tools
     setup_classification_tools(mcp, classifier)
