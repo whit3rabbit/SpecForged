@@ -56,7 +56,8 @@ def create_server(name: str = "SpecForge", base_dir: Optional[Path] = None) -> F
                 )
                 print(f"SpecForge: Using specifications directory: {resolved_base}")
                 print(
-                    f"SpecForge: Project markers found: {project_info['detected_markers']}"
+                    f"SpecForge: Project markers found: "
+                    f"{project_info['detected_markers']}"
                 )
 
                 if env_base and not Path(env_base).is_absolute():

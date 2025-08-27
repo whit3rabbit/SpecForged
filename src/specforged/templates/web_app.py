@@ -18,15 +18,19 @@ def get_web_app_template() -> Dict[str, Any]:
                 "ears_requirements": [
                     {
                         "condition": "WHEN a new user registers with valid information",
-                        "system_response": "create an account and send confirmation email",
+                        "system_response": (
+                            "create an account and send confirmation email"
+                        ),
                     },
                     {
                         "condition": "WHEN a user enters correct login credentials",
-                        "system_response": "authenticate and redirect to dashboard",
+                        "system_response": ("authenticate and redirect to dashboard"),
                     },
                     {
                         "condition": "IF login credentials are invalid",
-                        "system_response": "display error message and remain on login page",
+                        "system_response": (
+                            "display error message and remain on login page"
+                        ),
                     },
                 ],
             },
@@ -52,24 +56,35 @@ def get_web_app_template() -> Dict[str, Any]:
                 "ears_requirements": [
                     {
                         "condition": "WHEN user updates profile information",
-                        "system_response": "validate and save changes with confirmation",
+                        "system_response": (
+                            "validate and save changes with confirmation"
+                        ),
                     },
                     {
                         "condition": "IF user changes password",
-                        "system_response": "require current password and validate new password strength",
+                        "system_response": (
+                            "require current password and validate new password "
+                            "strength"
+                        ),
                     },
                 ],
             },
         ],
-        "architecture": "Three-tier architecture with presentation, business logic, and data layers",
+        "architecture": (
+            "Three-tier architecture with presentation, business logic, and data layers"
+        ),
         "components": [
             {
                 "name": "Frontend Application",
-                "description": "React/Vue.js SPA with responsive design and state management",
+                "description": (
+                    "React/Vue.js SPA with responsive design and state management"
+                ),
             },
             {
                 "name": "Backend API",
-                "description": "REST API server handling business logic and data operations",
+                "description": (
+                    "REST API server handling business logic and data operations"
+                ),
             },
             {
                 "name": "Authentication Service",
@@ -81,7 +96,7 @@ def get_web_app_template() -> Dict[str, Any]:
             },
             {
                 "name": "File Storage",
-                "description": "Cloud storage for user-uploaded files and assets",
+                "description": ("Cloud storage for user-uploaded files and assets"),
             },
         ],
         "data_models": """

@@ -55,7 +55,8 @@ class ProjectDetector:
                 f"\n1. Set SPECFORGE_BASE_DIR to your project's absolute path"
                 f"\n2. Use --base-dir argument with project path"
                 f"\n3. Ensure MCP server starts from within a project directory"
-                f"\n\nExample: SPECFORGE_BASE_DIR='/path/to/your/project/.specifications'"
+                f"\n\nExample: "
+                f"SPECFORGE_BASE_DIR='/path/to/your/project/.specifications'"
             )
 
         # Otherwise use working directory as project root

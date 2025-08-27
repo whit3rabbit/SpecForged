@@ -289,11 +289,16 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             return {
                 "status": "info",
                 "wizard_needed": False,
-                "message": f"Existing specifications found: {', '.join(existing_specs)}",
+                "message": (
+                    f"Existing specifications found: {', '.join(existing_specs)}"
+                ),
                 "suggestions": [
                     "Use 'create_spec' for individual specifications",
                     "Use 'list_specifications' to see all existing specs",
-                    "Use wizard mode with auto_detect_folder=False to create new project anyway",
+                    (
+                        "Use wizard mode with auto_detect_folder=False to "
+                        "create new project anyway"
+                    ),
                 ],
             }
 
@@ -326,7 +331,9 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
         return {
             "status": "wizard_mode",
             "wizard_needed": True,
-            "message": "SpecForge wizard mode activated! Use CLI for interactive experience.",
+            "message": (
+                "SpecForge wizard mode activated! Use CLI for interactive experience."
+            ),
             "instructions": [
                 "Run: specforged-cli new",
                 "Or: specforged-cli new --template web-app",

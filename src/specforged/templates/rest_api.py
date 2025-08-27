@@ -18,7 +18,9 @@ def get_rest_api_template() -> Dict[str, Any]:
                 "ears_requirements": [
                     {
                         "condition": "WHEN a request includes a valid API key",
-                        "system_response": "process the request and return appropriate response",
+                        "system_response": (
+                            "process the request and return appropriate response"
+                        ),
                     },
                     {
                         "condition": "IF API key is missing or invalid",
@@ -26,7 +28,9 @@ def get_rest_api_template() -> Dict[str, Any]:
                     },
                     {
                         "condition": "WHEN API key rate limit is exceeded",
-                        "system_response": "return 429 Too Many Requests with retry information",
+                        "system_response": (
+                            "return 429 Too Many Requests with retry information"
+                        ),
                     },
                 ],
             },
@@ -37,11 +41,16 @@ def get_rest_api_template() -> Dict[str, Any]:
                 "ears_requirements": [
                     {
                         "condition": "WHEN creating a resource with valid data",
-                        "system_response": "create the resource and return 201 Created with resource data",
+                        "system_response": (
+                            "create the resource and return 201 Created with "
+                            "resource data"
+                        ),
                     },
                     {
                         "condition": "WHEN updating a resource that exists",
-                        "system_response": "update the resource and return 200 OK with updated data",
+                        "system_response": (
+                            "update the resource and return 200 OK with updated data"
+                        ),
                     },
                     {
                         "condition": "IF requested resource does not exist",
@@ -56,16 +65,24 @@ def get_rest_api_template() -> Dict[str, Any]:
                 "ears_requirements": [
                     {
                         "condition": "WHEN validation errors occur",
-                        "system_response": "return 400 Bad Request with detailed field errors",
+                        "system_response": (
+                            "return 400 Bad Request with detailed field errors"
+                        ),
                     },
                     {
                         "condition": "IF server error occurs",
-                        "system_response": "return 500 Internal Server Error with error ID for tracking",
+                        "system_response": (
+                            "return 500 Internal Server Error with error ID for "
+                            "tracking"
+                        ),
                     },
                 ],
             },
         ],
-        "architecture": "Layered REST API architecture with controllers, services, and data access layers",
+        "architecture": (
+            "Layered REST API architecture with controllers, services, and "
+            "data access layers"
+        ),
         "components": [
             {
                 "name": "API Gateway",
