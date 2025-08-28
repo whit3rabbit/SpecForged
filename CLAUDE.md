@@ -110,7 +110,15 @@ HTTP deployment is available but not recommended for development work since it c
 
 ### Wizard Mode = Planning ONLY, NOT Execution
 
-**IMPORTANT**: The SpecForged wizard is strictly for PLANNING, never for execution:
+**IMPORTANT**: The SpecForged wizard is strictly for PLANNING, never for execution.
+
+#### ✅ **WIZARD PHASE SEQUENCE ENFORCED** (v0.2.1+):
+1. **Requirements** → requirements.md (user stories with EARS criteria)
+2. **Design** → design.md (architecture, components, data models)
+3. **Implementation Planning** → tasks.md (hierarchical task breakdown)
+4. **🎯 WIZARD COMPLETES** → Returns to normal MCP operation
+
+**The wizard guidance now emphasizes the mandatory design phase and prevents skipping.**
 
 #### ✅ What the Wizard DOES (Planning Phase):
 - Creates specifications and task lists
@@ -172,12 +180,30 @@ The system enforces strict phase transitions to prevent skipping critical phases
 - ❌ Requirements → Execution (skips design and planning)
 - ❌ Design → Execution (skips implementation planning)
 
+#### 🔒 **CRITICAL VALIDATION ENFORCED** (v0.2.1+):
+- **`generate_implementation_plan()` now validates**:
+  - ✅ User stories must exist (requirements phase completed)
+  - ✅ design.md must exist with substantial content (>100 chars)
+  - ❌ Returns detailed error messages if validation fails
+- **Applied at both MCP tool level AND core spec_manager level**
+- **Prevents accidental phase skipping at the code level**
+
+#### 🎯 **SMART USER GUIDANCE** (v0.2.2+):
+- **Proactive wizard prompts when no .specifications folder exists**
+- **Context-aware error messages** with specific fix suggestions
+- **Phase completion validation** before allowing task execution
+- **Enhanced trigger word detection** for requirements/design/task operations
+- **Comprehensive initialization status checking** with next-step guidance
+
 **Remember**: Wizard = Planning; Execution = Separate phase with context loading and testing
 
 ## MCP Tools Reference
 
-### Mode Classification
+### Mode Classification (Enhanced v0.2.2+)
 - `classify_mode(user_input)`: Determine user intent (chat/do/spec modes)
+  - **Enhanced Trigger Detection**: Now recognizes requirements, design, and task-specific keywords
+  - **New Patterns Added**: "add requirements", "update design.md", "modify tasks", etc.
+  - **File-Specific Triggers**: requirements.md, design.md, tasks.md automatically trigger spec mode
 
 ### Specification Management
 - `create_spec(name, description)`: Create new specification
@@ -188,10 +214,22 @@ The system enforces strict phase transitions to prevent skipping critical phases
 - `add_requirement(spec_id, as_a, i_want, so_that, ears_requirements)`: Add user story with EARS criteria
 - `update_design(spec_id, architecture, components, data_models, sequence_diagrams)`: Update technical design
 
-### Implementation Planning (NEW)
+### Implementation Planning (NEW - Phase Validated)
 - `generate_implementation_plan(spec_id)`: Create comprehensive task hierarchy from requirements/design
+  - **🚨 REQUIRES**: User stories AND design.md with >100 characters
+  - **VALIDATION**: Fails if requirements or substantial design missing
 - `update_implementation_plan(spec_id)`: Refresh plan when requirements change (preserves completion status)
 - `get_task_status_summary(spec_id)`: Complete progress overview with statistics
+
+### Smart Initialization & Phase Detection (NEW v0.2.2+)
+- `list_specifications()`: Enhanced with wizard prompts when no specs exist
+- `check_initialization_status()`: Comprehensive project status with guidance
+  - Detects missing .specifications folder
+  - Identifies incomplete specifications and suggests next steps
+  - Provides contextual guidance based on missing phases
+- `execute_task()`: Enhanced with prerequisite validation
+  - **BLOCKS EXECUTION** if requirements or design missing
+  - Returns detailed error messages with fix suggestions
 
 ### Task Management (NEW - Checkbox Style)
 - `check_task(spec_id, task_number)`: Mark task as completed ✅ (e.g., "1", "2.1", "3.2.1")

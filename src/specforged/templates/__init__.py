@@ -104,5 +104,6 @@ class TemplateManager:
             spec_manager.save_specification(spec_id)
             return True
 
-        except Exception:
+        except (KeyError, AttributeError, ValueError, TypeError) as e:
+            print(f"Error applying template {template_key}: {e}")
             return False

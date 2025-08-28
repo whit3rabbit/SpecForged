@@ -767,3 +767,163 @@ Take a moment to appreciate this accomplishment! You've successfully:
                 ),
             )
         ]
+
+    @mcp.prompt()
+    def no_specifications_prompt() -> list[base.Message]:
+        """Prompt when no specifications are found"""
+        return [
+            base.Message(
+                role="assistant",
+                content=base.TextContent(
+                    type="text",
+                    text="""🚀 **Welcome to SpecForge!**
+
+I don't see any specifications in your project yet. Let's get you started
+with the interactive wizard that will guide you through creating your first
+specification.
+
+## Start with the Wizard
+
+The SpecForge wizard walks you through:
+- **Requirements**: Define user stories with EARS acceptance criteria
+- **Design**: Create system architecture and component breakdown
+- **Planning**: Generate implementation tasks automatically
+
+### Quick Start
+```
+wizard_start(project_name="your-app-name", description="brief description")
+```
+
+### Example
+```
+wizard_start(project_name="todo-app",
+             description="A simple task management web application")
+```
+
+The wizard ensures you don't skip critical phases and creates a solid "
+foundation for development!""",
+                ),
+            )
+        ]
+
+    @mcp.prompt()
+    def missing_requirements_prompt() -> list[base.Message]:
+        """Prompt when requirements are missing"""
+        return [
+            base.Message(
+                role="assistant",
+                content=base.TextContent(
+                    type="text",
+                    text="""📋 **Requirements Needed**
+
+I notice your specification is missing requirements. Before moving to design
+or implementation, you need to define what your users need.
+
+## Add User Stories
+
+Define who will use your system and what they want to accomplish:
+
+```
+add_requirement(
+    spec_id="your-spec-id",
+    as_a="user role (e.g., 'end user', 'admin')",
+    i_want="what they want to do",
+    so_that="why it benefits them",
+    ears_requirements=["WHEN condition THE SYSTEM SHALL response"]
+)
+```
+
+## EARS Requirements Help
+
+Use these patterns for acceptance criteria:
+- **WHEN** [event] **THE SYSTEM SHALL** [response]
+- **WHILE** [state] **THE SYSTEM SHALL** [behavior]
+- **WHERE** [feature] **THE SYSTEM SHALL** [capability]
+- **THE SYSTEM SHALL** [always do this]
+- **IF** [condition] **THEN THE SYSTEM SHALL** [response]
+
+Requirements are the foundation - don't skip this step!""",
+                ),
+            )
+        ]
+
+    @mcp.prompt()
+    def missing_design_prompt() -> list[base.Message]:
+        """Prompt when design is missing"""
+        return [
+            base.Message(
+                role="assistant",
+                content=base.TextContent(
+                    type="text",
+                    text="""🎨 **Design Phase Required**
+
+Great job on the requirements! Now you need to create the technical design
+before generating implementation tasks.
+
+## Create System Design
+
+Define how your system will be built:
+
+```
+update_design(
+    spec_id="your-spec-id",
+    architecture="describe overall system structure",
+    components="list major components and responsibilities",
+    data_models="define key data structures",
+    sequence_diagrams="describe key interaction flows"
+)
+```
+
+## Design Elements to Include
+
+- **Architecture pattern** (MVC, microservices, layered, etc.)
+- **Major components** and their responsibilities
+- **Data models** and relationships
+- **Technology stack** choices
+- **Integration points** between components
+- **Key interaction flows**
+
+The design phase ensures your implementation has a clear blueprint to follow!""",
+                ),
+            )
+        ]
+
+    @mcp.prompt()
+    def incomplete_phase_prompt() -> list[base.Message]:
+        """Dynamic prompt for incomplete phases"""
+        return [
+            base.Message(
+                role="assistant",
+                content=base.TextContent(
+                    type="text",
+                    text="""⚠️ **Phase Incomplete**
+
+I noticed some phases of your specification need completion before proceeding.
+
+## SpecForge Workflow
+
+The proper sequence is:
+1. **Requirements** → User stories with EARS acceptance criteria
+2. **Design** → System architecture and component breakdown
+3. **Planning** → Implementation task generation
+4. **Execution** → Task completion with context loading
+
+## Check Status
+
+Use these tools to see what's missing:
+- `check_initialization_status()` - Overall status and guidance
+- `list_specifications()` - See all specs and their completeness
+- `get_specification_details(spec_id)` - Detailed view of a specific spec
+
+## Next Steps
+
+Based on what's missing, use:
+- `add_requirement()` for user stories
+- `update_design()` for architecture
+- `generate_implementation_plan()` for tasks
+- `execute_task()` for implementation (after context is loaded)
+
+Each phase builds on the previous one - don't skip steps!""",
+                ),
+            )
+        ]

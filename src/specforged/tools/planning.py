@@ -2,8 +2,9 @@
 Implementation planning MCP tools for task generation and management.
 """
 
-from typing import Dict, Any, List, Optional
-from mcp.server.fastmcp import FastMCP, Context
+from typing import Any, Dict, List, Optional
+
+from mcp.server.fastmcp import Context, FastMCP
 
 from ..core.spec_manager import SpecificationManager
 
@@ -26,6 +27,54 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             return {
                 "status": "error",
                 "message": f"Specification {spec_id} not found",
+            }
+
+        # CRITICAL: Validate that design phase is completed before generating plan
+        spec = spec_manager.specs[spec_id]
+
+        # Check if we have requirements (user stories)
+        if not spec.user_stories:
+            return {
+                "status": "error",
+                "message": (
+                    "Cannot generate implementation plan: No requirements "
+                    "found. Please add user stories first using "
+                    "add_requirement()."
+                ),
+            }
+
+        # Check if design.md exists and has substantial content
+        spec_dir = spec_manager.base_dir / spec_id
+        design_file = spec_dir / "design.md"
+        if not design_file.exists():
+            return {
+                "status": "error",
+                "message": (
+                    "Cannot generate implementation plan: Design document "
+                    "missing. Please complete the design phase using "
+                    "update_design() first."
+                ),
+            }
+
+        try:
+            design_content = design_file.read_text(encoding="utf-8").strip()
+            if len(design_content) < 100:  # Must have substantial design content
+                return {
+                    "status": "error",
+                    "message": (
+                        "Cannot generate implementation plan: Design document "
+                        "is too brief. Please add comprehensive design details "
+                        "using update_design()."
+                    ),
+                }
+        except Exception:
+            return {
+                "status": "error",
+                "message": (
+                    "Cannot generate implementation plan: Unable to read "
+                    "design document. Please ensure design.md is properly "
+                    "created."
+                ),
             }
 
         try:

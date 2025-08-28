@@ -123,7 +123,7 @@ class SpecificationManager:
                         self._ensure_standard_files(
                             spec_dir, self.specs[spec_data["id"]]
                         )
-                    except Exception as e:
+                    except (json.JSONDecodeError, KeyError, OSError, ValueError) as e:
                         print(f"Error loading spec {spec_dir.name}: {e}")
 
     def create_specification(self, name: str, description: str = "") -> Specification:
@@ -561,7 +561,8 @@ class SpecificationManager:
                 content = design_file.read_text(encoding="utf-8").strip()
                 if len(content) < 100:  # Must have substantial design content
                     return False
-            except Exception:
+            except (OSError, UnicodeDecodeError, FileNotFoundError) as e:
+                print(f"Error reading design file: {e}")
                 return False
 
         # Validate implementation_planning -> execution transition
@@ -580,6 +581,26 @@ class SpecificationManager:
             return False
 
         spec = self.specs[spec_id]
+
+        # CRITICAL: Validate that design phase is completed before generating plan
+        # Check if we have requirements (user stories)
+        if not spec.user_stories:
+            return False  # No requirements found
+
+        # Check if design.md exists and has substantial content
+        spec_dir = self.base_dir / spec_id
+        design_file = spec_dir / "design.md"
+        if not design_file.exists():
+            return False  # Design document missing
+
+        try:
+            design_content = design_file.read_text(encoding="utf-8").strip()
+            if len(design_content) < 100:  # Must have substantial design content
+                return False  # Design document is too brief
+        except (OSError, UnicodeDecodeError, FileNotFoundError) as e:
+            print(f"Unable to read design document: {e}")
+            return False
+
         new_tasks = self.plan_generator.generate_implementation_plan(spec)
 
         spec.tasks = new_tasks
@@ -680,3 +701,111 @@ class SpecificationManager:
         for task in tasks:
             flat_tasks.extend(task.get_flat_task_list())
         return flat_tasks
+
+    def check_phase_completeness(self, spec_id: str, phase: str) -> bool:
+        """Check if a specific phase has been completed with adequate content"""
+        if spec_id not in self.specs:
+            return False
+
+        spec = self.specs[spec_id]
+        spec_dir = self.base_dir / spec_id
+
+        if phase == "requirements":
+            return len(spec.user_stories) > 0
+
+        elif phase == "design":
+            design_file = spec_dir / "design.md"
+            if not design_file.exists():
+                return False
+            try:
+                content = design_file.read_text(encoding="utf-8").strip()
+                return len(content) >= 100
+            except (OSError, UnicodeDecodeError, FileNotFoundError):
+                return False
+
+        elif phase == "planning":
+            return len(spec.tasks) > 0
+
+        return False
+
+    def get_missing_prerequisites(self, spec_id: str) -> List[str]:
+        """Get list of missing phases/prerequisites for a specification"""
+        if spec_id not in self.specs:
+            return ["specification_not_found"]
+
+        missing = []
+
+        if not self.check_phase_completeness(spec_id, "requirements"):
+            missing.append("requirements")
+
+        if not self.check_phase_completeness(spec_id, "design"):
+            missing.append("design")
+
+        if not self.check_phase_completeness(spec_id, "planning"):
+            missing.append("planning")
+
+        return missing
+
+    def suggest_next_action(self, spec_id: str) -> Dict[str, str]:
+        """Get contextual suggestion for what to do next with a specification"""
+        if spec_id not in self.specs:
+            return {
+                "action": "create_spec",
+                "message": "Specification not found. Create it first.",
+            }
+
+        missing = self.get_missing_prerequisites(spec_id)
+
+        if "requirements" in missing:
+            return {
+                "action": "add_requirement",
+                "message": "Add user stories and EARS requirements first",
+                "tool": (
+                    "add_requirement(spec_id, as_a='user', i_want='goal', "
+                    "so_that='benefit', ears_requirements=[...])"
+                ),
+            }
+
+        elif "design" in missing:
+            return {
+                "action": "update_design",
+                "message": "Create system architecture and design",
+                "tool": (
+                    "update_design(spec_id, architecture='...', "
+                    "components='...', data_models='...')"
+                ),
+            }
+
+        elif "planning" in missing:
+            return {
+                "action": "generate_implementation_plan",
+                "message": "Generate implementation tasks from requirements and design",
+                "tool": "generate_implementation_plan(spec_id)",
+            }
+
+        else:
+            # All phases complete - suggest execution
+            spec = self.specs[spec_id]
+            if spec.tasks:
+                incomplete_tasks = [
+                    t for t in self._flatten_tasks(spec.tasks) if not t.is_completed
+                ]
+                if incomplete_tasks:
+                    return {
+                        "action": "execute_task",
+                        "message": (
+                            f"Start implementing tasks "
+                            f"({len(incomplete_tasks)} remaining)"
+                        ),
+                        "tool": (
+                            f"execute_task(spec_id, "
+                            f"task_id='{incomplete_tasks[0].id}')"
+                        ),
+                    }
+
+            return {
+                "action": "complete",
+                "message": (
+                    "Specification appears complete! " "Consider review and deployment."
+                ),
+            }

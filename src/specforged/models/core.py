@@ -2,10 +2,10 @@
 Core data models for SpecForge.
 """
 
-from typing import Dict, Any, List
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from dataclasses import dataclass, field
+from typing import Any, Dict, List
 
 
 class UserMode(Enum):
@@ -183,6 +183,24 @@ class Task:
 
 
 @dataclass
+class WizardState:
+    """Wizard state tracking for guided specification creation"""
+
+    is_active: bool = False
+    created_via_wizard: bool = False
+    current_wizard_phase: str = "requirements"  # requirements, design, planning
+    phase_completion: Dict[str, bool] = field(
+        default_factory=lambda: {
+            "requirements": False,
+            "design": False,
+            "planning": False,
+        }
+    )
+    wizard_guidance: Dict[str, Any] = field(default_factory=dict)
+    last_wizard_action: str = ""
+
+
+@dataclass
 class Specification:
     """Complete specification with all three files"""
 
@@ -196,3 +214,4 @@ class Specification:
     design: Dict[str, Any] = field(default_factory=dict)
     tasks: List[Task] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    wizard_state: WizardState = field(default_factory=WizardState)

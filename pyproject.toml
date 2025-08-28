@@ -39,7 +39,9 @@ dependencies = [
     "uvicorn[standard]>=0.24.0",
     "starlette>=0.32.0",
     "rich>=13.0.0",
-    "questionary>=2.0.0"
+    "questionary>=2.0.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
 ]
 
 [project.scripts]
@@ -114,6 +116,9 @@ packages = ["src/specforged"]
 
 [dependency-groups]
 dev = [
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
     "pre-commit>=4.3.0",
     "types-aiofiles>=24.1.0.20250822",
 ]

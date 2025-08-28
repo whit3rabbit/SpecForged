@@ -1492,6 +1492,8 @@ dependencies = [
     { name = "fastmcp" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "questionary" },
     { name = "rich" },
     { name = "starlette" },
@@ -1510,6 +1512,9 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "black" },
+    { name = "flake8" },
+    { name = "mypy" },
     { name = "pre-commit" },
     { name = "types-aiofiles" },
 ]
@@ -1523,7 +1528,9 @@ requires-dist = [
     { name = "mcp", extras = ["cli"], specifier = ">=1.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
     { name = "questionary", specifier = ">=2.0.0" },
     { name = "rich", specifier = ">=13.0.0" },
@@ -1535,6 +1542,9 @@ provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "black", specifier = ">=23.0.0" },
+    { name = "flake8", specifier = ">=6.0.0" },
+    { name = "mypy", specifier = ">=1.0.0" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "types-aiofiles", specifier = ">=24.1.0.20250822" },
 ]

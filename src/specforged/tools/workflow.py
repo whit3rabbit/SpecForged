@@ -56,6 +56,79 @@ pytest -v tests/test_{task_id.replace('-', '_').replace('.', '_')}.py
 """
 
 
+def _validate_execution_prerequisites(
+    spec_manager: SpecificationManager, spec_id: str
+) -> Dict[str, Any]:
+    """
+    Validate that prerequisites exist before task execution.
+    Returns validation result with errors and suggestions.
+    """
+    if spec_id not in spec_manager.specs:
+        return {
+            "valid": False,
+            "errors": ["Specification not found"],
+            "suggestions": [],
+        }
+
+    spec = spec_manager.specs[spec_id]
+    spec_dir = spec_manager.base_dir / spec_id
+    errors = []
+    suggestions = []
+
+    # Check if requirements exist and have content
+    if not spec.user_stories:
+        errors.append("No requirements found")
+        suggestions.append(
+            "Add user stories using add_requirement() before executing tasks"
+        )
+    else:
+        req_file = spec_dir / "requirements.md"
+        if not req_file.exists() or len(req_file.read_text().strip()) < 50:
+            errors.append("Requirements file missing or too brief")
+            suggestions.append(
+                (
+                    "Use add_requirement() to define proper user stories "
+                    "and acceptance criteria"
+                )
+            )
+
+    # Check if design exists and has substantial content
+    design_file = spec_dir / "design.md"
+    if not design_file.exists():
+        errors.append("Design document missing")
+        suggestions.append(
+            "Use update_design() to create system architecture before executing tasks"
+        )
+    else:
+        try:
+            design_content = design_file.read_text(encoding="utf-8").strip()
+            if len(design_content) < 100:
+                errors.append("Design document too brief")
+                suggestions.append(
+                    (
+                        "Use update_design() to add comprehensive architecture "
+                        "and component details"
+                    )
+                )
+        except Exception:
+            errors.append("Cannot read design document")
+            suggestions.append(
+                "Ensure design.md is properly created using update_design()"
+            )
+
+    # Check if tasks exist
+    if not spec.tasks:
+        errors.append("No implementation tasks found")
+        suggestions.append(
+            (
+                "Use generate_implementation_plan() to create tasks from "
+                "requirements and design"
+            )
+        )
+
+    return {"valid": len(errors) == 0, "errors": errors, "suggestions": suggestions}
+
+
 def _load_specification_context(
     spec_manager: SpecificationManager, spec_id: str
 ) -> Dict[str, str]:
@@ -188,6 +261,28 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                     f"Cannot execute task. Unmet dependencies: "
                     f"{', '.join(unmet_deps)}"
                 ),
+            }
+
+        # CRITICAL: Validate prerequisites before execution
+        validation = _validate_execution_prerequisites(spec_manager, spec_id)
+
+        if not validation["valid"]:
+            return {
+                "status": "error",
+                "message": "Cannot execute task: Missing prerequisites",
+                "errors": validation["errors"],
+                "suggestions": validation["suggestions"],
+                "help": {
+                    "description": (
+                        "Tasks require completed requirements and " "design phases"
+                    ),
+                    "workflow": [
+                        "1. Add requirements using add_requirement()",
+                        "2. Create design using update_design()",
+                        "3. Generate tasks using generate_implementation_plan()",
+                        "4. Then execute tasks using execute_task()",
+                    ],
+                },
             }
 
         # CRITICAL: Load specification context before execution

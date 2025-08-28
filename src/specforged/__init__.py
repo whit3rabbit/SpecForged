@@ -34,7 +34,7 @@ def _read_version_from_pyproject() -> Optional[str]:
             version = project.get("version")
             if isinstance(version, str):
                 return version
-    except Exception:
+    except (ImportError, OSError, TypeError, KeyError):
         pass
 
     # Regex fallback for Python 3.10 or parsing issues
@@ -45,7 +45,7 @@ def _read_version_from_pyproject() -> Optional[str]:
         m = re.search(r"^version\s*=\s*\"([^\"]+)\"", content, flags=re.MULTILINE)
         if m:
             return m.group(1)
-    except Exception:
+    except (ImportError, OSError, TypeError, KeyError):
         pass
 
     return None
@@ -57,7 +57,7 @@ def _resolve_version() -> str:
         from importlib.metadata import version
 
         return version("specforged")
-    except Exception:
+    except (ImportError, ModuleNotFoundError):
         # Not installed or metadata missing; try reading from source tree
         v = _read_version_from_pyproject()
         if v:

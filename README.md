@@ -79,14 +79,8 @@ The fastest way to get started with SpecForged is using the **interactive projec
 # Install specforged
 pipx install specforged
 
-# Create a new project specification interactively
-specforged-cli new
-
-# Or with a specific template
-specforged-cli new --template web-app
-
-# Or with custom base directory
-specforged-cli new --base-dir ./my-specs
+# Set up with your LLM (Claude Code, Cursor, etc.)
+# Then simply say: "Start specforge wizard for my project"
 ```
 
 The wizard will guide you through:
@@ -120,7 +114,7 @@ specforged --version
 
 - `specforged`: Run MCP server (default)
 - `specforged-http`: Run HTTP server for web integration
-- `specforged-cli`: CLI with subcommands (mcp/http modes)
+- `specforged-cli`: Simplified CLI (same as `specforged`, kept for compatibility)
 
 #### Management
 
@@ -430,21 +424,26 @@ Automatically generates and maintains three key files per specification:
 
 ### Interactive Project Wizard (Recommended)
 
-The quickest way to create comprehensive specifications:
+The quickest way to create comprehensive specifications is through conversation with your LLM:
 
-```bash
-# Start interactive wizard
-specforged-cli new
-
-# Follow prompts to:
-# 1. Define project basics (name, type, tech stack)
-# 2. Add user stories with EARS requirements
-# 3. Design system architecture and components
-# 4. Generate implementation tasks automatically
-
-# Use templates for common project types
-specforged-cli new --template rest-api
 ```
+User: "Start specforge wizard for my task management app"
+
+LLM: 🎉 Project 'task-management-app' created! I'm ready to guide you through
+     the requirements phase. Let's start by understanding your users and their
+     needs. What kind of system are you building and who will use it?
+
+User: "It's for team collaboration, users need to create and assign tasks"
+
+LLM: Great! Let me help you create user stories. I'll use add_requirement() to
+     add this to your specification...
+```
+
+The wizard guides you conversationally through:
+1. **Requirements**: Define user stories with EARS acceptance criteria
+2. **Design**: Document system architecture and components
+3. **Planning**: Generate implementation tasks automatically
+4. **Execution**: Track progress as tasks are completed
 
 **Wizard Features:**
 - **Guided Requirements**: Step-by-step user story creation with EARS notation help

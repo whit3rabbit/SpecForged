@@ -113,7 +113,7 @@ class ProjectWizard:
         except KeyboardInterrupt:
             self.console.print("\n❌ Wizard cancelled by user.")
             return None
-        except Exception as e:
+        except (OSError, ValueError, AttributeError, TypeError) as e:
             self.console.print(f"❌ Error during wizard: {e}")
             return None
 

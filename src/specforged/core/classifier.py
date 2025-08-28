@@ -33,6 +33,20 @@ class ModeClassifier:
             (r"\bhow\s+many\s+tasks?\s+(?:are\s+)?(?:complete|done)", 0.8),
             (r"\b(?:bulk|multiple)\s+(?:check|complete)\s+tasks?", 0.9),
             (r"\bcheckbox\s+(?:format|style)", 0.75),
+            # Requirements-specific patterns
+            (r"\b(?:add|create|update|modify|remove|delete)\s+requirements?", 0.9),
+            (r"\b(?:add|create|write|define|update)\s+user\s+stor(?:y|ies)", 0.85),
+            (r"\brequirements\.md\b", 0.95),
+            (r"\b(?:EARS|ears)\s+(?:criteria|requirements?)", 0.9),
+            # Design-specific patterns
+            (r"\b(?:add|create|update|modify)\s+design", 0.9),
+            (r"\b(?:create|write|define|update)\s+architecture", 0.85),
+            (r"\bdesign\.md\b", 0.95),
+            (r"\b(?:system|technical)\s+(?:architecture|design)", 0.8),
+            # Task-specific patterns
+            (r"\b(?:add|create|update|modify|remove|delete)\s+tasks?", 0.9),
+            (r"\btasks\.md\b", 0.95),
+            (r"\b(?:implementation|task)\s+plan", 0.85),
             # SpecForge trigger words (high priority for wizard mode)
             (r"\bspecforge\b", 0.95),
             (r"\bspecforged\b", 0.95),

@@ -138,7 +138,7 @@ def specforge_new(args: Any) -> None:
     except KeyboardInterrupt:
         print("\n❌ Wizard cancelled by user.")
         sys.exit(0)
-    except Exception as e:
+    except (ImportError, ModuleNotFoundError, OSError, ValueError) as e:
         print(f"❌ Error creating project: {e}")
         sys.exit(1)
 

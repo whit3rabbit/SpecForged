@@ -2,10 +2,11 @@
 Tests for checkbox formatting and task management functionality.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
+
+import pytest
 
 from src.specforged.core.spec_manager import SpecificationManager
 from src.specforged.models import Task
@@ -42,6 +43,21 @@ def sample_spec_with_tasks(spec_manager):
         "WHEN project is initialized",
         "create the required directory structure",
     )
+
+    # Add design content to make implementation plan generation work
+    spec.design = {
+        "architecture": "Layered architecture with clear separation of concerns",
+        "components": [
+            {"name": "Core Module", "description": "Main business logic"},
+            {"name": "API Layer", "description": "REST API endpoints"},
+            {"name": "Data Layer", "description": "Data persistence and storage"},
+        ],
+        "data_models": "interface User { id: string; name: string; }",
+        "sequence_diagrams": [],
+    }
+
+    # Save the spec with updated design
+    spec_manager.save_specification(spec.id)
 
     # Generate implementation plan
     spec_manager.generate_implementation_plan(spec.id)
