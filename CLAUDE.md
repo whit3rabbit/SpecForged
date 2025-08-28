@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SpecForge is a Model Context Protocol (MCP) server that implements specification-driven development with EARS (Easy Approach to Requirements Syntax) notation, intelligent mode classification, and structured workflow management. The system automatically routes user requests to appropriate handlers and enforces a structured development workflow.
+SpecForged is a Model Context Protocol (MCP) server that implements specification-driven development with EARS (Easy Approach to Requirements Syntax) notation, intelligent mode classification, and structured workflow management. The system automatically routes user requests to appropriate handlers and enforces a structured development workflow.
 
 ## Architecture
 
@@ -35,7 +35,7 @@ SpecForge is a Model Context Protocol (MCP) server that implements specification
 
 ### Workflow Phases
 
-SpecForge enforces a structured development workflow:
+specforged enforces a structured development workflow:
 1. **Requirements**: Define user stories with EARS acceptance criteria
 2. **Design**: Technical architecture and component design
 3. **Implementation Planning**: Break down into discrete tasks
@@ -106,6 +106,74 @@ black --check src/ tests/
 ### Notes
 HTTP deployment is available but not recommended for development work since it cannot write to local project files. For specification-driven development, use local installation methods (pipx, manual, or Docker with bind mounts).
 
+## 🚫 Critical: Wizard Mode Scope and Execution Guidelines
+
+### Wizard Mode = Planning ONLY, NOT Execution
+
+**IMPORTANT**: The SpecForged wizard is strictly for PLANNING, never for execution:
+
+#### ✅ What the Wizard DOES (Planning Phase):
+- Creates specifications and task lists
+- Guides through Requirements → Design → Implementation Planning
+- Generates requirements.md, design.md, and tasks.md files
+- Provides structured workflow and task breakdown
+- Sets up project specifications for development
+
+#### ❌ What the Wizard DOES NOT Do (Execution Phase):
+- Does NOT implement tasks or write code
+- Does NOT execute the implementation plan
+- Does NOT scaffold applications or components
+- Does NOT create actual source code files
+- Does NOT deploy or build anything
+
+### Execution Phase Guidelines (Separate from Wizard)
+
+**When you execute tasks (after wizard completion), you MUST:**
+
+#### Before Any Task Implementation:
+1. **Load Context**: Read requirements.md and design.md to understand the system
+2. **Review Architecture**: Follow the design decisions and component structure
+3. **Identify Requirements**: Find which EARS requirements this task fulfills
+4. **Check Dependencies**: Ensure prerequisite tasks are completed
+
+#### During Task Implementation:
+1. **Follow Design**: Implement according to the planned architecture patterns
+2. **Meet EARS Requirements**: Ensure all relevant acceptance criteria are satisfied
+3. **Maintain Quality**: Follow established coding patterns and conventions
+4. **Document Changes**: Add inline comments and update relevant documentation
+
+#### After Task Implementation:
+1. **Generate Tests**: Create comprehensive tests (unit, integration, acceptance)
+2. **Validate Requirements**: Verify EARS acceptance criteria are met
+3. **Integration Testing**: Ensure new code works with existing components
+4. **Mark Complete**: Update task status in tasks.md
+
+#### Test Generation Requirements:
+**Every completed task MUST include:**
+- **Unit Tests**: Test individual functions and components
+- **Integration Tests**: Test interactions between components
+- **Acceptance Tests**: Verify EARS requirements are satisfied
+- **Error Handling Tests**: Test edge cases and error conditions
+
+### Phase Transition Validation
+
+The system enforces strict phase transitions to prevent skipping critical phases:
+
+#### Valid Workflow Sequence:
+1. **Requirements** → Must have user stories before proceeding
+2. **Design** → Must create design.md with architecture before proceeding  
+3. **Implementation Planning** → Must generate tasks.md before proceeding
+4. **Execution** → Tasks are executed with full context loading
+5. **Review** → Quality assurance and validation
+6. **Completed** → Final state
+
+#### Prevented Invalid Transitions:
+- ❌ Requirements → Implementation Planning (skips design)
+- ❌ Requirements → Execution (skips design and planning)
+- ❌ Design → Execution (skips implementation planning)
+
+**Remember**: Wizard = Planning; Execution = Separate phase with context loading and testing
+
 ## MCP Tools Reference
 
 ### Mode Classification
@@ -142,6 +210,52 @@ HTTP deployment is available but not recommended for development work since it c
 - `spec://{spec_id}/design`: Access design.md content  
 - `spec://{spec_id}/tasks`: Access tasks.md content (now in checkbox format)
 
+## MCP Prompts Reference (Enhanced)
+
+specforged includes interactive prompts that guide users through each phase of the specification workflow. These prompts are conversational and adaptive.
+
+### Phase-Specific Prompts
+
+- `spec_creation_prompt()`: Initial specification creation guidance
+- `ears_requirement_prompt()`: **Enhanced** - Complete EARS notation guide with all 5 patterns
+- `design_phase_prompt()`: **New** - Interactive design workflow with architecture guidance
+- `implementation_planning_prompt()`: **Enhanced** - Conversational task generation process
+- `task_management_prompt()`: **Enhanced** - Natural language task management with motivation
+
+### Workflow Transition Prompts (New)
+
+- `requirements_to_design_prompt()`: Guides transition from requirements to design phase
+- `design_to_planning_prompt()`: Confirms design completion and introduces planning
+- `planning_to_execution_prompt()`: Launches execution phase with task overview
+- `execution_complete_prompt()`: Celebrates completion and suggests next steps
+
+### Enhanced EARS Notation Support
+
+The `ears_requirement_prompt()` now covers all 5 EARS requirement types:
+
+1. **Ubiquitous** (Always Active): `THE SYSTEM SHALL [action]`
+2. **Event-Driven**: `WHEN [event] THE SYSTEM SHALL [response]`
+3. **State-Driven**: `WHILE [state] THE SYSTEM SHALL [behavior]`
+4. **Optional Features**: `WHERE [feature] THE SYSTEM SHALL [capability]`
+5. **Unwanted Behavior**: `IF [condition] THEN THE SYSTEM SHALL [response]`
+
+### Natural Language Task Management
+
+Users can interact with tasks conversationally:
+
+- **Completion**: "Mark task 2.1 as done" → Automatic progress updates
+- **Status**: "How's my progress?" → Stats with encouragement
+- **Guidance**: "What should I work on next?" → Dependency-aware suggestions
+- **Details**: "Tell me about task 3.2" → Implementation guidance
+
+### Conversational Features
+
+- **Interactive coaching** for requirement refinement
+- **Automatic progress feedback** with milestone celebration
+- **Phase transition confirmations** with optional back-navigation
+- **Built-in best practice reminders** and quality checklists
+- **Flexible interaction** - natural language OR function calls
+
 ## File Structure
 
 Generated specifications are stored in:
@@ -156,7 +270,7 @@ specifications/
 
 ## Checkbox Task Format (NEW)
 
-SpecForge now generates implementation plans in GitHub-style checkbox markdown:
+specforged now generates implementation plans in GitHub-style checkbox markdown:
 
 ```markdown
 # Implementation Plan
@@ -203,19 +317,34 @@ SpecForge now generates implementation plans in GitHub-style checkbox markdown:
 - **Progress stats**: Real-time completion percentages
 - **Status preservation**: Plan updates preserve completion status
 
-## EARS Notation
+## EARS Notation (Enhanced)
 
-The system uses EARS (Easy Approach to Requirements Syntax) for requirements:
+The system uses EARS (Easy Approach to Requirements Syntax) for requirements, now supporting all 5 official EARS patterns with interactive coaching:
 
-**Format**: `[Condition] THE SYSTEM SHALL [Response]`
+### The 5 EARS Requirement Types
 
-**Patterns**:
-- `WHEN [event] THE SYSTEM SHALL [action]`
-- `WHILE [state] THE SYSTEM SHALL [behavior]`  
-- `WHERE [feature enabled] THE SYSTEM SHALL [capability]`
-- `IF [condition] THEN THE SYSTEM SHALL [response]`
+1. **Ubiquitous (Always Active)**: `THE SYSTEM SHALL [action/behavior]`
+   - Example: `THE SYSTEM SHALL log all user actions for audit purposes`
 
-**Example**: `WHEN a user submits invalid credentials THE SYSTEM SHALL display an error message`
+2. **Event-Driven**: `WHEN [event] THE SYSTEM SHALL [response]`
+   - Example: `WHEN a user submits invalid credentials THE SYSTEM SHALL display an error message`
+
+3. **State-Driven**: `WHILE [state] THE SYSTEM SHALL [behavior]`
+   - Example: `WHILE processing payment THE SYSTEM SHALL show progress indicator`
+
+4. **Optional Features**: `WHERE [feature] THE SYSTEM SHALL [capability]`
+   - Example: `WHERE premium features enabled THE SYSTEM SHALL unlock advanced options`
+
+5. **Unwanted Behavior**: `IF [condition] THEN THE SYSTEM SHALL [response]`
+   - Example: `IF session expires THEN THE SYSTEM SHALL redirect to login page`
+
+### Interactive EARS Coaching
+
+The enhanced `ears_requirement_prompt()` provides:
+- **Scenario coverage guidance** - Prompts for normal, error, optional, and state-driven cases
+- **Quality checklist** - Ensures requirements are testable, unambiguous, complete, consistent
+- **Interactive refinement** - Helps convert vague requirements into proper EARS format
+- **Best practice reminders** - Encourages comprehensive requirement coverage
 
 ## Mode Classification
 

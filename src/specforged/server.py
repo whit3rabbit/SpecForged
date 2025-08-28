@@ -16,6 +16,7 @@ from .tools import (
     setup_planning_tools,
     setup_spec_tools,
     setup_workflow_tools,
+    setup_filesystem_tools,
 )
 
 
@@ -28,66 +29,51 @@ def create_server(name: str = "SpecForge", base_dir: Optional[Path] = None) -> F
     # Initialize core managers
     classifier = ModeClassifier()
 
-    # Determine base directory for specifications:
-    # 1) Explicit argument (for programmatic use)
-    # 2) Environment variable with absolute path (legacy support)
-    # 3) Project-relative directory detection (new default behavior)
-    if base_dir is None:
-        env_base = os.environ.get("SPECFORGE_BASE_DIR") or os.environ.get(
-            "SPECFORGED_BASE_DIR"
-        )
-        if env_base and Path(env_base).is_absolute():
-            # If absolute path in env var, use it as-is (legacy behavior)
-            resolved_base = Path(env_base).expanduser()
-            print(f"SpecForge: Using absolute path from environment: {resolved_base}")
-        else:
-            # New behavior: detect project root and create specs there
-            try:
-                project_detector = ProjectDetector()
-                resolved_base = project_detector.get_specifications_dir()
+    env_base = os.environ.get("SPECFORGE_BASE_DIR")
+    env_project_root = os.environ.get("SPECFORGE_PROJECT_ROOT")
 
-                # Log project detection info for debugging
-                project_info = project_detector.get_project_info()
-                print(
-                    f"SpecForge: Working directory: {project_info['working_directory']}"
-                )
-                print(
-                    f"SpecForge: Detected project root: {project_info['project_root']}"
-                )
-                print(f"SpecForge: Using specifications directory: {resolved_base}")
-                print(
-                    f"SpecForge: Project markers found: "
-                    f"{project_info['detected_markers']}"
-                )
-
-                if env_base and not Path(env_base).is_absolute():
-                    # If relative path in env var, use it as subdirectory name
-                    resolved_base = project_detector.get_specifications_dir(env_base)
-                    print(
-                        f"SpecForge: Using relative path from environment: {env_base}"
-                    )
-                    print(f"SpecForge: Final specifications directory: {resolved_base}")
-
-            except ValueError as e:
-                print("\n❌ SpecForge: Project Detection Failed")
-                print(f"{e}")
-                print("\nFor this project, try updating your MCP config to:")
-                print(
-                    '  "env": {"SPECFORGE_BASE_DIR": '
-                    '"/Users/whit3rabbit/Documents/GitHub/SpecForge/.specifications"}'
-                )
-                print("\nServer cannot start without valid project context.")
-                raise
+    # Resolve working/project root and specifications base
+    if base_dir:
+        # Treat explicit base_dir as the *base* for specs; infer project as its parent
+        resolved_base = Path(base_dir).expanduser().resolve()
+        working_dir = resolved_base.parent
+        project_detector = ProjectDetector(working_dir=working_dir)
+        specs_base = resolved_base
     else:
-        resolved_base = base_dir
+        # If env project root is absolute & exists, prefer it; otherwise
+        # ProjectDetector will
+        # pull from WORKSPACE_FOLDER_PATHS/PWD/cwd and ascend to a marker.
+        wd_candidate = None
+        if env_project_root:
+            p = Path(env_project_root).expanduser()
+            if p.is_absolute() and p.exists():
+                wd_candidate = p
+        project_detector = ProjectDetector(working_dir=wd_candidate)
 
-    spec_manager = SpecificationManager(resolved_base)
+        # Base dir name (default ".specifications") goes *under* the detected
+        # project root
+        if env_base:
+            if Path(env_base).is_absolute():
+                specs_base = Path(env_base).expanduser().resolve()
+            else:
+                specs_base = project_detector.get_specifications_dir(env_base)
+        else:
+            specs_base = project_detector.get_specifications_dir()
+
+    # Log project detection info for debugging
+    project_info = project_detector.get_project_info()
+    print(f"SpecForge: Detected project root: {project_info['project_root']}")
+    print(f"SpecForge: Project markers found: {project_info['markers_found']}")
+    print(f"SpecForge: Using specifications directory: {specs_base}")
+
+    spec_manager = SpecificationManager(specs_base)
 
     # Setup all tools
     setup_classification_tools(mcp, classifier)
     setup_spec_tools(mcp, spec_manager)
     setup_workflow_tools(mcp, spec_manager)
     setup_planning_tools(mcp, spec_manager)
+    setup_filesystem_tools(mcp, spec_manager)
 
     # Setup resources and prompts
     setup_resources(mcp)

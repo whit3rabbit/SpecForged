@@ -32,9 +32,11 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             "status": spec.status.value,
             "phase": spec.current_phase.value,
             "files": {
-                "requirements": f"specifications/{spec.id}/requirements.md",
-                "design": f"specifications/{spec.id}/design.md",
-                "tasks": f"specifications/{spec.id}/tasks.md",
+                "requirements": str(
+                    spec_manager.base_dir / spec.id / "requirements.md"
+                ),
+                "design": str(spec_manager.base_dir / spec.id / "design.md"),
+                "tasks": str(spec_manager.base_dir / spec.id / "tasks.md"),
             },
             "message": (f"Specification '{name}' created. Now in requirements phase."),
         }

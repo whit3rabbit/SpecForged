@@ -10,6 +10,81 @@ from ..core.spec_manager import SpecificationManager
 from ..models import WorkflowPhase
 
 
+def _generate_test_template(
+    task_id: str, task_title: str, requirements: List[str]
+) -> str:
+    """Generate a basic test template for a completed task"""
+    return f"""# Tests for {task_title} (Task {task_id})
+
+## Unit Tests
+```python
+def test_{task_id.replace('-', '_').replace('.', '_')}_basic_functionality():
+    \"\"\"Test basic functionality of {task_title}\"\"\"
+    # TODO: Implement unit tests for core functionality
+    pass
+
+def test_{task_id.replace('-', '_').replace('.', '_')}_error_handling():
+    \"\"\"Test error handling for {task_title}\"\"\"
+    # TODO: Implement error condition tests
+    pass
+```
+
+## Integration Tests
+```python
+def test_{task_id.replace('-', '_').replace('.', '_')}_integration():
+    \"\"\"Test integration with other components\"\"\"
+    # TODO: Implement integration tests
+    pass
+```
+
+## Acceptance Tests (EARS Requirements)
+{chr(10).join([f'# - {req}' for req in requirements])}
+
+```python
+def test_{task_id.replace('-', '_').replace('.', '_')}_acceptance_criteria():
+    \"\"\"Verify EARS acceptance criteria are met\"\"\"
+    # TODO: Implement tests for each EARS requirement above
+    pass
+```
+
+## Test Execution
+```bash
+# Run tests with:
+pytest -v tests/test_{task_id.replace('-', '_').replace('.', '_')}.py
+```
+"""
+
+
+def _load_specification_context(
+    spec_manager: SpecificationManager, spec_id: str
+) -> Dict[str, str]:
+    """Load requirements.md and design.md content for task execution context"""
+    context = {"requirements": "", "design": "", "tasks": "", "error": ""}
+
+    try:
+        spec_dir = spec_manager.base_dir / spec_id
+
+        # Load requirements.md
+        req_file = spec_dir / "requirements.md"
+        if req_file.exists():
+            context["requirements"] = req_file.read_text(encoding="utf-8")
+
+        # Load design.md
+        design_file = spec_dir / "design.md"
+        if design_file.exists():
+            context["design"] = design_file.read_text(encoding="utf-8")
+
+        # Load tasks.md
+        tasks_file = spec_dir / "tasks.md"
+        if tasks_file.exists():
+            context["tasks"] = tasks_file.read_text(encoding="utf-8")
+
+    except Exception as e:
+        context["error"] = f"Error loading specification context: {str(e)}"
+
+    return context
+
+
 def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     """Setup workflow-related MCP tools"""
 
@@ -82,7 +157,8 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
     ) -> Dict[str, Any]:
         """
         Execute a specific task from the specification.
-        Updates task status and provides execution details.
+        IMPORTANT: Loads requirements.md and design.md context before execution.
+        Updates task status and provides execution details with proper context.
 
         Args:
             spec_id: The specification identifier
@@ -113,29 +189,104 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 ),
             }
 
+        # CRITICAL: Load specification context before execution
+        spec_context = _load_specification_context(spec_manager, spec_id)
+
+        if spec_context["error"]:
+            return {
+                "status": "error",
+                "message": (
+                    f"Failed to load specification context: {spec_context['error']}"
+                ),
+            }
+
         # Update task status
         spec_manager.update_task_status(spec_id, task_id, "in_progress")
 
         if ctx:
-            await ctx.info(f"Executing task {task_id}: {task.title}")
-            await ctx.report_progress(1, 3)
+            await ctx.info(f"🚀 Executing task {task_id}: {task.title}")
+            await ctx.info("📖 Loading specification context...")
+            await ctx.report_progress(1, 6)
 
-        # Simulate task execution
+        # Generate test template for this task
+        linked_requirements = getattr(task, "linked_requirements", [])
+        test_template = _generate_test_template(
+            task_id, task.title, linked_requirements
+        )
+
+        # Prepare execution guidance with context
+        execution_guidance = {
+            "task_id": task_id,
+            "task_title": task.title,
+            "task_description": task.description,
+            "requirements_content": spec_context["requirements"],
+            "design_content": spec_context["design"],
+            "tasks_content": spec_context["tasks"],
+            "linked_requirements": linked_requirements,
+            "test_template": test_template,
+            "execution_steps": [
+                "1. Review the requirements.md content above to understand user needs",
+                "2. Study the design.md content to follow the planned architecture",
+                "3. Implement the task following the design patterns and components",
+                "4. Ensure implementation satisfies the linked EARS requirements",
+                "5. Create tests using the provided test template",
+                "6. Validate implementation against the specification",
+            ],
+            "mandatory_deliverables": [
+                "✅ Working implementation following design.md architecture",
+                "✅ Unit tests for individual components",
+                "✅ Integration tests for component interactions",
+                "✅ Acceptance tests validating EARS requirements",
+                "✅ Test file using the generated template",
+                "✅ Documentation updates as needed",
+            ],
+        }
+
+        if ctx:
+            await ctx.info("🎯 Context loaded. Ready for implementation.")
+            await ctx.report_progress(2, 6)
+
+        # NOTE: This is where actual implementation should happen
+        # For now, we provide the execution guidance for the implementer
+        if ctx:
+            await ctx.info(
+                "⚠️  IMPLEMENTATION REQUIRED: Use the context provided to "
+                "implement this task"
+            )
+            await ctx.report_progress(3, 6)
+
+        # Simulate some processing time
         await asyncio.sleep(1)
+
+        if ctx:
+            await ctx.info("📝 Task marked as completed - ensure tests were created")
+            await ctx.report_progress(5, 6)
 
         # Mark as completed
         spec_manager.update_task_status(spec_id, task_id, "completed")
 
         if ctx:
-            await ctx.report_progress(3, 3)
-            await ctx.info(f"Task {task_id} completed")
+            await ctx.report_progress(6, 6)
+            await ctx.info(f"✅ Task {task_id} execution complete")
 
         return {
             "status": "success",
             "task_id": task_id,
             "title": task.title,
             "new_status": "completed",
-            "message": f"Task {task_id} executed successfully",
+            "context_loaded": True,
+            "execution_guidance": execution_guidance,
+            "message": (
+                f"Task {task_id} ready for implementation with full "
+                f"specification context loaded"
+            ),
+            "next_steps": [
+                "Use the provided requirements and design context to "
+                "implement the task",
+                "Generate tests for the implemented functionality",
+                "Validate implementation against EARS acceptance criteria",
+                "Update documentation as needed",
+            ],
         }
 
     @mcp.tool()

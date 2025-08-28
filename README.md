@@ -1,21 +1,82 @@
-# SpecForge MCP Server
+# SpecForged MCP Server
 
 [![PyPI version](https://badge.fury.io/py/specforged.svg)](https://pypi.org/project/specforged/)
 [![Python Version](https://img.shields.io/pypi/pyversions/specforged.svg)](https://pypi.org/project/specforged/)
-[![Test Suite](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml/badge.svg)](https://github.com/whit3rabbit/SpecForge/actions/workflows/test.yml)
+[![Test Suite](https://github.com/whit3rabbit/specforged/actions/workflows/test.yml/badge.svg)](https://github.com/whit3rabbit/specforged/actions/workflows/test.yml)
 
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
 
+## ✨ TL;DR: How specforged Works
+
+**SpecForged transforms your AI conversations into structured software development workflows.**
+
+### The Planning Workflow (Guided by Wizard Mode)
+
+**🧙‍♂️ Wizard Mode covers 3 planning phases only:**
+
+1. **Requirements** → Define user stories with EARS notation (5 requirement types)
+2. **Design** → Interactive architecture and component planning  
+3. **Planning** → Auto-generate numbered task hierarchies (1, 1.1, 1.2...)
+
+**⚡ Execution Phase (Separate from Wizard):**
+
+4. **Execution** → Context-aware task implementation with automatic test generation
+
+**IMPORTANT**: The wizard creates specifications and plans, but does NOT implement code. Implementation happens in a separate execution phase with proper context loading and test generation.
+
+### Natural Language Interface
+
+Just talk naturally - specforged understands:
+- *"Use specforged to create a new project"* → 🧙‍♂️ **Activates wizard mode**
+- *"Create a spec for a user dashboard"* → Starts requirements phase
+- *"Mark task 2.1 as done"* → Updates progress, suggests next tasks
+- *"How's my progress?"* → Shows completion stats and milestones
+- *"What should I work on next?"* → Lists available tasks with context
+
+### 🎯 Key Features
+
+**EARS Requirements** - All 5 patterns supported:
+- **Ubiquitous**: THE SYSTEM SHALL always validate inputs
+- **Event-Driven**: WHEN user clicks login THE SYSTEM SHALL authenticate  
+- **State-Driven**: WHILE processing THE SYSTEM SHALL show progress
+- **Optional**: WHERE premium enabled THE SYSTEM SHALL unlock features
+- **Error-Handling**: IF invalid data THEN THE SYSTEM SHALL show errors
+
+**Smart Task Management**:
+- ✅ Auto-complete parent tasks when all subtasks done
+- 🔗 Requirement traceability (every task links to user needs)
+- 📊 Real-time progress tracking with motivational feedback
+- 🎯 Dependency-aware task ordering
+
+**Conversational Workflow**:
+- Interactive prompts guide each phase transition
+- Natural language commands OR function calls
+- Automatic progress updates and celebration
+- Built-in coaching for requirement refinement
+
+### 🏗️ Generated Structure
+
+```
+specifications/
+└── my-dashboard/
+    ├── spec.json          # Metadata & status
+    ├── requirements.md    # User stories + EARS
+    ├── design.md         # Architecture decisions  
+    └── tasks.md          # Checkbox implementation plan
+```
+
+**Perfect for**: Feature specs, API design, project planning, requirement gathering, team alignment, and structured development workflows.
+
 ## Quick Start
 
-🎉 **SpecForge is now available on [PyPI](https://pypi.org/project/specforged/)!**
+🎉 **SpecForged is now available on [PyPI](https://pypi.org/project/specforged/)!**
 
-### Interactive Project Wizard
+### 🧙‍♂️ Interactive Project Wizard (Recommended)
 
-The fastest way to get started with SpecForge is using the interactive project wizard:
+The fastest way to get started with SpecForged is using the **interactive project wizard** - your guided companion for creating complete specifications:
 
 ```bash
-# Install SpecForge
+# Install specforged
 pipx install specforged
 
 # Create a new project specification interactively
@@ -44,7 +105,7 @@ Available project templates:
 ### Quick Installation
 
 ```bash
-# Install SpecForge globally with pipx
+# Install specforged globally with pipx
 pipx install specforged
 
 # Verify installation
@@ -53,10 +114,7 @@ specforged --version
 
 **Choose your integration method:**
 
-- 🔥 **[Claude Code](#claude-code-recommended-for-coding)** - Best for active development and coding
-- 🔧 **[Other IDEs](#cursor-ide)** - Cursor, Windsurf, VS Code with AI extensions
-- 💬 **[Claude Desktop](#claude-desktop-configuration)** - For chat-based specification work
-- 🐳 **[Docker](#docker-with-bind-mounts)** - Containerized deployment
+- 🔌 See combined setup: **[IDE & Host Integration](#ide--host-integration)**
 
 #### Available Commands
 
@@ -78,12 +136,17 @@ pipx uninstall specforged
 
 ⚠️ **Important**: For local development work, you need MCP servers that can write to your project files. HTTP-based deployments run on remote servers and cannot write to your local project directories.
 
-### Claude Code (Recommended for Coding)
+## IDE & Host Integration
 
-The best way to use SpecForge for development is with Claude Code and pipx:
+Below are collapsible, focused setup guides. Expand only what you need.
+
+<details>
+<summary><strong>Claude Code (recommended for coding)</strong></summary>
+
+The best way to use specforged for active development.
 
 ```bash
-# Install SpecForge globally with pipx
+# Install specforged globally with pipx
 pipx install specforged
 
 # Add to Claude Code with project scope (enables team sharing)
@@ -93,7 +156,8 @@ claude mcp add --scope=project specforged specforged
 claude mcp add specforged specforged
 ```
 
-**Why project scope?** Creates a `.mcp.json` file in your project root that team members can share:
+Why project scope? It creates a `.mcp.json` in your project root that teammates can reuse:
+
 ```json
 {
   "mcpServers": {
@@ -106,88 +170,136 @@ claude mcp add specforged specforged
 }
 ```
 
-**File System Access**: Claude Code will prompt for permission to write specification files to your project directory.
+File access: Claude Code will prompt for permission to write to your project directory.
 
-### Cursor IDE
+</details>
 
-For Cursor users, configure SpecForge as an MCP server:
+<details>
+<summary><strong>Cursor IDE</strong></summary>
 
-1. **Install SpecForge**: `pipx install specforged`
-2. **Configure MCP Server**:
-   - Open Cursor settings (Cmd/Ctrl + ,)
-   - Navigate to "Advanced Settings" or search for "MCP"
-   - Create configuration file at `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global)
-   - Add server configuration:
-   ```json
-   {
-     "mcpServers": {
-       "specforged": {
-         "command": "specforged",
-         "args": []
-       }
-     }
-   }
-   ```
-3. **Restart Cursor** to load the server
-4. **Enable File Access**: Grant permission when prompted for local file system access
+1) Install specforged: `pipx install specforged`
+2) Configure MCP in Cursor settings (Advanced → MCP) or create `.cursor/mcp.json` in your project root.
 
-### Windsurf IDE
-
-Windsurf users can integrate SpecForge through the MCP configuration:
-
-1. **Install SpecForge**: `pipx install specforged`
-2. **Configure MCP Server**:
-   - Navigate to "Windsurf Settings > Cascade > Plugins" or "Advanced Settings"
-   - Or manually edit the MCP configuration file at `~/.codeium/windsurf/mcp_config.json`:
-   ```json
-   {
-     "mcpServers": {
-       "specforged": {
-         "command": "specforged",
-         "args": [],
-         "env": {}
-       }
-     }
-   }
-   ```
-3. **Press the refresh button** after adding the server
-4. **Restart Windsurf** to load the server
-5. **Project-Relative Files**: SpecForge will automatically detect your project root and create specifications in `./.specifications/` (hidden folder) within your current project directory
-
-### VS Code with AI Extensions
-
-For VS Code with Continue, Codeium, or similar extensions:
-
-1. Install: `pipx install specforged`
-2. Configure MCP server in your AI extension settings
-3. Ensure the extension has workspace file permissions
-
-## Claude Desktop Configuration
-
-**Note**: Claude Desktop is designed for chat interfaces, not active development. For coding work, use Claude Code or other development-focused IDEs above.
-
-### Standard Claude Desktop Setup
-
-```bash
-# Install SpecForge globally with pipx
-pipx install specforged
-```
-
-Configure in Claude Desktop:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-**Linux**: `~/.config/Claude/claude_desktop_config.json`
+   - Important: There is no reliable auto-detection of the project folder. You must hardcode the absolute project path via `SPECFORGE_PROJECT_ROOT`.
 
 ```json
 {
   "mcpServers": {
     "specforged": {
-      "command": "specforged"
+      "command": "specforged",
+      "args": [],
+      "env": {
+        "SPECFORGE_PROJECT_ROOT": "/absolute/path/to/this/project",
+        "SPECFORGE_BASE_DIR": ".specifications"
+      }
     }
   }
 }
 ```
+
+3) Restart Cursor. 4) Grant local file access when prompted.
+5) Because this file lives in the project (`.cursor/mcp.json`), the hardcoded path is per-project.
+
+</details>
+
+<details>
+<summary><strong>Windsurf IDE</strong></summary>
+
+1) Install: `pipx install specforged`
+2) Configure via Settings → Cascade → Plugins, or edit `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "specforged": {
+      "command": "specforged",
+      "args": [],
+      "env": {
+        "SPECFORGE_PROJECT_ROOT": "/absolute/path/to/your/project",
+        "SPECFORGE_BASE_DIR": ".specifications"
+      }
+    }
+  }
+}
+```
+
+3) Press refresh, then restart Windsurf.
+4) Note: Windsurf does not reliably pass your workspace folder as the server CWD. There is no auto-detect. You must hardcode the absolute project path using `SPECFORGE_PROJECT_ROOT` as shown above.
+   - If you work across multiple projects, add separate entries (e.g., `specforged-foo`, `specforged-bar`) each with its own `SPECFORGE_PROJECT_ROOT`, or use a small wrapper script that `cd`s into the project before launching `specforged`.
+
+</details>
+
+<details>
+<summary><strong>VS Code (Continue/Codeium/etc.)</strong></summary>
+
+1) `pipx install specforged`
+2) Add specforged MCP server in your AI extension settings
+3) Ensure workspace file permissions are enabled
+
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong></summary>
+
+Note: Best for chat/spec work. For coding, prefer Claude Code.
+
+Install:
+
+```bash
+pipx install specforged
+```
+
+**Basic Configuration** (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "specforged": { "command": "specforged" }
+  }
+}
+```
+
+**Advanced Configuration** (recommended for reliable project detection):
+
+```json
+{
+  "mcpServers": {
+    "specforged": {
+      "command": "specforged",
+      "args": [],
+      "env": {
+        "SPECFORGE_PROJECT_ROOT": "/absolute/path/to/your/project",
+        "SPECFORGE_BASE_DIR": ".specifications"
+      }
+    }
+  }
+}
+```
+
+Use the advanced configuration when:
+- Working with multiple projects
+- Basic config fails to detect your project root correctly
+- You need explicit control over where specifications are stored
+
+Config file paths:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+</details>
+
+## Permissions & Path Security
+
+- **Project root = CWD**: specforged treats the server's current working directory as the project root. Run the server from your project folder.
+- **Specs location**: Defaults to `./.specifications/` under the project root. You can override by initializing `SpecificationManager(base_dir=Path("./.my-specs"))`.
+- **Strict path validation**: All tool paths (e.g., `read_file`, `write_file`, `create_directory`, `edit_block`) are resolved and must remain within the project root. Absolute and relative paths are allowed but are validated against the project root after resolution.
+- **No escapes**: Attempts to access files outside the project (e.g., `..`, absolute paths elsewhere, or via symlinks) are rejected.
+- **Symlinks**: Paths are fully resolved before validation. Symlinks that point outside the project root are denied.
+- **Large files**: Operations on very large files may be warned against or rejected depending on host constraints.
+- **IDE prompts**: IDEs/hosts (Claude Code, Windsurf, Cursor, etc.) may prompt for permission before allowing write access to your workspace—accept to enable file creation in `./.specifications/`.
+
+Tip: Keep the server process scoped per-project to avoid writing specs into the wrong project directory.
 
 ## Advanced Installation Methods
 
@@ -229,8 +341,8 @@ For development or local testing without pipx:
 
 ```bash
 # Clone the repository
-git clone https://github.com/whit3rabbit/SpecForge.git
-cd SpecForge
+git clone https://github.com/whit3rabbit/specforged.git
+cd specforged
 
 # Install dependencies
 pip install -r requirements.txt
@@ -246,7 +358,7 @@ Configure in Claude Desktop:
   "mcpServers": {
     "specforged": {
       "command": "python",
-      "args": ["/absolute/path/to/SpecForge/main.py"]
+      "args": ["/absolute/path/to/specforged/main.py"]
     }
   }
 }
@@ -260,7 +372,7 @@ Use specforged to create a spec for a TODO list app that supports creating, edit
 
 ## Overview
 
-SpecForge transforms ad-hoc development into a structured process by:
+specforged transforms ad-hoc development into a structured process by:
 - **Classifying intent** - Routes requests to appropriate handlers (spec mode vs. action mode)
 - **Enforcing workflow** - Guides through requirements → design → tasks → execution phases
 - **Using EARS notation** - Creates unambiguous, testable requirements
@@ -341,9 +453,9 @@ specforged-cli new --template rest-api
 - **Progress Tracking**: Generated tasks in checkbox format for easy progress monitoring
 - **Professional Output**: Creates complete specification with requirements.md, design.md, and tasks.md
 
-### Wizard Mode via MCP (Automatic Activation)
+### Wizard Mode via MCP (Planning Only - Automatic Activation)
 
-SpecForge can automatically activate wizard mode through natural language when using MCP integration:
+specforged can automatically activate wizard mode through natural language when using MCP integration:
 
 #### Auto-Activation Triggers
 
@@ -353,16 +465,22 @@ The wizard automatically starts when:
 - **First-time setup** is detected
 
 ```bash
-# These phrases trigger wizard mode automatically:
+# These phrases trigger wizard mode automatically (PLANNING ONLY):
 "Use specforged to create a new project specification"
-"Start specforge wizard for my application"
-"Create a new spec with specforged"
+"Start specforge wizard for my application" 
+"Create a new spec with specforged for payment processing"
 "I need specforged to help set up my project"
+"Launch the specforged wizard for user management"
+"Use specforged wizard mode to design my API"
 ```
 
-#### Three-Phase Workflow
+**⚠️  Important**: The wizard creates specifications but does NOT implement tasks. It guides you through Requirements → Design → Planning phases only.
 
-When wizard mode activates, you'll be guided through:
+**Pro Tip**: Just say "specforged" in your request and the wizard will activate if no specifications exist in your project!
+
+#### Three-Phase Planning Workflow (Wizard Mode)
+
+When wizard mode activates, you'll be guided through **PLANNING ONLY**:
 
 1. **📝 Phase 1: Requirements Gathering**
    - Interactive user story creation
@@ -382,12 +500,22 @@ When wizard mode activates, you'll be guided through:
    - Creates `tasks.md` with checkbox format
    - Progress tracking setup
 
+#### ⚡ Execution Phase (After Wizard Completion)
+
+**The wizard does NOT execute tasks.** Implementation happens separately with:
+
+- **Context Loading**: Automatically reads requirements.md and design.md before each task
+- **Architecture Compliance**: Ensures implementation follows the planned design
+- **EARS Validation**: Verifies acceptance criteria are met
+- **Test Generation**: Auto-generates test templates for each completed task
+- **Quality Assurance**: Validates implementation against specifications
+
 #### Example Wizard Session
 
 ```
 User: Use specforged to create a specification for user authentication
 
-Claude: I'll start the SpecForge wizard to create a comprehensive specification.
+Claude: I'll start the specforged wizard to create a comprehensive specification.
 
 📝 Phase 1/3: Requirements Gathering
 • Created user story: "As a user, I want secure login..."
@@ -405,7 +533,7 @@ Claude: I'll start the SpecForge wizard to create a comprehensive specification.
 • Established dependency relationships
 • Generated tasks.md with checkbox format ✅
 
-🎉 Complete specification created at: ./specifications/user-authentication/
+🎉 Complete specification created at: ./.specifications/user-authentication/
 ```
 
 ### Manual Specification Creation (MCP)
@@ -445,7 +573,7 @@ Response: Creates new specification with requirements.md, design.md, and tasks.m
 
 ## Triggering MCP Commands
 
-SpecForge integrates with Claude Desktop and other MCP hosts through natural language interactions. The system automatically classifies your input and routes requests to appropriate tools based on context and intent.
+specforged integrates with Claude Desktop and other MCP hosts through natural language interactions. The system automatically classifies your input and routes requests to appropriate tools based on context and intent.
 
 ### Command Patterns
 
@@ -492,6 +620,34 @@ The system will automatically invoke the appropriate MCP tools based on your nat
 | `transition_workflow_phase` | Move to next phase | `spec_id`, `target_phase` |
 | `list_specifications` | List all specs | - |
 | `get_specification_details` | Get spec details | `spec_id`, `include_content` |
+| `create_directory` | Create a directory within project root | `path`, `exist_ok` |
+| `read_file` | Read a UTF-8 text file within project root | `path` |
+| `write_file` | Write/append a UTF-8 text file within project root | `path`, `content`, `mode` |
+| `edit_block` | Safely replace exact text in a file | `file_path`, `old_string`, `new_string`, `expected_replacements` |
+
+### Filesystem Tools (Project-Scoped)
+
+These tools operate only within your current project directory (the server's CWD). Any path outside the project root is rejected.
+
+```bash
+# Create specs directory (if you want to initialize manually)
+create_directory(path=".specifications")
+
+# Create files
+write_file(path=".specifications/requirements.md", content="# Requirements")
+write_file(path="README.md", content="\nExtra line\n", mode="append")
+
+# Read a file
+read_file(path="src/main.py")
+
+# Safe in-place edit
+edit_block(
+  file_path="src/main.py",
+  old_string="print('Hello')",
+  new_string="print('Hello, World!')",
+  expected_replacements=1
+)
+```
 
 ### EARS Notation Examples
 
@@ -669,8 +825,9 @@ The server provides MCP resources for accessing specification files:
 Customize the server by modifying these settings in the Python file:
 
 ```python
-# Change base directory for specifications
-spec_manager = SpecificationManager(base_dir=Path(".my_specs"))
+# By default, specforged uses ./.specifications under your project root.
+# To override the specifications directory:
+spec_manager = SpecificationManager(base_dir=Path("./.my-specs"))
 
 # Adjust mode classification weights
 classifier.spec_patterns = [
@@ -683,7 +840,7 @@ classifier.spec_patterns = [
 
 ### Project Structure
 ```
-SpecForge/
+specforged/
 ├── src/
 │   ├── models/          # Data models and enums
 │   ├── core/           # Core business logic
@@ -758,7 +915,7 @@ Extend the mode classifier with domain-specific patterns:
 - Check write permissions in .specifications directory
 - Ensure all phases are properly transitioned
 - Verify spec_id matches existing specification
-- Ensure project context is detected (project markers like .git, pyproject.toml found)
+- Ensure you start the server from your project directory (CWD becomes the project root)
 
 ## License
 

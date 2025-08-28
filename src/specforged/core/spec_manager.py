@@ -23,9 +23,15 @@ from .project_detector import ProjectDetector
 class SpecificationManager:
     """Manages specification files and workflow"""
 
-    def __init__(self, base_dir: Path = Path("specifications")):
-        self.base_dir = base_dir
-        self.project_detector = ProjectDetector()
+    def __init__(self, base_dir: Optional[Path] = None):
+        # If a base_dir (specifications directory) is provided, use it directly
+        # and infer the project root as its parent. Otherwise, auto-detect.
+        if base_dir is not None:
+            self.base_dir = base_dir
+            self.project_detector = ProjectDetector(working_dir=base_dir.parent)
+        else:
+            self.project_detector = ProjectDetector()
+            self.base_dir = self.project_detector.get_specifications_dir()
 
         # Security: Validate that base_dir is within reasonable bounds
         self._validate_base_directory()
@@ -39,48 +45,42 @@ class SpecificationManager:
 
     def _validate_base_directory(self) -> None:
         """Validate that the base directory is safe to write to."""
-        try:
-            resolved_base = self.base_dir.resolve()
+        resolved_base = self.base_dir.resolve()
 
-            # Security check: Don't allow writing to system directories
-            system_dirs = {
-                Path("/"),
-                Path("/usr"),
-                Path("/usr/bin"),
-                Path("/usr/lib"),
-                Path("/bin"),
-                Path("/sbin"),
-                Path("/etc"),
-                Path("/var"),
-                Path("/sys"),
-                Path("/proc"),
-                Path("/dev"),
-            }
+        # Refuse root-level or system-like bases
+        if str(resolved_base) in ("/", "/.specifications"):
+            raise PermissionError(
+                f"Spec base resolves to '{resolved_base}', which is unsafe. "
+                f"Set SPECFORGE_PROJECT_ROOT or launch from a real project directory."
+            )
 
-            for sys_dir in system_dirs:
-                try:
-                    resolved_base.relative_to(sys_dir.resolve())
-                    raise ValueError(
-                        "Cannot write specifications to system directory: "
-                        f"{resolved_base}"
-                    )
-                except ValueError:
-                    # relative_to failed, which is good - not under system directory
-                    continue
-
-            # Additional check: ensure we're not trying to write to the root filesystem
-            if len(resolved_base.parts) <= 2:  # e.g., '/' or '/usr'
-                raise ValueError(
-                    f"Base directory too high in filesystem hierarchy: {resolved_base}"
+        system_dirs = {
+            Path("/System"),
+            Path("/usr"),
+            Path("/bin"),
+            Path("/sbin"),
+            Path("/etc"),
+        }
+        for sd in system_dirs:
+            try:
+                resolved_base.relative_to(sd)
+                # if relative_to() doesn't raise, we're under a system dir
+                raise PermissionError(
+                    f"Refusing to write under system directory: {resolved_base}"
                 )
+            except ValueError:
+                pass  # not under sd
 
-        except Exception as e:
-            print(f"Warning: Base directory validation failed: {e}")
-            # Continue anyway but log the warning
+        # Additional check: ensure we're not trying to write to the root filesystem
+        if len(resolved_base.parts) <= 2:  # e.g., '/' or '/usr'
+            raise PermissionError(
+                f"Base directory too high in filesystem hierarchy: {resolved_base}"
+            )
 
     def _validate_file_path(self, file_path: Path) -> bool:
         """
-        Validate that a file path is safe for operations.
+        Validate that a file path is safe for operations by ensuring it is within
+        the base directory and adheres to size limits.
 
         Args:
             file_path: Path to validate
@@ -89,10 +89,9 @@ class SpecificationManager:
             True if path is safe, False otherwise
         """
         try:
+            # Validate path against base directory (allow files under base_dir)
             resolved_path = file_path.resolve()
             resolved_base = self.base_dir.resolve()
-
-            # Check if path is within base directory
             resolved_path.relative_to(resolved_base)
 
             # Check file size limits (for existing files)
@@ -437,35 +436,143 @@ class SpecificationManager:
         return True
 
     def transition_phase(self, spec_id: str, new_phase: WorkflowPhase) -> bool:
-        """Transition specification to a new workflow phase"""
+        """
+        Transition specification to a new workflow phase with strict validation.
+        Prevents skipping critical phases like design and validates content readiness.
+        """
         if spec_id not in self.specs:
             return False
 
         spec = self.specs[spec_id]
+        current_phase = spec.current_phase
 
-        # Validate transition (simplified - could add more rules)
+        # Define strict workflow phase transitions
+        # Prevents skipping design phase and enforces proper sequence
         valid_transitions = {
-            WorkflowPhase.REQUIREMENTS: [WorkflowPhase.DESIGN],
-            WorkflowPhase.DESIGN: [WorkflowPhase.IMPLEMENTATION_PLANNING],
-            WorkflowPhase.IMPLEMENTATION_PLANNING: [WorkflowPhase.EXECUTION],
+            WorkflowPhase.IDLE: [WorkflowPhase.REQUIREMENTS],
+            WorkflowPhase.REQUIREMENTS: [
+                WorkflowPhase.DESIGN,
+                # Allow going back to requirements for revisions
+                WorkflowPhase.REQUIREMENTS,
+            ],
+            WorkflowPhase.DESIGN: [
+                WorkflowPhase.IMPLEMENTATION_PLANNING,
+                # Allow going back for revisions
+                WorkflowPhase.REQUIREMENTS,
+                WorkflowPhase.DESIGN,
+            ],
+            WorkflowPhase.IMPLEMENTATION_PLANNING: [
+                WorkflowPhase.EXECUTION,
+                # Allow going back for revisions
+                WorkflowPhase.REQUIREMENTS,
+                WorkflowPhase.DESIGN,
+                WorkflowPhase.IMPLEMENTATION_PLANNING,
+            ],
             WorkflowPhase.EXECUTION: [
                 WorkflowPhase.REVIEW,
                 WorkflowPhase.COMPLETED,
+                # Allow going back for revisions
+                WorkflowPhase.REQUIREMENTS,
+                WorkflowPhase.DESIGN,
+                WorkflowPhase.IMPLEMENTATION_PLANNING,
             ],
             WorkflowPhase.REVIEW: [
-                WorkflowPhase.REQUIREMENTS,
                 WorkflowPhase.COMPLETED,
+                # Allow going back to any previous phase for revisions
+                WorkflowPhase.REQUIREMENTS,
+                WorkflowPhase.DESIGN,
+                WorkflowPhase.IMPLEMENTATION_PLANNING,
+                WorkflowPhase.EXECUTION,
+            ],
+            WorkflowPhase.COMPLETED: [
+                # Allow reopening for revisions
+                WorkflowPhase.REQUIREMENTS,
+                WorkflowPhase.DESIGN,
+                WorkflowPhase.IMPLEMENTATION_PLANNING,
+                WorkflowPhase.EXECUTION,
+                WorkflowPhase.REVIEW,
             ],
         }
 
-        if spec.current_phase in valid_transitions:
-            if new_phase in valid_transitions[spec.current_phase]:
-                spec.current_phase = new_phase
-                spec.updated_at = datetime.now()
-                self.save_specification(spec_id)
-                return True
+        # Check if transition is valid
+        if current_phase not in valid_transitions:
+            return False
 
-        return False
+        if new_phase not in valid_transitions[current_phase]:
+            return False
+
+        # Additional content validation for forward transitions
+        if self._is_forward_transition(current_phase, new_phase):
+            if not self._validate_phase_readiness(spec_id, current_phase, new_phase):
+                return False
+
+        # Execute the transition
+        spec.current_phase = new_phase
+        spec.updated_at = datetime.now()
+        self.save_specification(spec_id)
+        return True
+
+    def _is_forward_transition(
+        self, current: WorkflowPhase, target: WorkflowPhase
+    ) -> bool:
+        """Check if this is a forward transition (not a revision)"""
+        phase_order = [
+            WorkflowPhase.IDLE,
+            WorkflowPhase.REQUIREMENTS,
+            WorkflowPhase.DESIGN,
+            WorkflowPhase.IMPLEMENTATION_PLANNING,
+            WorkflowPhase.EXECUTION,
+            WorkflowPhase.REVIEW,
+            WorkflowPhase.COMPLETED,
+        ]
+
+        try:
+            current_idx = phase_order.index(current)
+            target_idx = phase_order.index(target)
+            return target_idx > current_idx
+        except ValueError:
+            return False
+
+    def _validate_phase_readiness(
+        self, spec_id: str, current_phase: WorkflowPhase, target_phase: WorkflowPhase
+    ) -> bool:
+        """Validate that the specification is ready to transition to the target phase"""
+        spec = self.specs[spec_id]
+
+        # Validate requirements -> design transition
+        if (
+            current_phase == WorkflowPhase.REQUIREMENTS
+            and target_phase == WorkflowPhase.DESIGN
+        ):
+            if not spec.user_stories:
+                return False  # Must have user stories before design
+
+        # Validate design -> implementation_planning transition
+        elif (
+            current_phase == WorkflowPhase.DESIGN
+            and target_phase == WorkflowPhase.IMPLEMENTATION_PLANNING
+        ):
+            # Check if design.md exists and has content
+            spec_dir = self.base_dir / spec_id
+            design_file = spec_dir / "design.md"
+            if not design_file.exists():
+                return False  # Must have design document
+            try:
+                content = design_file.read_text(encoding="utf-8").strip()
+                if len(content) < 100:  # Must have substantial design content
+                    return False
+            except Exception:
+                return False
+
+        # Validate implementation_planning -> execution transition
+        elif (
+            current_phase == WorkflowPhase.IMPLEMENTATION_PLANNING
+            and target_phase == WorkflowPhase.EXECUTION
+        ):
+            if not spec.tasks:
+                return False  # Must have implementation tasks
+
+        return True
 
     def generate_implementation_plan(self, spec_id: str) -> bool:
         """Generate a new implementation plan from requirements and design"""

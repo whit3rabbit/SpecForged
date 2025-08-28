@@ -1,130 +1,158 @@
 """
-Project context detection utilities for determining the appropriate base directory
-for SpecForge specifications.
+Project context detection utilities that prioritize the current working directory
+as the project root and provide secure path validation.
 """
 
+from __future__ import annotations
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Iterable
+import json
+import os
+
+PROJECT_MARKERS = (
+    ".git",
+    "pyproject.toml",
+    "package.json",
+    "Cargo.toml",
+    "go.mod",
+)
+
+
+def _first_existing_path_from_env_list(val: str | None) -> Optional[Path]:
+    """Parse environment variable that may contain workspace paths in
+    various formats."""
+    if not val:
+        return None
+    s = val.strip()
+    candidates: list[str] = []
+    # JSON array case (some IDEs export ["path1","path2"])
+    if s.startswith("["):
+        try:
+            arr = json.loads(s)
+            if isinstance(arr, list):
+                candidates = [str(x) for x in arr]
+        except Exception:
+            pass
+    # Delimited case (',' ';' ':' os.pathsep). Cursor often uses comma/colon.
+    if not candidates:
+        for sep in (",", ";", ":", os.pathsep):
+            if sep in s:
+                candidates = [p.strip() for p in s.split(sep) if p.strip()]
+                break
+    if not candidates:
+        candidates = [s]
+    for p in candidates:
+        pp = Path(p.strip().strip('"').strip("'")).expanduser().resolve()
+        if pp.exists() and pp.is_dir():
+            return pp
+    return None
+
+
+def _ascend_to_project_root(
+    start: Path, markers: Iterable[str] = PROJECT_MARKERS
+) -> Path:
+    """Walk upward from start until a marker is found; else return start."""
+    cur = start
+    try:
+        cur = cur.resolve()
+    except Exception:
+        pass
+    for _ in range(64):  # safety bound
+        for m in markers:
+            if (cur / m).exists():
+                return cur
+        if cur.parent == cur:
+            break
+        cur = cur.parent
+    return start
 
 
 class ProjectDetector:
-    """Detects project context and determines appropriate specification directory."""
-
-    # Common project markers (in order of preference)
-    PROJECT_MARKERS = [
-        ".git",  # Git repository
-        "pyproject.toml",  # Python project
-        "package.json",  # Node.js project
-        "Cargo.toml",  # Rust project
-        "go.mod",  # Go project
-        "pom.xml",  # Maven project
-        "build.gradle",  # Gradle project
-        "Gemfile",  # Ruby project
-        "composer.json",  # PHP project
-        "requirements.txt",  # Python requirements
-        ".specforge",  # SpecForge project marker
-    ]
+    """
+    Detects the project's root directory based on IDE/workspace env and cwd.
+    Ensures all file operations are relative to where the user is working.
+    """
 
     def __init__(self, working_dir: Optional[Path] = None):
-        """Initialize with optional working directory (defaults to cwd)."""
-        self.working_dir = working_dir or Path.cwd()
+        """Initialize with intelligent workspace detection."""
+        # 1) explicit working_dir wins
+        if working_dir:
+            self.project_root = _ascend_to_project_root(Path(working_dir))
+            return
 
-    def find_project_root(self) -> Path:
-        """
-        Find the project root directory by looking for project markers.
+        # 2) IDE hints (Cursor/Windsurf): WORKSPACE_FOLDER_PATHS
+        ws = _first_existing_path_from_env_list(
+            os.environ.get("WORKSPACE_FOLDER_PATHS")
+        )
+        if ws:
+            self.project_root = _ascend_to_project_root(ws)
+            return
 
-        Returns:
-            Path to the project root, or working directory if no markers found.
-            If working directory is root (/), falls back to user's home directory.
-        """
-        current = self.working_dir.resolve()
+        # 3) $SPECFORGE_PROJECT_ROOT if absolute and exists
+        pr = os.environ.get("SPECFORGE_PROJECT_ROOT")
+        if pr:
+            p = Path(pr).expanduser()
+            if p.is_absolute() and p.exists():
+                self.project_root = _ascend_to_project_root(p)
+                return
 
-        # Walk up the directory tree
-        for parent in [current] + list(current.parents):
-            for marker in self.PROJECT_MARKERS:
-                if (parent / marker).exists():
-                    return parent
+        # 4) $PWD (some launchers set it correctly even if os.getcwd() is temp)
+        pwd = os.environ.get("PWD")
+        if pwd and Path(pwd).exists():
+            self.project_root = _ascend_to_project_root(Path(pwd))
+            return
 
-        # If no project markers found and we're at a problematic location (like root),
-        # raise an exception instead of falling back to Documents
-        if current == Path("/") or len(current.parts) <= 2:
-            raise ValueError(
-                f"No valid project context found. Working directory is {current}, "
-                f"which is not suitable for project-specific specifications. "
-                f"\n\nTo fix this:"
-                f"\n1. Set SPECFORGE_BASE_DIR to your project's absolute path"
-                f"\n2. Use --base-dir argument with project path"
-                f"\n3. Ensure MCP server starts from within a project directory"
-                f"\n\nExample: "
-                f"SPECFORGE_BASE_DIR='/path/to/your/project/.specifications'"
-            )
+        # 5) fallback: os.getcwd()
+        self.project_root = _ascend_to_project_root(Path.cwd())
 
-        # Otherwise use working directory as project root
-        return current
+    def get_project_root(self) -> Path:
+        """Return the resolved absolute path of the project root."""
+        return self.project_root
 
-    def get_specifications_dir(self, subdir: str = "specifications") -> Path:
+    def get_specifications_dir(self, subdir: str = ".specifications") -> Path:
         """
         Get the specifications directory for the current project.
 
         Args:
-            subdir: Subdirectory name for specifications (default: "specifications")
+            subdir: Subdirectory name for specifications (default: ".specifications")
 
         Returns:
-            Path to the specifications directory
+            Path to the specifications directory.
         """
-        project_root = self.find_project_root()
-        return project_root / subdir
+        return (self.project_root / subdir).resolve()
 
-    def validate_project_path(self, target_path: Path) -> bool:
+    def validate_path(self, target_path_str: str) -> Path:
         """
-        Validate that a target path is within the current project bounds.
+        Validate that a given path is within the project root directory.
 
         Args:
-            target_path: Path to validate
+            target_path_str: The path string to validate (relative or absolute).
 
         Returns:
-            True if path is within project bounds, False otherwise
-        """
-        try:
-            project_root = self.find_project_root()
-            resolved_target = target_path.resolve()
-            resolved_project = project_root.resolve()
+            The resolved, absolute Path object if it's safe.
 
-            # Check if target path is within project directory
-            resolved_target.relative_to(resolved_project)
-            return True
-        except ValueError:
-            return False
+        Raises:
+            PermissionError: If the path is outside the allowed project directory.
+        """
+        target_path = Path(target_path_str)
+        resolved_target = (
+            target_path
+            if target_path.is_absolute()
+            else (self.project_root / target_path)
+        ).resolve()
+        # Enforce containment
+        if (
+            self.project_root not in resolved_target.parents
+            and resolved_target != self.project_root
+        ):
+            raise PermissionError(f"Refusing path outside project: {resolved_target}")
+        return resolved_target
 
     def get_project_info(self) -> dict:
-        """
-        Get information about the detected project.
-
-        Returns:
-            Dictionary with project information
-        """
-        project_root = self.find_project_root()
-        detected_markers = []
-
-        for marker in self.PROJECT_MARKERS:
-            if (project_root / marker).exists():
-                detected_markers.append(marker)
-
+        """Get information about the detected project."""
         return {
-            "project_root": str(project_root),
-            "working_directory": str(self.working_dir),
-            "detected_markers": detected_markers,
-            "specifications_dir": str(self.get_specifications_dir()),
+            "project_root": str(self.project_root),
+            "markers_found": [
+                m for m in PROJECT_MARKERS if (self.project_root / m).exists()
+            ],
         }
-
-    @staticmethod
-    def create_project_marker(project_dir: Path) -> None:
-        """
-        Create a .specforge marker file in the project directory.
-
-        Args:
-            project_dir: Directory to create the marker in
-        """
-        marker_file = project_dir / ".specforge"
-        if not marker_file.exists():
-            marker_file.touch()

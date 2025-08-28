@@ -147,15 +147,18 @@ def test_transition_phase(temp_spec_dir):
     manager = SpecificationManager(temp_spec_dir)
     spec = manager.create_specification("Test Feature", "A test feature")
 
+    # Add a user story first (required for requirements -> design transition)
+    manager.add_user_story(spec.id, "user", "test functionality", "testing works")
+
     # Valid transition: requirements -> design
     success = manager.transition_phase(spec.id, WorkflowPhase.DESIGN)
     assert success is True
     assert spec.current_phase == WorkflowPhase.DESIGN
 
-    # Invalid transition: design -> requirements (not in valid transitions)
+    # Valid transition: design -> requirements (allowed for revisions)
     success = manager.transition_phase(spec.id, WorkflowPhase.REQUIREMENTS)
-    assert success is False
-    assert spec.current_phase == WorkflowPhase.DESIGN  # Should remain unchanged
+    assert success is True
+    assert spec.current_phase == WorkflowPhase.REQUIREMENTS
 
     # Test with invalid spec
     success = manager.transition_phase("invalid-spec", WorkflowPhase.EXECUTION)
