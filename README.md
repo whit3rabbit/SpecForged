@@ -15,7 +15,7 @@ A Model Context Protocol (MCP) server that implements specification-driven devel
 **🧙‍♂️ Wizard Mode covers 3 planning phases only:**
 
 1. **Requirements** → Define user stories with EARS notation (5 requirement types)
-2. **Design** → Interactive architecture and component planning  
+2. **Design** → Interactive architecture and component planning
 3. **Planning** → Auto-generate numbered task hierarchies (1, 1.1, 1.2...)
 
 **⚡ Execution Phase (Separate from Wizard):**
@@ -37,7 +37,7 @@ Just talk naturally - specforged understands:
 
 **EARS Requirements** - All 5 patterns supported:
 - **Ubiquitous**: THE SYSTEM SHALL always validate inputs
-- **Event-Driven**: WHEN user clicks login THE SYSTEM SHALL authenticate  
+- **Event-Driven**: WHEN user clicks login THE SYSTEM SHALL authenticate
 - **State-Driven**: WHILE processing THE SYSTEM SHALL show progress
 - **Optional**: WHERE premium enabled THE SYSTEM SHALL unlock features
 - **Error-Handling**: IF invalid data THEN THE SYSTEM SHALL show errors
@@ -61,7 +61,7 @@ specifications/
 └── my-dashboard/
     ├── spec.json          # Metadata & status
     ├── requirements.md    # User stories + EARS
-    ├── design.md         # Architecture decisions  
+    ├── design.md         # Architecture decisions
     └── tasks.md          # Checkbox implementation plan
 ```
 
@@ -467,7 +467,7 @@ The wizard automatically starts when:
 ```bash
 # These phrases trigger wizard mode automatically (PLANNING ONLY):
 "Use specforged to create a new project specification"
-"Start specforge wizard for my application" 
+"Start specforge wizard for my application"
 "Create a new spec with specforged for payment processing"
 "I need specforged to help set up my project"
 "Launch the specforged wizard for user management"

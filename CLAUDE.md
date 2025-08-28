@@ -13,7 +13,7 @@ SpecForged is a Model Context Protocol (MCP) server that implements specificatio
 - **src/models/**: Data models and enums
   - `core.py`: Core data classes (Specification, UserStory, Task, etc.)
   - Enums: UserMode, WorkflowPhase, SpecStatus
-  
+
 - **src/core/**: Core business logic
   - `classifier.py`: ModeClassifier for intent classification
   - `spec_manager.py`: SpecificationManager for workflow and file operations
@@ -58,7 +58,7 @@ python main_http.py
 
 # Using development helper script
 python scripts/dev.py install    # Install dependencies
-python scripts/dev.py serve      # Run MCP server  
+python scripts/dev.py serve      # Run MCP server
 python scripts/dev.py serve-http # Run HTTP server
 python scripts/dev.py test       # Run tests
 python scripts/dev.py lint       # Run linting
@@ -87,7 +87,7 @@ pytest -v
 # Format code
 black src/ tests/ main.py main_http.py
 
-# Lint code  
+# Lint code
 flake8 src/ tests/
 
 # Type checking
@@ -161,7 +161,7 @@ The system enforces strict phase transitions to prevent skipping critical phases
 
 #### Valid Workflow Sequence:
 1. **Requirements** → Must have user stories before proceeding
-2. **Design** → Must create design.md with architecture before proceeding  
+2. **Design** → Must create design.md with architecture before proceeding
 3. **Implementation Planning** → Must generate tasks.md before proceeding
 4. **Execution** → Tasks are executed with full context loading
 5. **Review** → Quality assurance and validation
@@ -179,7 +179,7 @@ The system enforces strict phase transitions to prevent skipping critical phases
 ### Mode Classification
 - `classify_mode(user_input)`: Determine user intent (chat/do/spec modes)
 
-### Specification Management  
+### Specification Management
 - `create_spec(name, description)`: Create new specification
 - `list_specifications()`: List all specs with status
 - `get_specification_details(spec_id, include_content)`: Get detailed spec info
@@ -207,7 +207,7 @@ The system enforces strict phase transitions to prevent skipping critical phases
 
 ### Resources
 - `spec://{spec_id}/requirements`: Access requirements.md content
-- `spec://{spec_id}/design`: Access design.md content  
+- `spec://{spec_id}/design`: Access design.md content
 - `spec://{spec_id}/tasks`: Access tasks.md content (now in checkbox format)
 
 ## MCP Prompts Reference (Enhanced)
@@ -263,7 +263,7 @@ Generated specifications are stored in:
 specifications/
 └── {spec-id}/
     ├── spec.json          # Specification metadata
-    ├── requirements.md    # User stories & EARS criteria  
+    ├── requirements.md    # User stories & EARS criteria
     ├── design.md         # Technical architecture
     └── tasks.md          # Implementation plan (checkbox format)
 ```
@@ -307,12 +307,12 @@ specforged now generates implementation plans in GitHub-style checkbox markdown:
 
 ### Task Numbering System
 - **Main tasks**: 1, 2, 3, 4, ...
-- **Subtasks**: 1.1, 1.2, 2.1, 2.2, ...  
+- **Subtasks**: 1.1, 1.2, 2.1, 2.2, ...
 - **Sub-subtasks**: 1.1.1, 1.1.2, 2.1.1, ...
 
 ### Smart Features
 - **Auto-completion**: Parent tasks auto-check when all subtasks complete
-- **Dependency tracking**: Tasks ordered by logical dependencies  
+- **Dependency tracking**: Tasks ordered by logical dependencies
 - **Requirement traceability**: Each task links to specific EARS requirements
 - **Progress stats**: Real-time completion percentages
 - **Status preservation**: Plan updates preserve completion status
@@ -352,10 +352,10 @@ The ModeClassifier routes requests based on pattern matching:
 
 - **SPEC Mode**: Creating specifications, requirements, design docs
   - Patterns: "create spec", "EARS requirements", "user story"
-  
-- **DO Mode**: Code changes, commands, implementation  
+
+- **DO Mode**: Code changes, commands, implementation
   - Patterns: "fix bug", "implement", "run tests", "deploy"
-  
+
 - **CHAT Mode**: Questions, explanations, help
   - Patterns: "what is", "how to", "explain", greetings
 
@@ -367,7 +367,7 @@ The ModeClassifier routes requests based on pattern matching:
 generate_implementation_plan(spec_id)
 ```
 - Analyzes user stories and EARS requirements
-- Extracts tasks from technical design components  
+- Extracts tasks from technical design components
 - Creates hierarchical structure with dependencies
 - Assigns sequential numbering (1, 1.1, 1.2, etc.)
 
@@ -404,7 +404,7 @@ get_task_details(spec_id, "2.1")
 - **Test Coverage**: Focus on core logic (classifier, spec manager, models, plan generator)
 - **Fixtures**: Use temporary directories for file system tests
 - **Async Testing**: pytest-asyncio for MCP tool testing
-- **New Test Files**: 
+- **New Test Files**:
   - `test_enhanced_task.py`: Task model with checkbox support
   - `test_plan_generator.py`: Implementation plan generation
   - `test_checkbox_format.py`: Checkbox markdown formatting and task management
@@ -412,7 +412,7 @@ get_task_details(spec_id, "2.1")
 ## Key Implementation Notes
 
 - All file operations use pathlib.Path for cross-platform compatibility
-- Specifications are persisted as JSON + generated Markdown files  
+- Specifications are persisted as JSON + generated Markdown files
 - Mode classification uses weighted regex patterns with confidence scoring
 - Workflow phase transitions have validation rules to prevent invalid states
 - HTTP server includes CORS middleware for web client compatibility

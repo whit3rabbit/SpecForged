@@ -2,10 +2,11 @@
 Tests for the SpecificationManager.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
+
+import pytest
 
 from src.specforged.core.spec_manager import SpecificationManager
 from src.specforged.models import SpecStatus, WorkflowPhase

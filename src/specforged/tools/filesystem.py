@@ -1,8 +1,8 @@
 # src/specforged/tools/filesystem.py
-from typing import Dict, Any
+from typing import Any, Dict
 
 import aiofiles
-from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.fastmcp import Context, FastMCP
 
 from ..core.spec_manager import SpecificationManager
 
@@ -90,11 +90,16 @@ def setup_filesystem_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> 
         try:
             validated_path = spec_manager.project_detector.validate_path(path)
             validated_path.parent.mkdir(parents=True, exist_ok=True)
-            write_mode = "w" if mode == "rewrite" else "a"
-            async with aiofiles.open(  # type: ignore[call-overload]
-                str(validated_path), mode=write_mode, encoding="utf-8"
-            ) as f:
-                await f.write(content)
+            if mode == "rewrite":
+                async with aiofiles.open(
+                    file=validated_path, mode="w", encoding="utf-8"
+                ) as f:
+                    await f.write(content)
+            else:
+                async with aiofiles.open(
+                    file=validated_path, mode="a", encoding="utf-8"
+                ) as f:
+                    await f.write(content)
             action = "written" if mode == "rewrite" else "appended"
             return {
                 "status": "success",

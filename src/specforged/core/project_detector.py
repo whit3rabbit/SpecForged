@@ -4,10 +4,11 @@ as the project root and provide secure path validation.
 """
 
 from __future__ import annotations
-from pathlib import Path
-from typing import Optional, Iterable
+
 import json
 import os
+from pathlib import Path
+from typing import Iterable, Optional
 
 PROJECT_MARKERS = (
     ".git",

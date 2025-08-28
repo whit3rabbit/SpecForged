@@ -3,8 +3,9 @@ Workflow and task management MCP tools.
 """
 
 import asyncio
-from typing import Dict, Any, List, Optional
-from mcp.server.fastmcp import FastMCP, Context
+from typing import Any, Dict, List, Optional
+
+from mcp.server.fastmcp import Context, FastMCP
 
 from ..core.spec_manager import SpecificationManager
 from ..models import WorkflowPhase

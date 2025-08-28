@@ -13,10 +13,10 @@ from .prompts import setup_prompts
 from .resources import setup_resources
 from .tools import (
     setup_classification_tools,
+    setup_filesystem_tools,
     setup_planning_tools,
     setup_spec_tools,
     setup_workflow_tools,
-    setup_filesystem_tools,
 )
 
 
