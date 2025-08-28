@@ -31,8 +31,8 @@ except ImportError:
     rich_print = print  # type: ignore
     questionary = None  # type: ignore
 
-from .core.spec_manager import SpecificationManager
-from .models import EARSRequirement
+from specforged.core.spec_manager import SpecificationManager
+from specforged.models import EARSRequirement
 
 
 class ProjectWizard:
@@ -391,7 +391,7 @@ You can exit at any time with Ctrl+C.
         )
 
         # Transition to design phase in SpecForge workflow
-        from ..models import WorkflowPhase
+        from specforged.models import WorkflowPhase
 
         self.spec_manager.transition_phase(spec_id, WorkflowPhase.DESIGN)
 
@@ -399,7 +399,7 @@ You can exit at any time with Ctrl+C.
         """Generate implementation tasks"""
 
         # Transition to planning phase
-        from ..models import WorkflowPhase
+        from specforged.models import WorkflowPhase
 
         self.spec_manager.transition_phase(
             spec_id, WorkflowPhase.IMPLEMENTATION_PLANNING
