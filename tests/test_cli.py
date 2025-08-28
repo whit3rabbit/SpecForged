@@ -109,7 +109,9 @@ class TestSpecforgeHTTP:
 
     @patch("uvicorn.run")
     @patch("specforged.cli.create_server")
-    def test_specforge_http_keyboard_interrupt(self, mock_create_server, mock_uvicorn_run):
+    def test_specforge_http_keyboard_interrupt(
+        self, mock_create_server, mock_uvicorn_run
+    ):
         """Test HTTP server handles KeyboardInterrupt gracefully"""
         mock_server = MagicMock()
         mock_create_server.return_value = mock_server

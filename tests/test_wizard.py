@@ -319,7 +319,9 @@ class TestWizardFunction:
         # Should create wizard with custom base_dir as Path
         mock_wizard_class.assert_called_once()
         call_args = mock_wizard_class.call_args[0]
-        assert str(call_args[0]) == "/custom/path"
+        # Should work on both Unix (/) and Windows (\) paths
+        expected_path = Path("/custom/path")
+        assert call_args[0] == expected_path
 
         mock_wizard.run.assert_called_once()
         assert result == "test-project"
