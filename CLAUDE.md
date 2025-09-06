@@ -447,6 +447,184 @@ get_task_details(spec_id, "2.1")
   - `test_plan_generator.py`: Implementation plan generation
   - `test_checkbox_format.py`: Checkbox markdown formatting and task management
 
+## VS Code Extension Integration
+
+SpecForge includes a comprehensive VS Code extension that provides seamless integration with multiple MCP server deployment options.
+
+### Extension File Structure
+```
+vscode-specforged/
+├── package.json              # Extension manifest and configuration
+├── src/
+│   ├── extension.ts         # Main extension entry point
+│   ├── commands/
+│   │   ├── index.ts         # Command implementations
+│   │   └── mcpCommands.ts   # MCP-specific commands
+│   ├── mcp/
+│   │   ├── mcpManager.ts    # Server connection & type management
+│   │   └── mcpSetup.ts      # IDE configuration wizard
+│   ├── models/
+│   │   └── mcpOperation.ts  # Operation queue data models
+│   ├── services/
+│   │   ├── fileOperationService.ts  # Local file operations
+│   │   └── mcpSyncService.ts        # Bidirectional sync service
+│   ├── utils/
+│   │   ├── conflictResolver.ts      # Sync conflict resolution
+│   │   └── statusBarManager.ts      # VS Code status bar integration
+│   └── views/
+│       ├── operationQueueView.ts    # MCP operation monitoring
+│       └── specTreeView.ts          # Specification tree explorer
+└── resources/
+    └── icons/               # Extension icons and assets
+```
+
+### Architecture: Extension + Server Integration
+
+```
+VS Code Extension (File Operations)
+        ↓
+   [MCP Manager Decision Layer]
+    ↙        ↘
+Local MCP    HTTP MCP (Smithery/Custom)
+(stdio)      (HTTPS/WebSocket)
+    ↘        ↙
+  [Unified File Operations + Intelligence]
+        ↓
+   VS Code UI Components
+```
+
+**Key Benefits:**
+- **Permission Solution**: Extension handles ALL file operations locally
+- **Multi-Server Support**: Switch between local, Smithery, or custom servers
+- **Real-time Sync**: Bidirectional communication with operation queues
+- **Visual Feedback**: Status indicators, progress tracking, conflict resolution
+
+### Server Connection Types
+
+#### 1. Local Server (Default)
+- Uses locally installed `specforged` via `pipx`
+- Communication: stdio pipes
+- Best for development and full control
+
+#### 2. Smithery Server (Cloud)
+- Uses Smithery.ai cloud deployment
+- Communication: HTTP/WebSocket
+- URL: `https://server.smithery.ai/specforged/mcp`
+- Best for teams and easy setup
+
+#### 3. Custom Server
+- User-defined HTTP endpoint
+- Communication: HTTP/WebSocket
+- Best for enterprise deployments
+
+### Extension Commands
+
+**Server Management:**
+- `SpecForged: Switch to Local Server` - Use local installation
+- `SpecForged: Switch to Smithery Server` - Use cloud deployment
+- `SpecForged: Configure MCP Server` - Server setup wizard
+- `SpecForged: Test MCP Connection` - Connection diagnostics
+
+**Specification Management:**
+- `SpecForged: Initialize Project` - Setup specifications folder
+- `SpecForged: Create Specification` - New spec wizard
+- `SpecForged: Sync Specifications` - Manual sync trigger
+
+## Smithery Cloud Deployment
+
+SpecForged supports deployment to Smithery.ai for cloud-hosted MCP servers.
+
+### Deployment Files
+- **`smithery.yaml`**: Runtime configuration
+  ```yaml
+  runtime: "python"
+  ```
+- **`pyproject.toml`**: Includes Smithery configuration
+  ```toml
+  [tool.smithery]
+  server = "specforged.smithery_server:create_smithery_server"
+
+  [project.scripts]
+  dev = "smithery.cli.dev:main"
+  playground = "smithery.cli.playground:main"
+  ```
+- **`src/specforged/smithery_server.py`**: Smithery-specific server factory
+
+### Development & Testing
+```bash
+# Local Smithery development
+uv run playground    # Interactive testing
+uv run dev           # Development server
+
+# Deploy to Smithery
+# 1. Push to GitHub
+# 2. Connect repository at https://smithery.ai
+# 3. Deploy from dashboard
+```
+
+### Smithery vs Local Comparison
+
+| Feature | Local Server | Smithery Server |
+|---------|-------------|-----------------|
+| **File Operations** | ✅ Full access | ❌ Read-only (delegated to extension) |
+| **Intelligence** | ✅ Full MCP tools | ✅ Full MCP tools |
+| **Setup Complexity** | Medium (`pipx install`) | Low (cloud URL) |
+| **Team Sharing** | Manual config | Easy URL sharing |
+| **Customization** | Full control | Configuration schema |
+| **Offline Support** | ✅ Works offline | ❌ Requires internet |
+
+## Development Commands
+
+### Code Quality & Pre-Release Checks
+```bash
+# Format code (run after making changes)
+uv run black src/ tests/
+
+# Lint code
+uv run flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+
+# Type check
+uv run mypy src/
+
+# Run tests
+uv run pytest tests/ -v
+
+# Full pre-release check (all commands above)
+uv run pytest tests/ -v && \
+uv run black --check src/ tests/ && \
+uv run flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503 && \
+uv run mypy src/
+```
+
+### Package Management
+```bash
+# Clean build
+rm -rf dist/
+uv build
+
+# Verify package
+python -m zipfile -l dist/*.whl
+python -c "
+import zipfile
+with zipfile.ZipFile('dist/specforged-*.whl') as z:
+    assert 'specforged/__init__.py' in z.namelist()
+print('✓ Package structure verified')
+"
+```
+
+### Development Workflow
+```bash
+# Install dependencies
+uv sync --extra dev
+
+# Install in editable mode
+uv pip install -e .
+
+# Test installation
+specforged --version
+uv run python -c "from specforged.smithery_server import create_smithery_server; print('✓ Smithery import works')"
+```
+
 ## Key Implementation Notes
 
 - All file operations use pathlib.Path for cross-platform compatibility
@@ -455,3 +633,6 @@ get_task_details(spec_id, "2.1")
 - Workflow phase transitions have validation rules to prevent invalid states
 - HTTP server includes CORS middleware for web client compatibility
 - Development script provides unified interface for common tasks
+- VS Code extension uses file-based IPC for local server communication
+- Smithery deployment uses HTTP/WebSocket for cloud server communication
+- Extension has priority for all file operations regardless of server type

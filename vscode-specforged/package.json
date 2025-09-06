@@ -1,0 +1,488 @@
+{
+  "name": "vscode-specforged",
+  "displayName": "SpecForged",
+  "description": "VS Code extension for SpecForged MCP server integration with specification-driven development",
+  "version": "0.1.0",
+  "publisher": "specforged",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whit3rabbit/SpecForge"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Project Management",
+    "Documentation"
+  ],
+  "keywords": [
+    "specifications",
+    "mcp",
+    "model-context-protocol",
+    "requirements",
+    "ears",
+    "project-management",
+    "claude",
+    "ai-development"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/.specifications/**",
+    "workspaceContains:**/specifications/**",
+    "onCommand:specforged.initialize",
+    "onCommand:specforged.setupMcp"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "views": {
+      "specforged": [
+        {
+          "id": "specforged.specifications",
+          "name": "Specifications",
+          "when": "specforged.hasSpecs || specforged.setupMode"
+        },
+        {
+          "id": "specforged.operationQueue",
+          "name": "MCP Operations",
+          "when": "specforged.mcpSyncEnabled"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "specforged",
+          "title": "SpecForged",
+          "icon": "$(book)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "specforged.initialize",
+        "title": "Initialize Project",
+        "category": "SpecForged",
+        "icon": "$(add)"
+      },
+      {
+        "command": "specforged.createSpec",
+        "title": "Create Specification",
+        "category": "SpecForged",
+        "icon": "$(file-add)"
+      },
+      {
+        "command": "specforged.setupMcp",
+        "title": "Setup MCP Server",
+        "category": "SpecForged",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "specforged.syncSpecs",
+        "title": "Sync Specifications",
+        "category": "SpecForged",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "specforged.toggleTask",
+        "title": "Toggle Task",
+        "category": "SpecForged",
+        "icon": "$(check)"
+      },
+      {
+        "command": "specforged.showCurrentSpec",
+        "title": "Show Current Spec",
+        "category": "SpecForged",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "specforged.openRequirements",
+        "title": "Open Requirements",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "specforged.openDesign",
+        "title": "Open Design",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "specforged.openTasks",
+        "title": "Open Tasks",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "specforged.refreshSpecs",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "specforged.mcp.createSpec",
+        "title": "MCP: Create Specification",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.updateRequirements",
+        "title": "MCP: Update Requirements",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.updateDesign",
+        "title": "MCP: Update Design",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.updateTasks",
+        "title": "MCP: Update Tasks",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.updateTaskStatus",
+        "title": "MCP: Update Task Status",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.addUserStory",
+        "title": "MCP: Add User Story",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.getSyncStatus",
+        "title": "MCP: Get Sync Status",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.mcp.forcSync",
+        "title": "MCP: Force Sync",
+        "category": "SpecForged MCP"
+      },
+      {
+        "command": "specforged.refreshQueue",
+        "title": "Refresh Queue",
+        "category": "SpecForged",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "specforged.clearCompletedOperations",
+        "title": "Clear Completed Operations",
+        "category": "SpecForged",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "specforged.resolveConflict",
+        "title": "Resolve Conflict",
+        "category": "SpecForged",
+        "icon": "$(check)"
+      },
+      {
+        "command": "specforged.retryFailedOperations",
+        "title": "Retry Failed Operations",
+        "category": "SpecForged",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "specforged.showOperationDetails",
+        "title": "Show Operation Details",
+        "category": "SpecForged",
+        "icon": "$(info)"
+      },
+      {
+        "command": "specforged.forceSync",
+        "title": "Force Sync",
+        "category": "SpecForged",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "specforged.switchToSmithery",
+        "title": "Switch to Smithery Server",
+        "category": "SpecForged",
+        "icon": "$(cloud)"
+      },
+      {
+        "command": "specforged.switchToLocal",
+        "title": "Switch to Local Server",
+        "category": "SpecForged",
+        "icon": "$(home)"
+      },
+      {
+        "command": "specforged.configureServer",
+        "title": "Configure MCP Server",
+        "category": "SpecForged",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "specforged.testConnection",
+        "title": "Test MCP Connection",
+        "category": "SpecForged",
+        "icon": "$(pulse)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "specforged.initialize",
+          "when": "view == specforged.specifications && !specforged.hasSpecs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "specforged.createSpec",
+          "when": "view == specforged.specifications && specforged.hasSpecs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "specforged.refreshSpecs",
+          "when": "view == specforged.specifications",
+          "group": "navigation@2"
+        },
+        {
+          "command": "specforged.setupMcp",
+          "when": "view == specforged.specifications",
+          "group": "navigation@3"
+        },
+        {
+          "command": "specforged.refreshQueue",
+          "when": "view == specforged.operationQueue",
+          "group": "navigation@1"
+        },
+        {
+          "command": "specforged.clearCompletedOperations",
+          "when": "view == specforged.operationQueue",
+          "group": "navigation@2"
+        },
+        {
+          "command": "specforged.retryFailedOperations",
+          "when": "view == specforged.operationQueue",
+          "group": "navigation@3"
+        },
+        {
+          "command": "specforged.forceSync",
+          "when": "view == specforged.operationQueue",
+          "group": "navigation@4"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "specforged.openRequirements",
+          "when": "view == specforged.specifications && viewItem == spec",
+          "group": "specforged@1"
+        },
+        {
+          "command": "specforged.openDesign",
+          "when": "view == specforged.specifications && viewItem == spec",
+          "group": "specforged@2"
+        },
+        {
+          "command": "specforged.openTasks",
+          "when": "view == specforged.specifications && viewItem == spec",
+          "group": "specforged@3"
+        },
+        {
+          "command": "specforged.toggleTask",
+          "when": "view == specforged.specifications && viewItem == task",
+          "group": "specforged@1"
+        },
+        {
+          "command": "specforged.showOperationDetails",
+          "when": "view == specforged.operationQueue && viewItem == operation",
+          "group": "operation@1"
+        },
+        {
+          "command": "specforged.resolveConflict",
+          "when": "view == specforged.operationQueue && viewItem == conflict",
+          "group": "conflict@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "specforged.openRequirements",
+          "when": "false"
+        },
+        {
+          "command": "specforged.openDesign",
+          "when": "false"
+        },
+        {
+          "command": "specforged.openTasks",
+          "when": "false"
+        },
+        {
+          "command": "specforged.toggleTask",
+          "when": "false"
+        },
+        {
+          "command": "specforged.refreshSpecs",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.createSpec",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.updateRequirements",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.updateDesign",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.updateTasks",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.updateTaskStatus",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.addUserStory",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.getSyncStatus",
+          "when": "false"
+        },
+        {
+          "command": "specforged.mcp.forcSync",
+          "when": "false"
+        },
+        {
+          "command": "specforged.refreshQueue",
+          "when": "false"
+        },
+        {
+          "command": "specforged.clearCompletedOperations",
+          "when": "false"
+        },
+        {
+          "command": "specforged.resolveConflict",
+          "when": "false"
+        },
+        {
+          "command": "specforged.retryFailedOperations",
+          "when": "false"
+        },
+        {
+          "command": "specforged.showOperationDetails",
+          "when": "false"
+        },
+        {
+          "command": "specforged.forceSync",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SpecForged",
+      "properties": {
+        "specforged.autoDetect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect specifications in workspace"
+        },
+        "specforged.specFolder": {
+          "type": "string",
+          "default": ".specifications",
+          "description": "Default specification folder name"
+        },
+        "specforged.showProgressBadges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show progress badges in specification tree"
+        },
+        "specforged.enableSyntaxHighlighting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable EARS syntax highlighting"
+        },
+        "specforged.mcpServerPath": {
+          "type": "string",
+          "default": "specforged",
+          "description": "Path to SpecForged MCP server executable"
+        },
+        "specforged.defaultIde": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "vscode", "cursor", "windsurf", "claude"],
+          "description": "Default IDE for MCP configuration"
+        },
+        "specforged.enableWebview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable rich webview for specification display"
+        },
+        "specforged.mcpServerType": {
+          "type": "string",
+          "default": "local",
+          "enum": ["local", "smithery", "custom"],
+          "enumDescriptions": [
+            "Local SpecForged installation (requires 'pipx install specforged')",
+            "Smithery cloud-hosted server (https://smithery.ai)",
+            "Custom HTTP server URL"
+          ],
+          "description": "Type of MCP server to connect to"
+        },
+        "specforged.mcpServerUrl": {
+          "type": "string",
+          "default": "",
+          "description": "URL for Smithery or custom HTTP MCP server (e.g., https://server.smithery.ai/specforged/mcp)"
+        },
+        "specforged.smitheryServerName": {
+          "type": "string",
+          "default": "specforged",
+          "description": "Smithery server name (used to construct server URL)"
+        },
+        "specforged.smitheryApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Optional API key for authenticated Smithery access"
+        },
+        "specforged.autoFallbackToLocal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically fallback to local server if Smithery/custom server is unavailable"
+        },
+        "specforged.connectionTimeout": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Connection timeout in milliseconds for HTTP servers"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0",
+    "glob": "^8.1.0"
+  },
+  "dependencies": {
+    "yaml": "^2.3.4"
+  },
+  "icon": "resources/icons/specforged.svg",
+  "galleryBanner": {
+    "color": "#1e3a8a",
+    "theme": "dark"
+  },
+  "badges": [
+    {
+      "url": "https://img.shields.io/badge/MCP-Compatible-blue",
+      "href": "https://modelcontextprotocol.io",
+      "description": "Model Context Protocol Compatible"
+    }
+  ]
+}

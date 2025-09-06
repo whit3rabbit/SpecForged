@@ -31,16 +31,29 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
 
     @mcp.tool()
     async def create_spec(
-        name: str, description: str = "", ctx: Optional[Context] = None
+        name: str,
+        description: str = "",
+        spec_id: Optional[str] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Create a new specification with requirements, design, and tasks files.
-        Initializes the spec workflow in the requirements phase.
+        Automatically sets it as the current specification.
+
+        Args:
+            name: A descriptive name for the specification.
+            description: A brief description of the specification's purpose.
+            spec_id: A short, unique identifier (e.g., 'frontend', 'refactor-api').
+                     If not provided, it will be generated from the name.
         """
-        spec = spec_manager.create_specification(name, description)
+        try:
+            spec = spec_manager.create_specification(name, description, spec_id)
+        except ValueError as e:
+            return {"status": "error", "message": str(e)}
 
         if ctx:
             await ctx.info(f"Created specification: {spec.id}")
+            await ctx.info(f"Set '{spec.id}' as the current specification.")
             await ctx.info(f"Phase: {spec.current_phase.value}")
 
         return {
@@ -55,40 +68,77 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
                 "design": str(spec_manager.base_dir / spec.id / "design.md"),
                 "tasks": str(spec_manager.base_dir / spec.id / "tasks.md"),
             },
-            "message": (f"Specification '{name}' created. Now in requirements phase."),
+            "message": (f"Specification '{name}' created with ID '{spec.id}'"),
         }
 
     @mcp.tool()
+    async def set_current_spec(
+        spec_id: str, ctx: Optional[Context] = None
+    ) -> Dict[str, Any]:
+        """
+        Set the active specification for subsequent commands.
+
+        Args:
+            spec_id: The identifier of the specification to make active.
+        """
+        success = spec_manager.set_current_specification(spec_id)
+        if success:
+            if ctx:
+                await ctx.info(f"Current specification set to: {spec_id}")
+            return {
+                "status": "success",
+                "current_spec_id": spec_id,
+                "message": f"'{spec_id}' is now the active specification.",
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Specification '{spec_id}' not found.",
+                "available_specs": list(spec_manager.specs.keys()),
+            }
+
+    @mcp.tool()
     async def add_requirement(
-        spec_id: str,
         as_a: str,
         i_want: str,
         so_that: str,
+        spec_id: Optional[str] = None,
         ears_requirements: Optional[List[Dict[str, str]]] = None,
         ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Add a user story with EARS-formatted acceptance criteria to the
-        specification.
+        specification. Uses the current spec if spec_id is omitted.
 
         Args:
-            spec_id: The specification identifier
             as_a: The user role (for user story)
             i_want: The desired functionality (for user story)
             so_that: The benefit/reason (for user story)
+            spec_id: The specification identifier. If omitted, uses the current spec.
             ears_requirements: List of EARS requirements with 'condition'
                 and 'system_response'
         """
+        effective_spec_id = spec_id or spec_manager.current_spec_id
+        if not effective_spec_id:
+            return {
+                "status": "error",
+                "message": (
+                    "No specification selected. Provide spec_id or set_current_spec()."
+                ),
+            }
+
         try:
             # Add user story
-            story = spec_manager.add_user_story(spec_id, as_a, i_want, so_that)
+            story = spec_manager.add_user_story(
+                effective_spec_id, as_a, i_want, so_that
+            )
 
             # Add EARS requirements if provided
             added_requirements = []
             if ears_requirements:
                 for req_data in ears_requirements:
                     req = spec_manager.add_ears_requirement(
-                        spec_id,
+                        effective_spec_id,
                         story.id,
                         req_data.get("condition", "WHEN a condition occurs"),
                         req_data.get("system_response", "perform an action"),
@@ -96,10 +146,12 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
                     added_requirements.append(req.to_ears_string())
 
             if ctx:
-                await ctx.info(f"Added user story {story.id} to spec {spec_id}")
+                await ctx.info(
+                    f"Added user story {story.id} to spec {effective_spec_id}"
+                )
 
             # Check if this is a wizard-created spec and provide guidance
-            spec = spec_manager.specs[spec_id]
+            spec = spec_manager.specs[effective_spec_id]
             wizard_info = {}
             if (
                 spec.wizard_state.is_active
@@ -107,7 +159,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             ):
                 user_story_count = len(spec.user_stories)
                 spec.wizard_state.last_wizard_action = f"added_user_story_{story.id}"
-                spec_manager.save_specification(spec_id)
+                spec_manager.save_specification(effective_spec_id)
 
                 if user_story_count < 3:
                     wizard_info = {
@@ -142,6 +194,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
 
             return {
                 "status": "success",
+                "spec_id": effective_spec_id,
                 "story_id": story.id,
                 "user_story": (f"As a {as_a}, I want {i_want}, so that {so_that}"),
                 "ears_requirements": added_requirements,
@@ -157,7 +210,7 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
 
     @mcp.tool()
     async def update_design(
-        spec_id: str,
+        spec_id: Optional[str] = None,
         architecture: Optional[str] = None,
         components: Optional[List[Dict[str, str]]] = None,
         data_models: Optional[str] = None,
@@ -166,22 +219,32 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     ) -> Dict[str, Any]:
         """
         Update the technical design documentation for a specification.
+        Uses the current spec if spec_id is omitted.
 
         Args:
-            spec_id: The specification identifier
+            spec_id: The specification identifier. If omitted, uses the current spec.
             architecture: System architecture description
             components: List of components with name and description
             data_models: TypeScript/interface definitions
             sequence_diagrams: List of diagrams with title and mermaid
                 content
         """
-        if spec_id not in spec_manager.specs:
+        effective_spec_id = spec_id or spec_manager.current_spec_id
+        if not effective_spec_id:
             return {
                 "status": "error",
-                "message": f"Specification {spec_id} not found",
+                "message": (
+                    "No specification selected. Provide spec_id or set_current_spec()."
+                ),
             }
 
-        spec = spec_manager.specs[spec_id]
+        if effective_spec_id not in spec_manager.specs:
+            return {
+                "status": "error",
+                "message": f"Specification {effective_spec_id} not found",
+            }
+
+        spec = spec_manager.specs[effective_spec_id]
 
         # Update design sections
         if architecture:
@@ -199,14 +262,14 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
         from datetime import datetime
 
         spec.updated_at = datetime.now()
-        spec_manager.save_specification(spec_id)
+        spec_manager.save_specification(effective_spec_id)
 
         if ctx:
-            await ctx.info(f"Updated design for spec {spec_id}")
+            await ctx.info(f"Updated design for spec {effective_spec_id}")
 
         return {
             "status": "success",
-            "spec_id": spec_id,
+            "spec_id": effective_spec_id,
             "updated_sections": [
                 k
                 for k in [
@@ -223,15 +286,18 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     @mcp.tool()
     async def list_specifications(ctx: Optional[Context] = None) -> Dict[str, Any]:
         """
-        List all available specifications with their current status and phase.
+        List all available specifications with their current status and phase,
+        highlighting the current one.
         """
         specs = []
+        current_spec_id = spec_manager.current_spec_id
 
         for spec_id, spec in spec_manager.specs.items():
             specs.append(
                 {
                     "id": spec_id,
                     "name": spec.name,
+                    "is_current": spec_id == current_spec_id,
                     "status": spec.status.value,
                     "phase": spec.current_phase.value,
                     "created_at": spec.created_at.isoformat(),
@@ -245,7 +311,11 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             )
 
         # Check if no specifications exist and suggest wizard
-        result = {"specifications": specs, "total": len(specs)}
+        result = {
+            "specifications": specs,
+            "total": len(specs),
+            "current_spec_id": current_spec_id,
+        }
 
         if len(specs) == 0:
             # Check if .specifications folder exists at all

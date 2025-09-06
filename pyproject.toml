@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specforged"
-version = "0.3.0"
+version = "0.3.1"
 description = "Spec-driven development workflow with mode classification and EARS notation"
 readme = "README.md"
 license = {text = "MIT"}
@@ -42,12 +42,15 @@ dependencies = [
     "questionary>=2.0.0",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
+    "smithery>=0.1.23",
 ]
 
 [project.scripts]
 specforged = "specforged.cli:specforge_mcp"
 specforged-http = "specforged.cli:specforge_http"
 specforged-cli = "specforged.cli:main"
+dev = "smithery.cli.dev:main"
+playground = "smithery.cli.playground:main"
 
 [project.urls]
 Homepage = "https://github.com/whit3rabbit/SpecForge"
@@ -100,7 +103,7 @@ strict_equality = true
 ignore_missing_imports = true
 
 [tool.flake8]
-max-line-length = 88
+max-line-length = 101
 extend-ignore = ["E203", "W503"]
 
 [tool.pytest.ini_options]
@@ -122,3 +125,6 @@ dev = [
     "pre-commit>=4.3.0",
     "types-aiofiles>=24.1.0.20250822",
 ]
+
+[tool.smithery]
+server = "specforged.smithery_server:create_smithery_server"

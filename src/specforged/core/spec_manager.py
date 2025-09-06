@@ -126,9 +126,19 @@ class SpecificationManager:
                     except (json.JSONDecodeError, KeyError, OSError, ValueError) as e:
                         print(f"Error loading spec {spec_dir.name}: {e}")
 
-    def create_specification(self, name: str, description: str = "") -> Specification:
+        # Load current spec configuration
+        self._load_current_spec_config()
+
+    def create_specification(
+        self, name: str, description: str = "", spec_id: Optional[str] = None
+    ) -> Specification:
         """Create a new specification"""
-        spec_id = name.lower().replace(" ", "-")
+        # Use provided spec_id or generate one from the name
+        spec_id = spec_id or name.lower().replace(" ", "-").replace("_", "-")
+
+        if spec_id in self.specs:
+            raise ValueError(f"Specification with id '{spec_id}' already exists.")
+
         spec = Specification(
             id=spec_id,
             name=name,
@@ -140,7 +150,7 @@ class SpecificationManager:
         )
 
         self.specs[spec_id] = spec
-        self.current_spec_id = spec_id
+        self.set_current_specification(spec_id)
 
         # Create directory structure
         spec_dir = self.base_dir / spec_id
@@ -152,6 +162,35 @@ class SpecificationManager:
         self._ensure_standard_files(spec_dir, spec)
 
         return spec
+
+    def set_current_specification(self, spec_id: str) -> bool:
+        """Set the active specification context."""
+        if spec_id in self.specs:
+            self.current_spec_id = spec_id
+            self._save_current_spec_config()
+            return True
+        return False
+
+    def _save_current_spec_config(self) -> None:
+        """Save current specification configuration to a config file."""
+        config_file = self.base_dir / ".current"
+        try:
+            with open(config_file, "w", encoding="utf-8") as f:
+                f.write(self.current_spec_id or "")
+        except OSError as e:
+            print(f"Warning: Could not save current spec config: {e}")
+
+    def _load_current_spec_config(self) -> None:
+        """Load current specification from config file."""
+        config_file = self.base_dir / ".current"
+        if config_file.exists():
+            try:
+                with open(config_file, "r", encoding="utf-8") as f:
+                    spec_id = f.read().strip()
+                    if spec_id and spec_id in self.specs:
+                        self.current_spec_id = spec_id
+            except OSError:
+                pass  # Ignore if can't read config
 
     def _ensure_standard_files(self, spec_dir: Path, spec: Specification) -> None:
         """Create requirements.md, design.md, and tasks.md if missing."""
@@ -346,7 +385,32 @@ class SpecificationManager:
             design=data.get("design", {}),
             metadata=data.get("metadata", {}),
         )
+        # Manually deserialize nested objects
+        spec.user_stories = [
+            self._deserialize_user_story(s) for s in data.get("user_stories", [])
+        ]
+        spec.tasks = [self._deserialize_task(t) for t in data.get("tasks", [])]
         return spec
+
+    def _deserialize_user_story(self, data: Dict[str, Any]) -> UserStory:
+        """Deserialize user story from dict"""
+        story = UserStory(
+            id=data["id"],
+            as_a=data["as_a"],
+            i_want=data["i_want"],
+            so_that=data["so_that"],
+        )
+        story.requirements = [
+            EARSRequirement(**r) for r in data.get("requirements", [])
+        ]
+        return story
+
+    def _deserialize_task(self, data: Dict[str, Any]) -> Task:
+        """Deserialize task from dict, handling nested subtasks"""
+        subtasks_data = data.pop("subtasks", [])
+        task = Task(**data)
+        task.subtasks = [self._deserialize_task(st) for st in subtasks_data]
+        return task
 
     def add_user_story(
         self, spec_id: str, as_a: str, i_want: str, so_that: str

@@ -600,31 +600,66 @@ The system will automatically invoke the appropriate MCP tools based on your nat
 
 ### Available Tools
 
+### Multi-Specification Context Management
+
+SpecForged now supports managing multiple specifications in a single project with **current specification context**—like a current working directory for specs.
+
+**Key Features:**
+- **Current Spec Context**: Set an active specification to work with
+- **Custom Spec IDs**: Create specs with meaningful names (`frontend`, `api-v2`, etc.)
+- **Context Switching**: Seamlessly switch between different specs
+- **Simplified Commands**: Most tools no longer require `spec_id` parameter
+
+**Context Management:**
+```bash
+# Create specs with custom IDs
+create_spec(name="Frontend Development", spec_id="frontend")
+create_spec(name="API Refactor", spec_id="api-v2")
+
+# Switch context (like 'cd' for specifications)
+set_current_spec(spec_id="frontend")
+
+# Work without specifying spec_id (uses current context)
+add_requirement(as_a="user", i_want="to login", so_that="I can access my account")
+update_design(architecture="React + TypeScript")
+generate_implementation_plan()
+check_task(task_number="1.1")
+
+# List specs shows which is current
+list_specifications()  # Shows is_current: true for active spec
+```
+
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `classify_mode` | Classify user input intent | `user_input` |
-| `create_spec` | Create new specification | `name`, `description` |
-| `add_requirement` | Add user story with EARS criteria | `spec_id`, `as_a`, `i_want`, `so_that`, `ears_requirements` |
-| `update_design` | Update technical design | `spec_id`, `architecture`, `components`, `data_models`, `sequence_diagrams` |
-| `generate_implementation_plan` | Create task hierarchy from requirements | `spec_id` |
-| `update_implementation_plan` | Refresh plan preserving completion status | `spec_id` |
-| `check_task` | Mark task as completed | `spec_id`, `task_number` |
-| `uncheck_task` | Mark task as pending | `spec_id`, `task_number` |
-| `bulk_check_tasks` | Check multiple tasks at once | `spec_id`, `task_numbers`, `all_tasks` |
-| `get_task_details` | Get detailed task information | `spec_id`, `task_number` |
-| `get_next_available_tasks` | Find tasks ready to work on | `spec_id` |
-| `get_task_status_summary` | Complete progress overview | `spec_id` |
-| `add_implementation_task` | Add individual task to plan | `spec_id`, `title`, `description`, `dependencies`, `subtasks` |
-| `execute_task` | Execute a specific task | `spec_id`, `task_id` |
-| `transition_workflow_phase` | Move to next phase | `spec_id`, `target_phase` |
-| `list_specifications` | List all specs | - |
-| `get_specification_details` | Get spec details | `spec_id`, `include_content` |
+| `create_spec` | Create new specification | `name`, `description`, `[spec_id]` |
+| `set_current_spec` | **NEW** Set active specification | `spec_id` |
+| `add_requirement` | Add user story with EARS criteria | `as_a`, `i_want`, `so_that`, `[spec_id]`, `[ears_requirements]` |
+| `update_design` | Update technical design | `[spec_id]`, `[architecture]`, `[components]`, `[data_models]`, `[sequence_diagrams]` |
+| `generate_implementation_plan` | Create task hierarchy from requirements | `[spec_id]` |
+| `update_implementation_plan` | Refresh plan preserving completion status | `[spec_id]` |
+| `check_task` | Mark task as completed | `task_number`, `[spec_id]` |
+| `uncheck_task` | Mark task as pending | `task_number`, `[spec_id]` |
+| `bulk_check_tasks` | Check multiple tasks at once | `task_numbers`, `[spec_id]` |
+| `get_task_details` | Get detailed task information | `task_number`, `[spec_id]` |
+| `get_next_available_tasks` | Find tasks ready to work on | `[spec_id]` |
+| `get_task_status_summary` | Complete progress overview | `[spec_id]` |
+| `add_implementation_task` | Add individual task to plan | `title`, `description`, `[spec_id]`, `[dependencies]`, `[subtasks]` |
+| `execute_task` | Execute a specific task | `task_id`, `[spec_id]` |
+| `transition_workflow_phase` | Move to next phase | `target_phase`, `[spec_id]` |
+| `list_specifications` | List all specs (shows current) | - |
+| `get_specification_details` | Get spec details | `spec_id`, `[include_content]` |
+
+*Parameters in `[brackets]` are optional. When `spec_id` is omitted, the current specification context is used.*
+
+### Filesystem Tools (Project-Scoped)
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
 | `create_directory` | Create a directory within project root | `path`, `exist_ok` |
 | `read_file` | Read a UTF-8 text file within project root | `path` |
 | `write_file` | Write/append a UTF-8 text file within project root | `path`, `content`, `mode` |
 | `edit_block` | Safely replace exact text in a file | `file_path`, `old_string`, `new_string`, `expected_replacements` |
-
-### Filesystem Tools (Project-Scoped)
 
 These tools operate only within your current project directory (the server's CWD). Any path outside the project root is rejected.
 
@@ -668,60 +703,30 @@ THEN THE SYSTEM SHALL redirect to login
 
 ### Complete Workflow Example
 
-```python
-# 1. Create specification
-create_spec(name="Payment Processing", description="Handle customer payments")
+This shows how natural language prompts trigger MCP commands behind the scenes:
 
-# 2. Add requirements
-add_requirement(
-    spec_id="payment-processing",
-    as_a="customer",
-    i_want="to pay with multiple methods",
-    so_that="I can choose my preferred payment option",
-    ears_requirements=[
-        {
-            "condition": "WHEN a customer selects credit card",
-            "system_response": "display secure card entry form"
-        },
-        {
-            "condition": "IF payment fails",
-            "system_response": "show error and suggest alternatives"
-        }
-    ]
-)
+| Natural Language Prompt | MCP Command Triggered |
+|--------------------------|----------------------|
+| *"Create a spec for payment processing with ID 'payments'"* | `create_spec(name="Payment Processing", description="Handle customer payments", spec_id="payments")` |
+| *"Create a spec for user authentication with ID 'auth'"* | `create_spec(name="User Authentication", description="Handle user authentication", spec_id="auth")` |
+| *"Add a requirement: As a customer, I want to pay with multiple methods..."* | `add_requirement(as_a="customer", i_want="to pay with multiple methods", so_that="I can choose my preferred payment option", ears_requirements=[...])` |
+| *"Update the design with microservices architecture"* | `update_design(architecture="Microservices with payment gateway integration", components=[...])` |
+| *"Generate the implementation plan"* | `generate_implementation_plan()` |
+| *"Switch to the auth spec"* | `set_current_spec(spec_id="auth")` |
+| *"Add a login requirement"* | `add_requirement(as_a="user", i_want="to login securely", so_that="I can access my account")` |
+| *"Switch back to payments"* | `set_current_spec(spec_id="payments")` |
+| *"Mark task 1 as complete"* | `check_task(task_number="1")` |
+| *"Complete task 2.1"* | `check_task(task_number="2.1")` |
+| *"How's my progress?"* | `get_task_status_summary()` |
+| *"Show all my specifications"* | `list_specifications()` |
+| *"Mark tasks 3.1, 3.2, and 4.1 as done"* | `bulk_check_tasks(task_numbers=["3.1", "3.2", "4.1"])` |
 
-# 3. Design architecture
-update_design(
-    spec_id="payment-processing",
-    architecture="Microservices with payment gateway integration",
-    components=[
-        {"name": "PaymentService", "description": "Handles payment processing"},
-        {"name": "GatewayAdapter", "description": "Integrates with payment providers"}
-    ]
-)
+### Key Benefits of Natural Language Interface
 
-# 4. Generate implementation plan
-generate_implementation_plan(spec_id="payment-processing")
-
-# 5. Check task progress
-get_task_status_summary(spec_id="payment-processing")
-
-# 6. Complete tasks
-check_task(spec_id="payment-processing", task_number="1")
-check_task(spec_id="payment-processing", task_number="2.1")
-
-# 7. Bulk complete multiple tasks
-bulk_check_tasks(
-    spec_id="payment-processing",
-    task_numbers=["3.1", "3.2", "4.1"]
-)
-
-# 8. Or complete all remaining tasks
-bulk_check_tasks(
-    spec_id="payment-processing",
-    all_tasks=True
-)
-```
+- **No need to remember exact function names** - just describe what you want
+- **Context-aware responses** - the system understands which spec you're working on
+- **Flexible phrasing** - multiple ways to express the same intent
+- **Automatic parameter inference** - many parameters filled from context
 
 ## File Structure
 

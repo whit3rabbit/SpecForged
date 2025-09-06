@@ -14,23 +14,34 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
     @mcp.tool()
     async def generate_implementation_plan(
-        spec_id: str, ctx: Optional[Context] = None
+        spec_id: Optional[str] = None, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Generate a comprehensive implementation plan from requirements and design.
         Creates a hierarchical task structure with checkbox format.
+        Uses the current spec if spec_id is omitted.
 
         Args:
-            spec_id: The specification identifier
+            spec_id: The specification identifier. If omitted, uses the current spec.
         """
-        if spec_id not in spec_manager.specs:
+        effective_spec_id = spec_id or spec_manager.current_spec_id
+        if not effective_spec_id:
             return {
                 "status": "error",
-                "message": f"Specification {spec_id} not found",
+                "message": (
+                    "No specification selected. "
+                    "Provide a spec_id or use set_current_spec()."
+                ),
+            }
+
+        if effective_spec_id not in spec_manager.specs:
+            return {
+                "status": "error",
+                "message": f"Specification {effective_spec_id} not found",
             }
 
         # CRITICAL: Validate that design phase is completed before generating plan
-        spec = spec_manager.specs[spec_id]
+        spec = spec_manager.specs[effective_spec_id]
 
         # Check if we have requirements (user stories)
         if not spec.user_stories:
@@ -44,7 +55,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         # Check if design.md exists and has substantial content
-        spec_dir = spec_manager.base_dir / spec_id
+        spec_dir = spec_manager.base_dir / effective_spec_id
         design_file = spec_dir / "design.md"
         if not design_file.exists():
             return {
@@ -78,7 +89,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         try:
-            success = spec_manager.generate_implementation_plan(spec_id)
+            success = spec_manager.generate_implementation_plan(effective_spec_id)
 
             if not success:
                 return {
@@ -87,10 +98,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 }
 
             # Get statistics
-            stats = spec_manager.get_completion_stats(spec_id)
+            stats = spec_manager.get_completion_stats(effective_spec_id)
 
             if ctx:
-                await ctx.info(f"Generated implementation plan for {spec_id}")
+                await ctx.info(f"Generated implementation plan for {effective_spec_id}")
                 if stats:
                     await ctx.info(f"Created {stats['total']} tasks")
 
@@ -99,7 +110,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
             return {
                 "status": "success",
-                "spec_id": spec_id,
+                "spec_id": effective_spec_id,
                 "tasks_created": tasks_created,
                 "message": tasks_message,
                 "stats": stats,
@@ -110,23 +121,34 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
     @mcp.tool()
     async def update_implementation_plan(
-        spec_id: str, ctx: Optional[Context] = None
+        spec_id: Optional[str] = None, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Update existing implementation plan based on changes to requirements or design.
         Preserves completion status of existing tasks.
+        Uses the current spec if spec_id is omitted.
 
         Args:
-            spec_id: The specification identifier
+            spec_id: The specification identifier. If omitted, uses the current spec.
         """
-        if spec_id not in spec_manager.specs:
+        effective_spec_id = spec_id or spec_manager.current_spec_id
+        if not effective_spec_id:
             return {
                 "status": "error",
-                "message": f"Specification {spec_id} not found",
+                "message": (
+                    "No specification selected. "
+                    "Provide a spec_id or use set_current_spec()."
+                ),
+            }
+
+        if effective_spec_id not in spec_manager.specs:
+            return {
+                "status": "error",
+                "message": f"Specification {effective_spec_id} not found",
             }
 
         try:
-            success = spec_manager.update_implementation_plan(spec_id)
+            success = spec_manager.update_implementation_plan(effective_spec_id)
 
             if not success:
                 return {
@@ -135,17 +157,17 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 }
 
             # Get updated statistics
-            stats = spec_manager.get_completion_stats(spec_id)
+            stats = spec_manager.get_completion_stats(effective_spec_id)
 
             if ctx:
-                await ctx.info(f"Updated implementation plan for {spec_id}")
+                await ctx.info(f"Updated implementation plan for {effective_spec_id}")
 
             total_tasks = stats["total"] if stats else 0
             update_message = f"Implementation plan updated with {total_tasks} tasks"
 
             return {
                 "status": "success",
-                "spec_id": spec_id,
+                "spec_id": effective_spec_id,
                 "total_tasks": total_tasks,
                 "message": update_message,
                 "stats": stats,
@@ -156,24 +178,35 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
     @mcp.tool()
     async def check_task(
-        spec_id: str, task_number: str, ctx: Optional[Context] = None
+        task_number: str, spec_id: Optional[str] = None, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Mark a task as completed (check the checkbox).
         Automatically updates parent task status if all subtasks are complete.
+        Uses the current spec if spec_id is omitted.
 
         Args:
-            spec_id: The specification identifier
             task_number: The hierarchical task number (e.g., "1", "2.1", "3.2.1")
+            spec_id: The specification identifier. If omitted, uses the current spec.
         """
-        if spec_id not in spec_manager.specs:
+        effective_spec_id = spec_id or spec_manager.current_spec_id
+        if not effective_spec_id:
             return {
                 "status": "error",
-                "message": f"Specification {spec_id} not found",
+                "message": (
+                    "No specification selected. "
+                    "Provide a spec_id or use set_current_spec()."
+                ),
+            }
+
+        if effective_spec_id not in spec_manager.specs:
+            return {
+                "status": "error",
+                "message": f"Specification {effective_spec_id} not found",
             }
 
         # Find the task
-        task = spec_manager.get_task_by_number(spec_id, task_number)
+        task = spec_manager.get_task_by_number(effective_spec_id, task_number)
         if not task:
             return {"status": "error", "message": f"Task {task_number} not found"}
 
@@ -185,7 +218,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         try:
-            success = spec_manager.check_task(spec_id, task_number)
+            success = spec_manager.check_task(effective_spec_id, task_number)
 
             if not success:
                 return {
@@ -197,12 +230,12 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 await ctx.info(f"Checked task {task_number}: {task.title}")
 
             # Get updated stats
-            stats = spec_manager.get_completion_stats(spec_id)
+            stats = spec_manager.get_completion_stats(effective_spec_id)
             progress_pct = stats["completion_percentage"] if stats else 0
 
             return {
                 "status": "success",
-                "spec_id": spec_id,
+                "spec_id": effective_spec_id,
                 "task_number": task_number,
                 "task_title": task.title,
                 "message": f"Task {task_number} marked as completed",
@@ -215,24 +248,35 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
     @mcp.tool()
     async def uncheck_task(
-        spec_id: str, task_number: str, ctx: Optional[Context] = None
+        task_number: str, spec_id: Optional[str] = None, ctx: Optional[Context] = None
     ) -> Dict[str, Any]:
         """
         Mark a task as pending (uncheck the checkbox).
         Updates parent task status accordingly.
+        Uses the current spec if spec_id is omitted.
 
         Args:
-            spec_id: The specification identifier
             task_number: The hierarchical task number (e.g., "1", "2.1", "3.2.1")
+            spec_id: The specification identifier. If omitted, uses the current spec.
         """
-        if spec_id not in spec_manager.specs:
+        effective_spec_id = spec_id or spec_manager.current_spec_id
+        if not effective_spec_id:
             return {
                 "status": "error",
-                "message": f"Specification {spec_id} not found",
+                "message": (
+                    "No specification selected. "
+                    "Provide a spec_id or use set_current_spec()."
+                ),
+            }
+
+        if effective_spec_id not in spec_manager.specs:
+            return {
+                "status": "error",
+                "message": f"Specification {effective_spec_id} not found",
             }
 
         # Find the task
-        task = spec_manager.get_task_by_number(spec_id, task_number)
+        task = spec_manager.get_task_by_number(effective_spec_id, task_number)
         if not task:
             return {"status": "error", "message": f"Task {task_number} not found"}
 
@@ -244,7 +288,7 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         try:
-            success = spec_manager.uncheck_task(spec_id, task_number)
+            success = spec_manager.uncheck_task(effective_spec_id, task_number)
 
             if not success:
                 return {
@@ -256,12 +300,12 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 await ctx.info(f"Unchecked task {task_number}: {task.title}")
 
             # Get updated stats
-            stats = spec_manager.get_completion_stats(spec_id)
+            stats = spec_manager.get_completion_stats(effective_spec_id)
             progress_pct = stats["completion_percentage"] if stats else 0
 
             return {
                 "status": "success",
-                "spec_id": spec_id,
+                "spec_id": effective_spec_id,
                 "task_number": task_number,
                 "task_title": task.title,
                 "message": f"Task {task_number} marked as pending",
