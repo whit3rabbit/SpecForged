@@ -3,6 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/specforged.svg)](https://pypi.org/project/specforged/)
 [![Python Version](https://img.shields.io/pypi/pyversions/specforged.svg)](https://pypi.org/project/specforged/)
 [![Test Suite](https://github.com/whit3rabbit/specforged/actions/workflows/test.yml/badge.svg)](https://github.com/whit3rabbit/specforged/actions/workflows/test.yml)
+[![smithery badge](https://smithery.ai/badge/@whit3rabbit/specforged)](https://smithery.ai/server/@whit3rabbit/specforged)
 
 A Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management.
 
