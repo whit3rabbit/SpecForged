@@ -1,1 +1,26 @@
-runtime: "python"
+runtime: "container"
+startCommand:
+  type: "http"
+  configSchema:
+    type: "object"
+    properties:
+      project_path:
+        type: "string"
+        description: "Project root path relative to deployment environment"
+        default: "."
+      spec_folder:
+        type: "string"
+        description: "Specifications folder name within project"
+        default: ".specifications"
+      enable_filesystem_tools:
+        type: "boolean"
+        description: "Enable filesystem modification tools (disabled for cloud deployment)"
+        default: false
+      mode_classification_enabled:
+        type: "boolean"
+        description: "Enable intelligent mode classification for user requests"
+        default: true
+    required: []
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."

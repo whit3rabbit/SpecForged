@@ -24,7 +24,7 @@ export class OperationQueueProvider implements vscode.TreeDataProvider<Operation
         if (!element) {
             // Root level - show categories
             const items: OperationTreeItem[] = [];
-            
+
             // Sync Status
             items.push(new OperationTreeItem(
                 'Sync Status',
@@ -101,7 +101,7 @@ export class OperationQueueProvider implements vscode.TreeDataProvider<Operation
             const timeDiff = Date.now() - lastSync.getTime();
             const minutes = Math.floor(timeDiff / 60000);
             const syncTime = minutes < 1 ? 'Just now' : `${minutes}m ago`;
-            
+
             items.push(new OperationTreeItem(
                 `Last Sync: ${syncTime}`,
                 vscode.TreeItemCollapsibleState.None,
@@ -212,10 +212,10 @@ export class OperationTreeItem extends vscode.TreeItem {
         public readonly description?: string
     ) {
         super(label, collapsibleState);
-        
+
         this.tooltip = this.getTooltip();
         this.description = description;
-        
+
         if (contextValue === 'operation') {
             this.iconPath = this.getOperationIcon(data as McpOperation);
         } else if (contextValue === 'conflict') {
@@ -233,11 +233,11 @@ export class OperationTreeItem extends vscode.TreeItem {
             case 'operation':
                 const op = this.data as McpOperation;
                 return `Operation: ${op.type}\nStatus: ${op.status}\nCreated: ${new Date(op.timestamp).toLocaleString()}\nRetries: ${op.retryCount}/${op.maxRetries}`;
-            
+
             case 'conflict':
                 const conflict = this.data as Conflict;
                 return `Conflict: ${conflict.type}\nDescription: ${conflict.description}\nOperations: ${conflict.operations.length}\nCreated: ${new Date(conflict.timestamp).toLocaleString()}`;
-            
+
             default:
                 return this.label;
         }
@@ -287,13 +287,13 @@ export class OperationQueueView {
             vscode.commands.registerCommand('specforged.refreshQueue', () => {
                 this.provider.refresh();
             }),
-            
+
             vscode.commands.registerCommand('specforged.clearCompletedOperations', async () => {
                 await this.mcpSyncService.cleanupOldOperations(0.1); // Clean operations older than 6 minutes
                 this.provider.refresh();
                 vscode.window.showInformationMessage('Completed operations cleared');
             }),
-            
+
             vscode.commands.registerCommand('specforged.resolveConflict', async (conflictId: string) => {
                 const conflict = this.conflictResolver.getConflictById(conflictId);
                 if (!conflict) {
@@ -309,17 +309,17 @@ export class OperationQueueView {
                     vscode.window.showErrorMessage('Failed to resolve conflict');
                 }
             }),
-            
+
             vscode.commands.registerCommand('specforged.retryFailedOperations', async () => {
                 const queue = this.mcpSyncService.getOperationQueue();
                 const failedOps = queue.operations.filter(op => op.status === McpOperationStatus.FAILED);
-                
+
                 for (const op of failedOps) {
                     op.status = McpOperationStatus.PENDING;
                     op.retryCount = Math.min(op.retryCount + 1, op.maxRetries);
                     op.error = undefined;
                 }
-                
+
                 if (failedOps.length > 0) {
                     // Trigger processing
                     await this.mcpSyncService.processOperations();
@@ -329,11 +329,11 @@ export class OperationQueueView {
                     vscode.window.showInformationMessage('No failed operations to retry');
                 }
             }),
-            
+
             vscode.commands.registerCommand('specforged.showOperationDetails', (operation: McpOperation) => {
                 this.showOperationDetails(operation);
             }),
-            
+
             vscode.commands.registerCommand('specforged.forceSync', async () => {
                 await this.mcpSyncService.processOperations();
                 this.provider.refresh();

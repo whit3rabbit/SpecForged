@@ -97,7 +97,8 @@ def _validate_execution_prerequisites(
     if not design_file.exists():
         errors.append("Design document missing")
         suggestions.append(
-            "Use update_design() to create system architecture before executing tasks"
+            "Use update_design() to create system architecture before "
+            "executing tasks"
         )
     else:
         try:
@@ -105,10 +106,8 @@ def _validate_execution_prerequisites(
             if len(design_content) < 100:
                 errors.append("Design document too brief")
                 suggestions.append(
-                    (
-                        "Use update_design() to add comprehensive architecture "
-                        "and component details"
-                    )
+                    "Use update_design() to add comprehensive architecture "
+                    "and component details"
                 )
         except Exception:
             errors.append("Cannot read design document")
@@ -126,7 +125,11 @@ def _validate_execution_prerequisites(
             )
         )
 
-    return {"valid": len(errors) == 0, "errors": errors, "suggestions": suggestions}
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "suggestions": suggestions,
+    }
 
 
 def _load_specification_context(
@@ -159,7 +162,9 @@ def _load_specification_context(
     return context
 
 
-def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
+def setup_workflow_tools(
+    mcp: FastMCP, spec_manager: SpecificationManager
+) -> None:
     """Setup workflow-related MCP tools"""
 
     @mcp.tool()
@@ -180,7 +185,8 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
         Args:
             title: Task title
             description: Detailed task description
-            spec_id: The specification identifier. If omitted, uses the current spec.
+            spec_id: The specification identifier. If omitted, uses the
+                current spec.
             dependencies: List of task IDs this task depends on
             subtasks: List of subtask descriptions
             linked_requirements: List of requirement IDs this task
@@ -192,7 +198,8 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             return {
                 "status": "error",
                 "message": (
-                    "No specification selected. Provide spec_id or set_current_spec()."
+                    "No specification selected. Provide spec_id or "
+                    "set_current_spec()."
                 ),
             }
 
@@ -217,7 +224,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
             # Renumber tasks to maintain hierarchy
             spec = spec_manager.specs[effective_spec_id]
-            spec_manager.plan_generator._number_tasks_hierarchically(spec.tasks)
+            spec_manager.plan_generator._number_tasks_hierarchically(
+                spec.tasks
+            )
 
             spec_manager.save_specification(effective_spec_id)
 
@@ -230,7 +239,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 "task_id": task.id,
                 "task_number": task.task_number,
                 "title": task.title,
-                "message": (f"Task {task.task_number} added to implementation plan"),
+                "message": (
+                    f"Task {task.task_number} added to implementation plan"
+                ),
             }
 
         except Exception as e:
@@ -238,24 +249,29 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
     @mcp.tool()
     async def execute_task(
-        task_id: str, spec_id: Optional[str] = None, ctx: Optional[Context] = None
+        task_id: str,
+        spec_id: Optional[str] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Execute a specific task from the specification.
-        IMPORTANT: Loads requirements.md and design.md context before execution.
-        Updates task status and provides execution details with proper context.
-        Uses the current spec if spec_id is omitted.
+
+        IMPORTANT: Loads requirements.md and design.md context before
+        execution. Updates task status and provides execution details with
+        proper context. Uses the current spec if spec_id is omitted.
 
         Args:
             task_id: The task identifier to execute
-            spec_id: The specification identifier. If omitted, uses the current spec.
+            spec_id: The specification identifier. If omitted, uses the
+                current spec.
         """
         effective_spec_id = spec_id or spec_manager.current_spec_id
         if not effective_spec_id:
             return {
                 "status": "error",
                 "message": (
-                    "No specification selected. Provide spec_id or set_current_spec()."
+                    "No specification selected. Provide spec_id or "
+                    "set_current_spec()."
                 ),
             }
 
@@ -288,7 +304,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         # CRITICAL: Validate prerequisites before execution
-        validation = _validate_execution_prerequisites(spec_manager, effective_spec_id)
+        validation = _validate_execution_prerequisites(
+            spec_manager, effective_spec_id
+        )
 
         if not validation["valid"]:
             return {
@@ -298,30 +316,37 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 "suggestions": validation["suggestions"],
                 "help": {
                     "description": (
-                        "Tasks require completed requirements and " "design phases"
+                        "Tasks require completed requirements and "
+                        "design phases"
                     ),
                     "workflow": [
                         "1. Add requirements using add_requirement()",
                         "2. Create design using update_design()",
-                        "3. Generate tasks using generate_implementation_plan()",
+                        "3. Generate tasks using "
+                        "generate_implementation_plan()",
                         "4. Then execute tasks using execute_task()",
                     ],
                 },
             }
 
         # CRITICAL: Load specification context before execution
-        spec_context = _load_specification_context(spec_manager, effective_spec_id)
+        spec_context = _load_specification_context(
+            spec_manager, effective_spec_id
+        )
 
         if spec_context["error"]:
             return {
                 "status": "error",
                 "message": (
-                    f"Failed to load specification context: {spec_context['error']}"
+                    f"Failed to load specification context: "
+                    f"{spec_context['error']}"
                 ),
             }
 
         # Update task status
-        spec_manager.update_task_status(effective_spec_id, task_id, "in_progress")
+        spec_manager.update_task_status(
+            effective_spec_id, task_id, "in_progress"
+        )
 
         if ctx:
             await ctx.info(f"🚀 Executing task {task_id}: {task.title}")
@@ -345,10 +370,14 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             "linked_requirements": linked_requirements,
             "test_template": test_template,
             "execution_steps": [
-                "1. Review the requirements.md content above to understand user needs",
-                "2. Study the design.md content to follow the planned architecture",
-                "3. Implement the task following the design patterns and components",
-                "4. Ensure implementation satisfies the linked EARS requirements",
+                "1. Review the requirements.md content above to understand "
+                "user needs",
+                "2. Study the design.md content to follow the planned "
+                "architecture",
+                "3. Implement the task following the design patterns and "
+                "components",
+                "4. Ensure implementation satisfies the linked EARS "
+                "requirements",
                 "5. Create tests using the provided test template",
                 "6. Validate implementation against the specification",
             ],
@@ -379,11 +408,15 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
         await asyncio.sleep(1)
 
         if ctx:
-            await ctx.info("📝 Task marked as completed - ensure tests were created")
+            await ctx.info(
+                "📝 Task marked as completed - ensure tests were created"
+            )
             await ctx.report_progress(5, 6)
 
         # Mark as completed
-        spec_manager.update_task_status(effective_spec_id, task_id, "completed")
+        spec_manager.update_task_status(
+            effective_spec_id, task_id, "completed"
+        )
 
         if ctx:
             await ctx.report_progress(6, 6)
@@ -412,24 +445,29 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
     @mcp.tool()
     async def transition_workflow_phase(
-        target_phase: str, spec_id: Optional[str] = None, ctx: Optional[Context] = None
+        target_phase: str,
+        spec_id: Optional[str] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Transition the specification to a new workflow phase.
         Uses the current spec if spec_id is omitted.
+
         Valid phases: requirements, design, implementation_planning,
         execution, review, completed
 
         Args:
             target_phase: The target workflow phase
-            spec_id: The specification identifier. If omitted, uses the current spec.
+            spec_id: The specification identifier. If omitted, uses the
+                current spec.
         """
         effective_spec_id = spec_id or spec_manager.current_spec_id
         if not effective_spec_id:
             return {
                 "status": "error",
                 "message": (
-                    "No specification selected. Provide spec_id or set_current_spec()."
+                    "No specification selected. Provide spec_id or "
+                    "set_current_spec()."
                 ),
             }
         try:
@@ -440,7 +478,8 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
 
                 if ctx:
                     await ctx.info(
-                        f"Transitioned spec {effective_spec_id} to {target_phase} phase"
+                        f"Transitioned spec {effective_spec_id} to "
+                        f"{target_phase} phase"
                     )
 
                 return {
@@ -448,7 +487,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                     "spec_id": effective_spec_id,
                     "previous_phase": spec.current_phase.value,
                     "current_phase": target_phase,
-                    "message": (f"Workflow transitioned to {target_phase} phase"),
+                    "message": (
+                        f"Workflow transitioned to {target_phase} phase"
+                    ),
                 }
             else:
                 return {
@@ -457,96 +498,31 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 }
 
         except ValueError:
-            return {"status": "error", "message": f"Invalid phase: {target_phase}"}
+            return {
+                "status": "error",
+                "message": f"Invalid phase: {target_phase}",
+            }
 
     @mcp.tool()
-    async def bulk_check_tasks(
-        task_numbers: List[str],
+    async def get_next_available_tasks(
         spec_id: Optional[str] = None,
         ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
-        Mark multiple tasks as completed (check multiple checkboxes).
-        Uses the current spec if spec_id is omitted.
+        Get tasks that are ready to be worked on (all dependencies
+        completed). Uses the current spec if spec_id is omitted.
 
         Args:
-            task_numbers: List of hierarchical task numbers to check
-            spec_id: The specification identifier. If omitted, uses the current spec.
+            spec_id: The specification identifier. If omitted, uses the
+                current spec.
         """
         effective_spec_id = spec_id or spec_manager.current_spec_id
         if not effective_spec_id:
             return {
                 "status": "error",
                 "message": (
-                    "No specification selected. Provide spec_id or set_current_spec()."
-                ),
-            }
-
-        if effective_spec_id not in spec_manager.specs:
-            return {
-                "status": "error",
-                "message": f"Specification {effective_spec_id} not found",
-            }
-
-        results = []
-        success_count = 0
-
-        for task_number in task_numbers:
-            try:
-                success = spec_manager.check_task(effective_spec_id, task_number)
-                if success:
-                    success_count += 1
-                    results.append({"task_number": task_number, "status": "success"})
-                    if ctx:
-                        await ctx.info(f"Checked task {task_number}")
-                else:
-                    results.append(
-                        {
-                            "task_number": task_number,
-                            "status": "failed",
-                            "message": "Task not found",
-                        }
-                    )
-            except Exception as e:
-                results.append(
-                    {"task_number": task_number, "status": "error", "message": str(e)}
-                )
-
-        # Get updated stats
-        stats = spec_manager.get_completion_stats(effective_spec_id)
-
-        # Safely access stats with None check
-        progress_text = "0%"
-        if stats and "completion_percentage" in stats:
-            progress_text = f"{stats['completion_percentage']}%"
-
-        return {
-            "status": "success",
-            "spec_id": effective_spec_id,
-            "tasks_checked": success_count,
-            "total_requested": len(task_numbers),
-            "results": results,
-            "progress": progress_text,
-            "stats": stats,
-        }
-
-    @mcp.tool()
-    async def get_next_available_tasks(
-        spec_id: Optional[str] = None, ctx: Optional[Context] = None
-    ) -> Dict[str, Any]:
-        """
-        Get tasks that are ready to be worked on (all dependencies completed).
-        Uses the current spec if spec_id is omitted.
-
-        Args:
-            spec_id: The specification identifier. If omitted, uses the current spec.
-        """
-        effective_spec_id = spec_id or spec_manager.current_spec_id
-        if not effective_spec_id:
-            return {
-                "status": "error",
-                "message": (
-                    "No specification selected. Provide spec_id or set_current_spec()."
+                    "No specification selected. Provide spec_id or "
+                    "set_current_spec()."
                 ),
             }
 
@@ -566,7 +542,9 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
                 # Check if all dependencies are completed
                 deps_completed = True
                 for dep_id in task.dependencies:
-                    dep_task = next((t for t in all_tasks if t.id == dep_id), None)
+                    dep_task = next(
+                        (t for t in all_tasks if t.id == dep_id), None
+                    )
                     if dep_task and not dep_task.is_completed:
                         deps_completed = False
                         break
@@ -587,5 +565,7 @@ def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             "spec_id": effective_spec_id,
             "available_tasks": available_tasks,
             "count": len(available_tasks),
-            "message": (f"Found {len(available_tasks)} tasks ready to work on"),
+            "message": (
+                f"Found {len(available_tasks)} tasks ready to work on"
+            ),
         }

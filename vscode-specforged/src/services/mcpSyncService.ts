@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { 
-    McpOperation, 
-    McpOperationQueue, 
-    McpSyncState, 
+import {
+    McpOperation,
+    McpOperationQueue,
+    McpSyncState,
     McpOperationResult,
     McpOperationType,
     McpOperationStatus,
@@ -20,16 +20,16 @@ export class McpSyncService {
     private syncStateWatcher: vscode.FileSystemWatcher | undefined;
     private processingTimer: NodeJS.Timeout | undefined;
     private heartbeatTimer: NodeJS.Timeout | undefined;
-    
+
     private readonly OPERATION_QUEUE_FILE = '.vscode/mcp-operations.json';
     private readonly SYNC_STATE_FILE = '.vscode/specforge-sync.json';
     private readonly OPERATION_RESULTS_FILE = '.vscode/mcp-results.json';
-    
+
     private currentQueue: McpOperationQueue = {
         operations: [],
         version: 1
     };
-    
+
     private syncState: McpSyncState = {
         extensionOnline: true,
         mcpServerOnline: false,
@@ -53,20 +53,20 @@ export class McpSyncService {
         try {
             // Ensure .vscode directory exists
             await this.ensureVscodeDirectory();
-            
+
             // Load existing state
             await this.loadOperationQueue();
             await this.loadSyncState();
-            
+
             // Setup file watchers
             this.setupFileWatchers();
-            
+
             // Start processing timer
             this.startProcessingTimer();
-            
+
             // Start heartbeat
             this.startHeartbeat();
-            
+
             // Update sync state
             this.syncState.extensionOnline = true;
             await this.saveSyncState();
@@ -140,7 +140,7 @@ export class McpSyncService {
 
     private async processOperation(operation: McpOperation): Promise<void> {
         console.log(`Processing operation: ${operation.type} (${operation.id})`);
-        
+
         operation.status = McpOperationStatus.IN_PROGRESS;
         await this.saveOperationQueue();
 
@@ -157,7 +157,7 @@ export class McpSyncService {
             }
 
             success = result?.success !== false;
-            
+
             operation.status = success ? McpOperationStatus.COMPLETED : McpOperationStatus.FAILED;
             operation.result = result;
             operation.completedAt = new Date().toISOString();
@@ -193,10 +193,10 @@ export class McpSyncService {
             case McpOperationType.UPDATE_TASK_STATUS:
             case McpOperationType.DELETE_SPEC:
                 return false; // Handle file operations locally
-            
+
             case McpOperationType.HEARTBEAT:
                 return true; // Route status checks to server
-                
+
             default:
                 return true; // Route unknown operations to server
         }
@@ -210,11 +210,11 @@ export class McpSyncService {
         // Map operation to MCP method call
         const methodName = this.getHttpMethodName(operation.type);
         const response = await this.mcpManager.callHttpMcp(methodName, operation.params);
-        
+
         if (!response.success) {
             throw new Error(response.error || 'HTTP MCP call failed');
         }
-        
+
         return response.result;
     }
 
@@ -289,7 +289,7 @@ export class McpSyncService {
         this.syncState.mcpServerOnline = true;
         this.syncState.lastSync = new Date().toISOString();
         await this.saveSyncState();
-        
+
         return {
             success: true,
             message: 'Heartbeat received',
@@ -309,7 +309,7 @@ export class McpSyncService {
         // Watch for operation queue changes (MCP server adding operations)
         const queuePattern = new vscode.RelativePattern(workspaceFolder, this.OPERATION_QUEUE_FILE);
         this.operationQueueWatcher = vscode.workspace.createFileSystemWatcher(queuePattern);
-        
+
         this.operationQueueWatcher.onDidChange(async () => {
             try {
                 await this.loadOperationQueue();
@@ -323,7 +323,7 @@ export class McpSyncService {
         // Watch for sync state changes
         const syncPattern = new vscode.RelativePattern(workspaceFolder, this.SYNC_STATE_FILE);
         this.syncStateWatcher = vscode.workspace.createFileSystemWatcher(syncPattern);
-        
+
         this.syncStateWatcher.onDidChange(async () => {
             try {
                 await this.loadSyncState();
@@ -346,7 +346,7 @@ export class McpSyncService {
             const heartbeat = McpOperationFactory.createHeartbeatOperation(
                 vscode.extensions.getExtension('specforged.vscode-specforged')?.packageJSON?.version
             );
-            
+
             // Don't queue heartbeat, just update sync state
             this.syncState.lastSync = new Date().toISOString();
             await this.saveSyncState();
@@ -375,13 +375,13 @@ export class McpSyncService {
             const queueFile = vscode.Uri.joinPath(workspaceFolder.uri, this.OPERATION_QUEUE_FILE);
             const content = await vscode.workspace.fs.readFile(queueFile);
             const data = JSON.parse(new TextDecoder().decode(content));
-            
+
             this.currentQueue = {
                 operations: data.operations || [],
                 lastProcessed: data.lastProcessed,
                 version: data.version || 1
             };
-            
+
             console.log(`Loaded operation queue with ${this.currentQueue.operations.length} operations`);
         } catch (error) {
             // File doesn't exist or is invalid, start with empty queue
@@ -410,7 +410,7 @@ export class McpSyncService {
             const stateFile = vscode.Uri.joinPath(workspaceFolder.uri, this.SYNC_STATE_FILE);
             const content = await vscode.workspace.fs.readFile(stateFile);
             const data = JSON.parse(new TextDecoder().decode(content));
-            
+
             this.syncState = {
                 extensionOnline: true, // Always true when extension is running
                 mcpServerOnline: data.mcpServerOnline || false,
@@ -444,7 +444,7 @@ export class McpSyncService {
             if (!workspaceFolder) return;
 
             const resultsFile = vscode.Uri.joinPath(workspaceFolder.uri, this.OPERATION_RESULTS_FILE);
-            
+
             // Load existing results
             let results: McpOperationResult[] = [];
             try {
@@ -457,7 +457,7 @@ export class McpSyncService {
 
             // Add new result
             results.push(result);
-            
+
             // Keep only last 100 results
             if (results.length > 100) {
                 results = results.slice(-100);
@@ -475,7 +475,7 @@ export class McpSyncService {
         this.syncState.pendingOperations = this.currentQueue.operations.filter(
             op => op.status === McpOperationStatus.PENDING || op.status === McpOperationStatus.IN_PROGRESS
         ).length;
-        
+
         this.syncState.failedOperations = this.currentQueue.operations.filter(
             op => op.status === McpOperationStatus.FAILED && !McpOperationValidator.canRetry(op)
         ).length;
@@ -483,18 +483,18 @@ export class McpSyncService {
 
     async cleanupOldOperations(maxAgeHours: number = 24): Promise<void> {
         const initialCount = this.currentQueue.operations.length;
-        
+
         this.currentQueue.operations = this.currentQueue.operations.filter(op => {
             // Keep pending and in-progress operations
             if (op.status === McpOperationStatus.PENDING || op.status === McpOperationStatus.IN_PROGRESS) {
                 return true;
             }
-            
+
             // Keep failed operations that can be retried
             if (op.status === McpOperationStatus.FAILED && McpOperationValidator.canRetry(op)) {
                 return true;
             }
-            
+
             // Remove old operations
             return !McpOperationValidator.shouldExpire(op, maxAgeHours);
         });
@@ -517,7 +517,7 @@ export class McpSyncService {
         // Update sync state with specification changes
         const specIndex = this.syncState.specifications.findIndex(s => s.specId === specId);
         const now = new Date().toISOString();
-        
+
         if (specIndex >= 0) {
             this.syncState.specifications[specIndex].lastModified = now;
             this.syncState.specifications[specIndex].version++;
@@ -528,10 +528,10 @@ export class McpSyncService {
                 version: 1
             });
         }
-        
+
         this.syncState.lastSync = now;
         await this.saveSyncState();
-        
+
         console.log(`Notified specification change: ${specId} (${changeType})`);
     }
 
@@ -539,15 +539,15 @@ export class McpSyncService {
         if (this.operationQueueWatcher) {
             this.operationQueueWatcher.dispose();
         }
-        
+
         if (this.syncStateWatcher) {
             this.syncStateWatcher.dispose();
         }
-        
+
         if (this.processingTimer) {
             clearInterval(this.processingTimer);
         }
-        
+
         if (this.heartbeatTimer) {
             clearInterval(this.heartbeatTimer);
         }

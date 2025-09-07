@@ -17,7 +17,7 @@ export class SpecParser {
                 if (fileType === vscode.FileType.File) {
                     const filePath = vscode.Uri.joinPath(specDir, fileName);
                     const file = await this.readSpecificationFile(filePath);
-                    
+
                     if (file) {
                         switch (fileName) {
                             case 'spec.json':
@@ -54,7 +54,7 @@ export class SpecParser {
         try {
             const content = await vscode.workspace.fs.readFile(filePath);
             const stat = await vscode.workspace.fs.stat(filePath);
-            
+
             return {
                 path: filePath.fsPath,
                 content: Buffer.from(content).toString('utf8'),
@@ -101,14 +101,14 @@ export class SpecParser {
 
         for (const line of lines) {
             const trimmedLine = line.trim();
-            
+
             // Match checkbox pattern: - [x] 1.2.3. Task title
             const taskMatch = trimmedLine.match(/^-\s*(\[[ x]\])\s*([0-9.]+)\.\s*(.+)$/);
-            
+
             if (taskMatch) {
                 const [, checkbox, taskNumber, title] = taskMatch;
                 const status = checkbox === '[x]' ? 'completed' : 'pending';
-                
+
                 const task: Task = {
                     id: `task-${taskNumber}`,
                     title: title.trim(),
@@ -154,30 +154,30 @@ export class SpecParser {
     static parseRequirementsMarkdown(content: string): UserStory[] {
         const stories: UserStory[] = [];
         const sections = content.split(/## User Story/);
-        
+
         for (let i = 1; i < sections.length; i++) {
             const section = sections[i];
             const lines = section.split('\n');
-            
+
             // Extract story ID from first line
             const idMatch = lines[0].match(/^(\S+)/);
             const id = idMatch ? idMatch[1] : `US-${i.toString().padStart(3, '0')}`;
-            
+
             // Find story components
             let as_a = '';
             let i_want = '';
             let so_that = '';
-            
+
             for (const line of lines) {
                 const asMatch = line.match(/\*\*As a\*\*\s+(.+),?/);
                 const wantMatch = line.match(/\*\*I want\*\*\s+(.+),?/);
                 const soMatch = line.match(/\*\*So that\*\*\s+(.+)/);
-                
+
                 if (asMatch) as_a = asMatch[1];
                 if (wantMatch) i_want = wantMatch[1];
                 if (soMatch) so_that = soMatch[1];
             }
-            
+
             if (as_a && i_want && so_that) {
                 stories.push({
                     id,
@@ -188,17 +188,17 @@ export class SpecParser {
                 });
             }
         }
-        
+
         return stories;
     }
 
     static extractEARSRequirements(content: string): { pattern: string; requirement: string }[] {
         const requirements: { pattern: string; requirement: string }[] = [];
         const lines = content.split('\n');
-        
+
         for (const line of lines) {
             const trimmed = line.trim();
-            
+
             // Match EARS patterns
             const earsPatterns = [
                 /^WHEN\s+(.+)\s+THE SYSTEM SHALL\s+(.+)$/i,
@@ -207,7 +207,7 @@ export class SpecParser {
                 /^IF\s+(.+)\s+THEN THE SYSTEM SHALL\s+(.+)$/i,
                 /^THE SYSTEM SHALL\s+(.+)$/i
             ];
-            
+
             for (const pattern of earsPatterns) {
                 const match = trimmed.match(pattern);
                 if (match) {
@@ -219,7 +219,7 @@ export class SpecParser {
                 }
             }
         }
-        
+
         return requirements;
     }
 }

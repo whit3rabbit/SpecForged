@@ -5,29 +5,29 @@
       <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
     </linearGradient>
   </defs>
-  
+
   <!-- Background circle -->
   <circle cx="64" cy="64" r="60" fill="url(#gradient)" stroke="#1e40af" stroke-width="2"/>
-  
+
   <!-- Book spine -->
   <rect x="25" y="35" width="8" height="58" fill="#ffffff" opacity="0.9"/>
-  
+
   <!-- Book pages -->
   <rect x="33" y="35" width="60" height="58" fill="#ffffff" rx="2" ry="2"/>
-  
+
   <!-- Page lines representing specifications -->
   <line x1="40" y1="45" x2="80" y2="45" stroke="#1e3a8a" stroke-width="2" opacity="0.8"/>
   <line x1="40" y1="52" x2="85" y2="52" stroke="#3b82f6" stroke-width="2" opacity="0.6"/>
   <line x1="40" y1="59" x2="75" y2="59" stroke="#1e3a8a" stroke-width="2" opacity="0.8"/>
-  
+
   <!-- EARS notation symbol -->
   <text x="45" y="75" font-family="monospace" font-size="12" fill="#1e3a8a" font-weight="bold">WHEN</text>
   <text x="45" y="85" font-family="monospace" font-size="8" fill="#3b82f6">THE SYSTEM SHALL</text>
-  
+
   <!-- Checkmark for completed tasks -->
   <circle cx="85" cy="80" r="8" fill="#10b981"/>
   <polyline points="80,80 83,83 90,76" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  
+
   <!-- MCP connection indicator -->
   <circle cx="105" cy="45" r="6" fill="#f59e0b"/>
   <circle cx="105" cy="45" r="3" fill="#ffffff"/>

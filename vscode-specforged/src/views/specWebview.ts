@@ -90,15 +90,15 @@ export class SpecWebview {
                     </header>
 
                     <nav class="tab-nav">
-                        <button class="tab-button ${activeTab === 'requirements' ? 'active' : ''}" 
+                        <button class="tab-button ${activeTab === 'requirements' ? 'active' : ''}"
                                 onclick="switchTab('requirements')">
                             📋 Requirements
                         </button>
-                        <button class="tab-button ${activeTab === 'design' ? 'active' : ''}" 
+                        <button class="tab-button ${activeTab === 'design' ? 'active' : ''}"
                                 onclick="switchTab('design')">
                             🎨 Design
                         </button>
-                        <button class="tab-button ${activeTab === 'tasks' ? 'active' : ''}" 
+                        <button class="tab-button ${activeTab === 'tasks' ? 'active' : ''}"
                                 onclick="switchTab('tasks')">
                             ✅ Tasks ${this.getTasksBadge(spec)}
                         </button>
@@ -127,32 +127,32 @@ export class SpecWebview {
                 padding: 0;
                 line-height: 1.6;
             }
-            
+
             .container {
                 max-width: 1200px;
                 margin: 0 auto;
                 padding: 20px;
             }
-            
+
             .spec-header {
                 border-bottom: 2px solid var(--vscode-panel-border);
                 padding-bottom: 20px;
                 margin-bottom: 20px;
             }
-            
+
             .spec-header h1 {
                 margin: 0 0 10px 0;
                 font-size: 2em;
                 color: var(--vscode-textLink-foreground);
             }
-            
+
             .spec-meta {
                 display: flex;
                 gap: 15px;
                 align-items: center;
                 flex-wrap: wrap;
             }
-            
+
             .status {
                 padding: 4px 12px;
                 border-radius: 20px;
@@ -160,18 +160,18 @@ export class SpecWebview {
                 font-weight: bold;
                 text-transform: uppercase;
             }
-            
+
             .status-draft { background-color: #6c757d; color: white; }
             .status-in_review { background-color: #ffc107; color: black; }
             .status-approved { background-color: #17a2b8; color: white; }
             .status-in_progress { background-color: #fd7e14; color: white; }
             .status-completed { background-color: #28a745; color: white; }
-            
+
             .phase {
                 color: var(--vscode-descriptionForeground);
                 font-size: 0.9em;
             }
-            
+
             .progress {
                 background-color: var(--vscode-badge-background);
                 color: var(--vscode-badge-foreground);
@@ -179,14 +179,14 @@ export class SpecWebview {
                 border-radius: 12px;
                 font-size: 0.8em;
             }
-            
+
             .tab-nav {
                 display: flex;
                 gap: 2px;
                 margin-bottom: 20px;
                 border-bottom: 1px solid var(--vscode-panel-border);
             }
-            
+
             .tab-button {
                 background: transparent;
                 border: none;
@@ -197,20 +197,20 @@ export class SpecWebview {
                 font-size: 0.9em;
                 transition: all 0.2s ease;
             }
-            
+
             .tab-button:hover {
                 background-color: var(--vscode-list-hoverBackground);
             }
-            
+
             .tab-button.active {
                 border-bottom-color: var(--vscode-textLink-foreground);
                 color: var(--vscode-textLink-foreground);
             }
-            
+
             .content {
                 min-height: 400px;
             }
-            
+
             .ears-requirement {
                 background-color: var(--vscode-textBlockQuote-background);
                 border-left: 4px solid var(--vscode-textLink-foreground);
@@ -218,12 +218,12 @@ export class SpecWebview {
                 margin: 8px 0;
                 border-radius: 0 4px 4px 0;
             }
-            
+
             .ears-keyword {
                 font-weight: bold;
                 color: var(--vscode-debugTokenExpression-name);
             }
-            
+
             .task-item {
                 display: flex;
                 align-items: flex-start;
@@ -231,27 +231,27 @@ export class SpecWebview {
                 padding: 8px 0;
                 border-bottom: 1px solid var(--vscode-list-dropBackground);
             }
-            
+
             .task-checkbox {
                 margin-top: 2px;
                 cursor: pointer;
                 font-size: 1.2em;
             }
-            
+
             .task-content {
                 flex: 1;
             }
-            
+
             .task-title {
                 font-weight: 500;
                 margin-bottom: 4px;
             }
-            
+
             .task-description {
                 color: var(--vscode-descriptionForeground);
                 font-size: 0.9em;
             }
-            
+
             .task-meta {
                 display: flex;
                 gap: 10px;
@@ -259,7 +259,7 @@ export class SpecWebview {
                 font-size: 0.8em;
                 color: var(--vscode-descriptionForeground);
             }
-            
+
             .requirement-tag {
                 background-color: var(--vscode-badge-background);
                 color: var(--vscode-badge-foreground);
@@ -267,12 +267,12 @@ export class SpecWebview {
                 border-radius: 3px;
                 font-size: 0.7em;
             }
-            
+
             .task-completed {
                 opacity: 0.7;
                 text-decoration: line-through;
             }
-            
+
             .progress-bar {
                 width: 100%;
                 height: 8px;
@@ -281,13 +281,13 @@ export class SpecWebview {
                 overflow: hidden;
                 margin: 10px 0;
             }
-            
+
             .progress-fill {
                 height: 100%;
                 background-color: var(--vscode-progressBar-foreground);
                 transition: width 0.3s ease;
             }
-            
+
             pre {
                 background-color: var(--vscode-textBlockQuote-background);
                 padding: 16px;
@@ -295,7 +295,7 @@ export class SpecWebview {
                 overflow-x: auto;
                 border-left: 4px solid var(--vscode-textLink-foreground);
             }
-            
+
             code {
                 background-color: var(--vscode-textPreformat-background);
                 padding: 2px 4px;
@@ -320,7 +320,7 @@ export class SpecWebview {
 
     private renderRequirementsTab(spec: ParsedSpecification): string {
         const requirements = spec.files.requirements?.content || '';
-        
+
         if (!requirements.trim()) {
             return `
                 <div class="empty-state">
@@ -333,7 +333,7 @@ export class SpecWebview {
 
         // Parse EARS requirements from content
         const earsRequirements = SpecParser.extractEARSRequirements(requirements);
-        
+
         let html = `
             <div class="requirements-content">
                 <div class="toolbar">
@@ -376,7 +376,7 @@ export class SpecWebview {
 
     private renderDesignTab(spec: ParsedSpecification): string {
         const design = spec.files.design?.content || '';
-        
+
         if (!design.trim()) {
             return `
                 <div class="empty-state">
@@ -433,14 +433,14 @@ export class SpecWebview {
                         <button onclick="openFile('Tasks')" class="btn">📝 Edit Tasks</button>
                     </div>
                 </div>
-                
+
                 <div class="tasks-list">
         `;
 
         for (const task of sortedTasks) {
             const isCompleted = task.status === 'completed';
             const checkbox = isCompleted ? '☑️' : '⬜';
-            
+
             html += `
                 <div class="task-item ${isCompleted ? 'task-completed' : ''}">
                     <span class="task-checkbox" onclick="toggleTask('${task.task_number}')">${checkbox}</span>
@@ -450,7 +450,7 @@ export class SpecWebview {
                         <div class="task-meta">
                             ${task.linked_requirements.length > 0 ? `
                                 <div class="task-requirements">
-                                    ${task.linked_requirements.map(req => 
+                                    ${task.linked_requirements.map(req =>
                                         `<span class="requirement-tag">${req}</span>`
                                     ).join('')}
                                 </div>
@@ -474,41 +474,41 @@ export class SpecWebview {
     private highlightEARS(text: string): string {
         const keywords = ['WHEN', 'WHILE', 'WHERE', 'IF', 'THE SYSTEM SHALL', 'THEN THE SYSTEM SHALL'];
         let highlighted = text;
-        
+
         for (const keyword of keywords) {
             const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
             highlighted = highlighted.replace(regex, `<span class="ears-keyword">${keyword}</span>`);
         }
-        
+
         return highlighted;
     }
 
     private convertMarkdownToHtml(markdown: string): string {
         // Basic markdown conversion - in production, use a proper markdown parser
         let html = markdown;
-        
+
         // Headers
         html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
         html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
         html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-        
+
         // Code blocks
         html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-        
+
         // Inline code
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-        
+
         // Bold
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
+
         // Lists
         html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
         html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-        
+
         // Paragraphs
         html = html.replace(/\n\n/g, '</p><p>');
         html = '<p>' + html + '</p>';
-        
+
         return html;
     }
 
@@ -529,14 +529,14 @@ export class SpecWebview {
     private getWebviewScript(): string {
         return `
             const vscode = acquireVsCodeApi();
-            
+
             function switchTab(tab) {
                 vscode.postMessage({
                     command: 'switchTab',
                     tab: tab
                 });
             }
-            
+
             function toggleTask(taskNumber) {
                 vscode.postMessage({
                     command: 'toggleTask',
@@ -544,7 +544,7 @@ export class SpecWebview {
                     activeTab: 'tasks'
                 });
             }
-            
+
             function openFile(fileType) {
                 vscode.postMessage({
                     command: 'openFile',

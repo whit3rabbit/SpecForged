@@ -20,7 +20,7 @@ export interface SpecificationFileStructure {
 export class FileOperationService {
     private workspaceFolders: readonly vscode.WorkspaceFolder[];
     private specFolderNames = ['.specifications', 'specifications'];
-    
+
     constructor() {
         this.workspaceFolders = vscode.workspace.workspaceFolders || [];
     }
@@ -71,12 +71,12 @@ export class FileOperationService {
     }
 
     async createSpecification(
-        name: string, 
-        description: string = '', 
+        name: string,
+        description: string = '',
         specId?: string
     ): Promise<FileOperationResult> {
         const cleanSpecId = specId || this.generateSpecId(name);
-        
+
         // Find or create specifications directory
         let specDir = await this.findSpecificationDirectory();
         if (!specDir) {
@@ -96,7 +96,7 @@ export class FileOperationService {
 
         // Create individual spec directory
         const individualSpecDir = vscode.Uri.joinPath(specDir, cleanSpecId);
-        
+
         try {
             // Check if spec already exists
             try {
@@ -149,7 +149,7 @@ export class FileOperationService {
     }
 
     async updateSpecificationFile(
-        specId: string, 
+        specId: string,
         fileName: 'requirements.md' | 'design.md' | 'tasks.md' | 'spec.json',
         content: string
     ): Promise<FileOperationResult> {
@@ -163,7 +163,7 @@ export class FileOperationService {
         }
 
         const filePath = vscode.Uri.joinPath(specDir, specId, fileName);
-        
+
         try {
             await this.writeFile(filePath, content);
             return {
@@ -191,7 +191,7 @@ export class FileOperationService {
         }
 
         const individualSpecDir = vscode.Uri.joinPath(specDir, specId);
-        
+
         try {
             await vscode.workspace.fs.delete(individualSpecDir, { recursive: true });
             return {
@@ -221,13 +221,13 @@ export class FileOperationService {
         }
 
         const filePath = vscode.Uri.joinPath(specDir, specId, fileName);
-        
+
         try {
             const content = await this.readFile(filePath);
             return {
                 success: true,
                 message: `Read ${fileName} for specification '${specId}'`,
-                data: { 
+                data: {
                     content,
                     path: filePath.fsPath
                 }
@@ -258,7 +258,7 @@ export class FileOperationService {
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             const taskMatch = line.match(/^-\s*(\[[ x]\])\s*([0-9.]+)\.\s*(.+)$/);
-            
+
             if (taskMatch && taskMatch[2] === taskNumber) {
                 const checkbox = newStatus === 'completed' ? '[x]' : '[ ]';
                 const title = taskMatch[3];
@@ -293,7 +293,7 @@ export class FileOperationService {
         }
 
         const content = requirementsResult.data!.content as string;
-        
+
         // Generate story ID
         const storyCount = (content.match(/## User Story/g) || []).length;
         const storyId = `US-${(storyCount + 1).toString().padStart(3, '0')}`;
@@ -487,7 +487,7 @@ Tasks will appear in checkbox format like this:
 
 Use the extension or MCP tools to:
 - Toggle task completion status
-- Track progress automatically  
+- Track progress automatically
 - Link tasks to specific requirements
 - Estimate and track time
 `;

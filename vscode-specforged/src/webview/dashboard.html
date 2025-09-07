@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' vscode-resource:; script-src 'unsafe-inline' vscode-resource:; font-src vscode-resource:;">
+    <title>SpecForged MCP Dashboard</title>
+    <style>
+        :root {
+            --vscode-foreground: var(--vscode-editor-foreground);
+            --vscode-background: var(--vscode-editor-background);
+            --vscode-button-background: var(--vscode-button-background);
+            --vscode-button-foreground: var(--vscode-button-foreground);
+            --vscode-button-hoverBackground: var(--vscode-button-hoverBackground);
+            --vscode-input-background: var(--vscode-input-background);
+            --vscode-input-border: var(--vscode-input-border);
+            --vscode-badge-background: var(--vscode-badge-background);
+            --vscode-badge-foreground: var(--vscode-badge-foreground);
+            --vscode-progressBar-background: var(--vscode-progressBar-background);
+            --vscode-list-hoverBackground: var(--vscode-list-hoverBackground);
+            --vscode-list-activeSelectionBackground: var(--vscode-list-activeSelectionBackground);
+            --vscode-notifications-background: var(--vscode-notifications-background);
+            --vscode-notifications-border: var(--vscode-notifications-border);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            font-weight: var(--vscode-font-weight);
+            color: var(--vscode-foreground);
+            background: var(--vscode-background);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .dashboard-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--vscode-input-border);
+            background: var(--vscode-notifications-background);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .dashboard-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dashboard-title .icon {
+            font-size: 20px;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .btn.secondary {
+            background: transparent;
+            border: 1px solid var(--vscode-input-border);
+        }
+
+        .dashboard-content {
+            flex: 1;
+            overflow: auto;
+            padding: 16px 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--vscode-notifications-background);
+            border: 1px solid var(--vscode-notifications-border);
+            border-radius: 6px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-title {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            font-size: 16px;
+            opacity: 0.6;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .stat-description {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--vscode-notifications-background);
+            border: 1px solid var(--vscode-notifications-border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--vscode-input-border);
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .panel-content {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .client-list, .server-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .client-item, .server-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .client-item:hover, .server-item:hover {
+            background: var(--vscode-list-hoverBackground);
+            border-color: var(--vscode-input-border);
+        }
+
+        .client-info, .server-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.online {
+            background: #4CAF50;
+            box-shadow: 0 0 4px #4CAF50;
+        }
+
+        .status-indicator.offline {
+            background: #f44336;
+        }
+
+        .status-indicator.configured {
+            background: #2196F3;
+        }
+
+        .status-indicator.warning {
+            background: #FF9800;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .item-description {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-small {
+            background: transparent;
+            border: 1px solid var(--vscode-input-border);
+            color: var(--vscode-foreground);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .recommendation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--vscode-input-background);
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+        }
+
+        .recommendation-item.high {
+            border-left-color: #f44336;
+        }
+
+        .recommendation-item.medium {
+            border-left-color: #FF9800;
+        }
+
+        .recommendation-item.low {
+            border-left-color: #4CAF50;
+        }
+
+        .recommendation-icon {
+            font-size: 14px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .recommendation-content {
+            flex: 1;
+        }
+
+        .recommendation-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .recommendation-description {
+            font-size: 12px;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .loading::before {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--vscode-progressBar-background);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .empty-state-description {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--vscode-input-background);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--vscode-progressBar-background);
+            transition: width 0.3s ease;
+        }
+
+        .badge {
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .notification {
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            border-left: 4px solid;
+            font-size: 13px;
+        }
+
+        .notification.info {
+            background: rgba(33, 150, 243, 0.1);
+            border-left-color: #2196F3;
+            color: #2196F3;
+        }
+
+        .notification.warning {
+            background: rgba(255, 152, 0, 0.1);
+            border-left-color: #FF9800;
+            color: #FF9800;
+        }
+
+        .notification.success {
+            background: rgba(76, 175, 80, 0.1);
+            border-left-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .notification.error {
+            background: rgba(244, 67, 54, 0.1);
+            border-left-color: #f44336;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">
+                <span class="icon">🔧</span>
+                SpecForged MCP Dashboard
+            </h1>
+            <div class="dashboard-actions">
+                <button class="btn secondary" onclick="refreshData()">
+                    <span>↻</span> Refresh
+                </button>
+                <button class="btn" onclick="quickSetup()">
+                    <span>🚀</span> Quick Setup
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div id="notifications"></div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-title">MCP Clients</span>
+                        <span class="stat-icon">📱</span>
+                    </div>
+                    <div class="stat-value" id="total-clients">--</div>
+                    <div class="stat-description">
+                        <span id="configured-clients">--</span> configured
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-title">MCP Servers</span>
+                        <span class="stat-icon">🖥️</span>
+                    </div>
+                    <div class="stat-value" id="total-servers">--</div>
+                    <div class="stat-description">
+                        <span id="active-servers">--</span> active
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-title">Setup Progress</span>
+                        <span class="stat-icon">📊</span>
+                    </div>
+                    <div class="stat-value" id="setup-progress">--%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-title">Recommendations</span>
+                        <span class="stat-icon">💡</span>
+                    </div>
+                    <div class="stat-value" id="recommendations-count">--</div>
+                    <div class="stat-description">
+                        <span id="high-priority-recs">--</span> high priority
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        MCP Clients
+                        <button class="btn-small" onclick="addClient()">+ Add</button>
+                    </div>
+                    <div class="panel-content">
+                        <div id="clients-loading" class="loading">Loading clients...</div>
+                        <div id="clients-list" class="client-list" style="display: none;"></div>
+                        <div id="clients-empty" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">📱</div>
+                            <div class="empty-state-title">No MCP clients detected</div>
+                            <div class="empty-state-description">
+                                Install Claude, Cursor, Windsurf, or other MCP-enabled tools to get started.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        MCP Servers
+                        <button class="btn-small" onclick="browseServers()">Browse</button>
+                    </div>
+                    <div class="panel-content">
+                        <div id="servers-loading" class="loading">Loading servers...</div>
+                        <div id="servers-list" class="server-list" style="display: none;"></div>
+                        <div id="servers-empty" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">🖥️</div>
+                            <div class="empty-state-title">No MCP servers configured</div>
+                            <div class="empty-state-description">
+                                Configure servers like SpecForged, Context7, or others to enable MCP functionality.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-header">
+                    Setup Recommendations
+                </div>
+                <div class="panel-content">
+                    <div id="recommendations-loading" class="loading">Loading recommendations...</div>
+                    <div id="recommendations-list" class="recommendation-list" style="display: none;"></div>
+                    <div id="recommendations-empty" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">✅</div>
+                        <div class="empty-state-title">All set up!</div>
+                        <div class="empty-state-description">
+                            Your MCP ecosystem is properly configured. No recommendations at this time.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // VS Code API
+        const vscode = acquireVsCodeApi();
+
+        // State management
+        let dashboardData = null;
+        let refreshInterval = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('MCP Dashboard initialized');
+            loadDashboardData();
+            
+            // Set up auto-refresh every 30 seconds
+            refreshInterval = setInterval(loadDashboardData, 30000);
+        });
+
+        // Message handling from extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            
+            switch (message.command) {
+                case 'updateData':
+                    dashboardData = message.data;
+                    renderDashboard();
+                    break;
+                case 'showNotification':
+                    showNotification(message.type, message.message);
+                    break;
+                case 'operationComplete':
+                    showNotification('success', message.message);
+                    setTimeout(loadDashboardData, 1000); // Refresh after operation
+                    break;
+            }
+        });
+
+        // Load dashboard data
+        function loadDashboardData() {
+            vscode.postMessage({
+                command: 'loadData'
+            });
+        }
+
+        // Refresh data
+        function refreshData() {
+            showNotification('info', 'Refreshing MCP ecosystem data...');
+            vscode.postMessage({
+                command: 'refreshData'
+            });
+        }
+
+        // Quick setup
+        function quickSetup() {
+            vscode.postMessage({
+                command: 'quickSetup'
+            });
+        }
+
+        // Client actions
+        function configureClient(clientId) {
+            vscode.postMessage({
+                command: 'configureClient',
+                clientId: clientId
+            });
+        }
+
+        function testClientConnection(clientId) {
+            vscode.postMessage({
+                command: 'testClient',
+                clientId: clientId
+            });
+        }
+
+        function addClient() {
+            vscode.postMessage({
+                command: 'addClient'
+            });
+        }
+
+        // Server actions
+        function configureServer(serverName) {
+            vscode.postMessage({
+                command: 'configureServer',
+                serverName: serverName
+            });
+        }
+
+        function testServerConnection(serverName) {
+            vscode.postMessage({
+                command: 'testServer',
+                serverName: serverName
+            });
+        }
+
+        function browseServers() {
+            vscode.postMessage({
+                command: 'browseServers'
+            });
+        }
+
+        // Recommendation actions
+        function executeRecommendation(actionId, params) {
+            vscode.postMessage({
+                command: 'executeRecommendation',
+                actionId: actionId,
+                params: params
+            });
+        }
+
+        // Render dashboard
+        function renderDashboard() {
+            if (!dashboardData) return;
+
+            renderStats();
+            renderClients();
+            renderServers();
+            renderRecommendations();
+        }
+
+        // Render statistics
+        function renderStats() {
+            const { clients, servers, recommendations } = dashboardData;
+            
+            document.getElementById('total-clients').textContent = clients.length;
+            document.getElementById('configured-clients').textContent = 
+                clients.filter(c => c.configExists).length;
+            
+            document.getElementById('total-servers').textContent = servers.size;
+            document.getElementById('active-servers').textContent = 
+                Array.from(servers.values()).filter(s => s.isConfigured).length;
+            
+            const configuredClients = clients.filter(c => c.configExists).length;
+            const progressPercent = clients.length > 0 ? 
+                Math.round((configuredClients / clients.length) * 100) : 0;
+            
+            document.getElementById('setup-progress').textContent = `${progressPercent}%`;
+            document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+            
+            document.getElementById('recommendations-count').textContent = recommendations.length;
+            document.getElementById('high-priority-recs').textContent = 
+                recommendations.filter(r => r.priority === 'high').length;
+        }
+
+        // Render clients
+        function renderClients() {
+            const clientsList = document.getElementById('clients-list');
+            const clientsLoading = document.getElementById('clients-loading');
+            const clientsEmpty = document.getElementById('clients-empty');
+            
+            clientsLoading.style.display = 'none';
+            
+            if (!dashboardData.clients || dashboardData.clients.length === 0) {
+                clientsEmpty.style.display = 'block';
+                clientsList.style.display = 'none';
+                return;
+            }
+            
+            clientsEmpty.style.display = 'none';
+            clientsList.style.display = 'block';
+            
+            clientsList.innerHTML = dashboardData.clients.map(client => {
+                const statusClass = client.isInstalled ? 
+                    (client.configExists ? 'configured' : 'warning') : 'offline';
+                const statusText = client.isInstalled ? 
+                    (client.configExists ? 'Configured' : 'Not configured') : 'Not installed';
+                
+                return `
+                    <div class="client-item">
+                        <div class="client-info">
+                            <div class="status-indicator ${statusClass}"></div>
+                            <div class="item-details">
+                                <div class="item-name">${client.displayName}</div>
+                                <div class="item-description">
+                                    ${statusText}${client.version ? ` • ${client.version}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            ${client.isInstalled ? `
+                                <button class="btn-small" onclick="configureClient('${client.id}')">
+                                    ${client.configExists ? 'Reconfigure' : 'Configure'}
+                                </button>
+                                <button class="btn-small" onclick="testClientConnection('${client.id}')">
+                                    Test
+                                </button>
+                            ` : `
+                                <button class="btn-small" onclick="installClient('${client.id}')">
+                                    Install
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render servers
+        function renderServers() {
+            const serversList = document.getElementById('servers-list');
+            const serversLoading = document.getElementById('servers-loading');
+            const serversEmpty = document.getElementById('servers-empty');
+            
+            serversLoading.style.display = 'none';
+            
+            const servers = Array.from(dashboardData.servers.values());
+            
+            if (servers.length === 0) {
+                serversEmpty.style.display = 'block';
+                serversList.style.display = 'none';
+                return;
+            }
+            
+            serversEmpty.style.display = 'none';
+            serversList.style.display = 'block';
+            
+            serversList.innerHTML = servers.map(server => {
+                const statusClass = server.isConfigured ? 'configured' : 'offline';
+                const clientsText = server.clientsConfigured.length === 1 ? 
+                    '1 client' : `${server.clientsConfigured.length} clients`;
+                
+                return `
+                    <div class="server-item">
+                        <div class="server-info">
+                            <div class="status-indicator ${statusClass}"></div>
+                            <div class="item-details">
+                                <div class="item-name">${server.name}</div>
+                                <div class="item-description">
+                                    ${server.description || 'MCP Server'} • ${clientsText}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn-small" onclick="configureServer('${server.name}')">
+                                Configure
+                            </button>
+                            <button class="btn-small" onclick="testServerConnection('${server.name}')">
+                                Test
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render recommendations
+        function renderRecommendations() {
+            const recommendationsList = document.getElementById('recommendations-list');
+            const recommendationsLoading = document.getElementById('recommendations-loading');
+            const recommendationsEmpty = document.getElementById('recommendations-empty');
+            
+            recommendationsLoading.style.display = 'none';
+            
+            if (!dashboardData.recommendations || dashboardData.recommendations.length === 0) {
+                recommendationsEmpty.style.display = 'block';
+                recommendationsList.style.display = 'none';
+                return;
+            }
+            
+            recommendationsEmpty.style.display = 'none';
+            recommendationsList.style.display = 'block';
+            
+            recommendationsList.innerHTML = dashboardData.recommendations.map(rec => {
+                const iconMap = {
+                    install_client: '📱',
+                    configure_server: '⚙️',
+                    fix_config: '🔧',
+                    upgrade: '⬆️'
+                };
+                
+                return `
+                    <div class="recommendation-item ${rec.priority}">
+                        <div class="recommendation-icon">
+                            ${iconMap[rec.type] || '💡'}
+                        </div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-title">${rec.title}</div>
+                            <div class="recommendation-description">${rec.description}</div>
+                        </div>
+                        <button class="btn-small" onclick="executeRecommendation('${rec.action}', ${JSON.stringify(rec).replace(/"/g, '&quot;')})">
+                            Apply
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show notification
+        function showNotification(type, message) {
+            const notifications = document.getElementById('notifications');
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            notifications.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Install client helper
+        function installClient(clientId) {
+            vscode.postMessage({
+                command: 'installClient',
+                clientId: clientId
+            });
+        }
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specforged"
-version = "0.3.1"
+version = "0.3.2"
 description = "Spec-driven development workflow with mode classification and EARS notation"
 readme = "README.md"
 license = {text = "MIT"}
@@ -117,6 +117,9 @@ asyncio_mode = "auto"
 [tool.hatch.build.targets.wheel]
 packages = ["src/specforged"]
 
+[tool.smithery]
+server = "specforged.smithery_server:create_smithery_server"
+
 [dependency-groups]
 dev = [
     "black>=23.0.0",
@@ -125,6 +128,3 @@ dev = [
     "pre-commit>=4.3.0",
     "types-aiofiles>=24.1.0.20250822",
 ]
-
-[tool.smithery]
-server = "specforged.smithery_server:create_smithery_server"

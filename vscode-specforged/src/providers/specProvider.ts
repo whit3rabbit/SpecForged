@@ -13,9 +13,9 @@ export class SpecTreeItem extends vscode.TreeItem {
         public readonly data?: any
     ) {
         super(label, collapsibleState);
-        
+
         this.contextValue = itemType;
-        
+
         switch (itemType) {
             case 'spec':
                 this.iconPath = new vscode.ThemeIcon('book');
@@ -126,7 +126,7 @@ export class SpecProvider implements vscode.TreeDataProvider<SpecTreeItem> {
         if (!element) {
             // Root level - show specifications or empty state
             const specs = this.specManager.getSpecifications();
-            
+
             if (specs.length === 0) {
                 return [
                     new SpecTreeItem(
@@ -218,7 +218,7 @@ export class SpecProvider implements vscode.TreeDataProvider<SpecTreeItem> {
 
     private buildTaskTree(tasks: Task[], specId: string, parentNumber?: string): SpecTreeItem[] {
         const items: SpecTreeItem[] = [];
-        
+
         // Filter tasks for current level
         const currentLevelTasks = tasks.filter(task => {
             if (!parentNumber) {
@@ -233,12 +233,12 @@ export class SpecProvider implements vscode.TreeDataProvider<SpecTreeItem> {
 
         for (const task of TaskHelper.sortTasksByNumber(currentLevelTasks)) {
             // Check if this task has subtasks
-            const hasSubtasks = tasks.some(t => 
+            const hasSubtasks = tasks.some(t =>
                 TaskHelper.isSubtaskOf(t.task_number, task.task_number)
             );
 
-            const collapsibleState = hasSubtasks ? 
-                vscode.TreeItemCollapsibleState.Expanded : 
+            const collapsibleState = hasSubtasks ?
+                vscode.TreeItemCollapsibleState.Expanded :
                 vscode.TreeItemCollapsibleState.None;
 
             const taskItem = new SpecTreeItem(

@@ -18,7 +18,7 @@ suite('Extension Test Suite', () => {
 
     test('Should register SpecForged commands', async () => {
         const commands = await vscode.commands.getCommands(true);
-        
+
         const specforgedCommands = [
             'specforged.initialize',
             'specforged.createSpec',

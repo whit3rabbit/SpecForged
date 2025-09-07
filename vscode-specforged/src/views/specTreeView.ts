@@ -74,7 +74,7 @@ export class SpecTreeView {
             // Open the corresponding file
             const fileName = item.data.file;
             const command = this.getOpenCommand(fileName);
-            
+
             if (command) {
                 await vscode.commands.executeCommand(command, item.specId, fileName);
             }
@@ -119,7 +119,7 @@ export class SpecTreeView {
         const message = `Task ${item.taskNumber}: ${task.title}`;
         const status = task.status;
         const toggleAction = status === 'completed' ? 'Mark Pending' : 'Mark Completed';
-        
+
         vscode.window.showInformationMessage(
             message,
             toggleAction,
@@ -148,9 +148,9 @@ export class SpecTreeView {
     }
 
     private getTaskDetailsHtml(task: any): string {
-        const statusIcon = task.status === 'completed' ? '✅' : 
+        const statusIcon = task.status === 'completed' ? '✅' :
                           task.status === 'in_progress' ? '⚙️' : '⭕';
-        
+
         return `
             <!DOCTYPE html>
             <html>
@@ -218,36 +218,36 @@ export class SpecTreeView {
                     <div class="task-title">${statusIcon} ${task.title}</div>
                     <span class="status ${task.status}">${task.status.replace('_', ' ')}</span>
                 </div>
-                
+
                 ${task.description ? `
                 <div class="section">
                     <h3>Description</h3>
                     <p>${task.description}</p>
                 </div>
                 ` : ''}
-                
+
                 ${task.linked_requirements.length > 0 ? `
                 <div class="section">
                     <h3>Linked Requirements</h3>
                     <div class="requirements">
-                        ${task.linked_requirements.map((req: string) => 
+                        ${task.linked_requirements.map((req: string) =>
                             `<span class="requirement-tag">${req}</span>`
                         ).join('')}
                     </div>
                 </div>
                 ` : ''}
-                
+
                 ${task.dependencies.length > 0 ? `
                 <div class="section">
                     <h3>Dependencies</h3>
                     <ul>
-                        ${task.dependencies.map((dep: string) => 
+                        ${task.dependencies.map((dep: string) =>
                             `<li>${dep}</li>`
                         ).join('')}
                     </ul>
                 </div>
                 ` : ''}
-                
+
                 ${task.estimated_hours > 0 || task.actual_hours > 0 ? `
                 <div class="section">
                     <h3>Time Tracking</h3>

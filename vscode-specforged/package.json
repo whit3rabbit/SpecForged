@@ -1,8 +1,8 @@
 {
   "name": "vscode-specforged",
-  "displayName": "SpecForged",
-  "description": "VS Code extension for SpecForged MCP server integration with specification-driven development",
-  "version": "0.1.0",
+  "displayName": "SpecForged Enhanced",
+  "description": "Advanced MCP ecosystem management with unified configuration, auto-discovery, and seamless integration across Cursor, Windsurf, Claude, and more",
+  "version": "0.2.0",
   "publisher": "specforged",
   "repository": {
     "type": "git",
@@ -24,13 +24,25 @@
     "ears",
     "project-management",
     "claude",
-    "ai-development"
+    "ai-development",
+    "cursor",
+    "windsurf",
+    "configuration-sync",
+    "mcp-client",
+    "mcp-server",
+    "ecosystem",
+    "discovery",
+    "automation"
   ],
   "activationEvents": [
     "workspaceContains:**/.specifications/**",
     "workspaceContains:**/specifications/**",
     "onCommand:specforged.initialize",
-    "onCommand:specforged.setupMcp"
+    "onCommand:specforged.setupMcp",
+    "onCommand:specforged.discoverMcpEcosystem",
+    "onCommand:specforged.quickMcpSetup",
+    "onCommand:specforged.openMcpDashboard",
+    "onFileSystem:mcp"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -45,6 +57,26 @@
           "id": "specforged.operationQueue",
           "name": "MCP Operations",
           "when": "specforged.mcpSyncEnabled"
+        },
+        {
+          "id": "specforged.mcpDashboard",
+          "name": "MCP Dashboard",
+          "when": "specforged.enableDashboard"
+        },
+        {
+          "id": "specforged.mcpClients",
+          "name": "MCP Clients",
+          "when": "specforged.hasClients"
+        },
+        {
+          "id": "specforged.mcpServers",
+          "name": "MCP Servers", 
+          "when": "specforged.hasServers"
+        },
+        {
+          "id": "specforged.settings",
+          "name": "Settings",
+          "when": "specforged.enableDashboard"
         }
       ]
     },
@@ -213,6 +245,156 @@
         "title": "Test MCP Connection",
         "category": "SpecForged",
         "icon": "$(pulse)"
+      },
+      {
+        "command": "specforged.discoverMcpEcosystem",
+        "title": "Discover MCP Ecosystem",
+        "category": "SpecForged Enhanced",
+        "icon": "$(search)"
+      },
+      {
+        "command": "specforged.refreshMcpDetection",
+        "title": "Refresh MCP Detection",
+        "category": "SpecForged Enhanced",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "specforged.showMcpStatus",
+        "title": "Show MCP Status Report",
+        "category": "SpecForged Enhanced",
+        "icon": "$(info)"
+      },
+      {
+        "command": "specforged.quickMcpSetup",
+        "title": "Quick MCP Setup",
+        "category": "SpecForged Enhanced",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "specforged.configureAllMcp",
+        "title": "Configure All MCP Clients",
+        "category": "SpecForged Enhanced",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "specforged.selectMcpClient",
+        "title": "Select MCP Client",
+        "category": "SpecForged Enhanced",
+        "icon": "$(selection)"
+      },
+      {
+        "command": "specforged.setupMcpForClient",
+        "title": "Setup MCP for Client",
+        "category": "SpecForged Enhanced",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "specforged.createSyncProfile",
+        "title": "Create Sync Profile",
+        "category": "SpecForged Sync",
+        "icon": "$(add)"
+      },
+      {
+        "command": "specforged.applySyncProfile",
+        "title": "Apply Sync Profile",
+        "category": "SpecForged Sync",
+        "icon": "$(play)"
+      },
+      {
+        "command": "specforged.manageSyncProfiles",
+        "title": "Manage Sync Profiles",
+        "category": "SpecForged Sync",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "specforged.syncConfigToClients",
+        "title": "Sync Config to Clients",
+        "category": "SpecForged Sync",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "specforged.browseServers",
+        "title": "Browse MCP Servers",
+        "category": "SpecForged Servers",
+        "icon": "$(library)"
+      },
+      {
+        "command": "specforged.installServer",
+        "title": "Install MCP Server",
+        "category": "SpecForged Servers",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "specforged.testServerConnection",
+        "title": "Test Server Connection",
+        "category": "SpecForged Servers",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "specforged.manageServers",
+        "title": "Manage MCP Servers",
+        "category": "SpecForged Servers",
+        "icon": "$(server-process)"
+      },
+      {
+        "command": "specforged.backupConfigurations",
+        "title": "Backup Configurations",
+        "category": "SpecForged Backup",
+        "icon": "$(archive)"
+      },
+      {
+        "command": "specforged.restoreConfiguration",
+        "title": "Restore Configuration",
+        "category": "SpecForged Backup",
+        "icon": "$(history)"
+      },
+      {
+        "command": "specforged.manageBackups",
+        "title": "Manage Backups",
+        "category": "SpecForged Backup",
+        "icon": "$(database)"
+      },
+      {
+        "command": "specforged.createProjectFromTemplate",
+        "title": "Create Project from Template",
+        "category": "SpecForged Templates",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "specforged.shareProjectConfig",
+        "title": "Share Project Config",
+        "category": "SpecForged Templates",
+        "icon": "$(share)"
+      },
+      {
+        "command": "specforged.diagnoseConnections",
+        "title": "Diagnose Connections",
+        "category": "SpecForged Diagnostics",
+        "icon": "$(debug)"
+      },
+      {
+        "command": "specforged.generateDiagnosticReport",
+        "title": "Generate Diagnostic Report",
+        "category": "SpecForged Diagnostics",
+        "icon": "$(output)"
+      },
+      {
+        "command": "specforged.troubleshootSetup",
+        "title": "Troubleshoot Setup",
+        "category": "SpecForged Diagnostics",
+        "icon": "$(question)"
+      },
+      {
+        "command": "specforged.openMcpDashboard",
+        "title": "Open MCP Dashboard",
+        "category": "SpecForged Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "specforged.openSettings",
+        "title": "Open Settings",
+        "category": "SpecForged Settings",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -445,6 +627,126 @@
           "minimum": 1000,
           "maximum": 60000,
           "description": "Connection timeout in milliseconds for HTTP servers"
+        },
+        "specforged.autoDiscovery": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically discover MCP clients on startup"
+        },
+        "specforged.discoveryInterval": {
+          "type": "number",
+          "default": 300000,
+          "minimum": 60000,
+          "maximum": 3600000,
+          "description": "Interval in milliseconds for auto-discovery refresh (5-60 minutes)"
+        },
+        "specforged.enableDashboard": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable unified MCP dashboard webview"
+        },
+        "specforged.showRecommendations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show setup recommendations and suggestions"
+        },
+        "specforged.enableBackups": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic configuration backups"
+        },
+        "specforged.backupRetentionDays": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 365,
+          "description": "Number of days to keep configuration backups"
+        },
+        "specforged.syncProfiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "enabled": { "type": "boolean" }
+            }
+          },
+          "default": [],
+          "description": "Saved sync profiles for configuration management"
+        },
+        "specforged.preferredProtocol": {
+          "type": "string",
+          "default": "stdio",
+          "enum": ["stdio", "http", "websocket"],
+          "enumDescriptions": [
+            "Standard input/output protocol (local servers)",
+            "HTTP protocol (remote servers, cloud)",
+            "WebSocket protocol (real-time communication)"
+          ],
+          "description": "Preferred MCP protocol for new connections"
+        },
+        "specforged.retryAttempts": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Number of connection retry attempts for MCP servers"
+        },
+        "specforged.retryDelay": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Delay in milliseconds between connection retries"
+        },
+        "specforged.enableTelemetry": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable anonymous usage telemetry to improve the extension"
+        },
+        "specforged.debugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug mode for troubleshooting"
+        },
+        "specforged.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["error", "warn", "info", "debug", "trace"],
+          "description": "Logging level for extension output"
+        },
+        "specforged.serverRegistry": {
+          "type": "string",
+          "default": "https://registry.mcp.dev",
+          "description": "MCP server registry URL for browsing available servers"
+        },
+        "specforged.customClientPaths": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "description": "Custom paths for MCP client configurations (key: client_id, value: path)"
+        },
+        "specforged.enableNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for MCP operations and status changes"
+        },
+        "specforged.quickSetupPreferences": {
+          "type": "object",
+          "properties": {
+            "skipClientSelection": { "type": "boolean" },
+            "autoConfigureSpecForged": { "type": "boolean" },
+            "createDefaultProfile": { "type": "boolean" }
+          },
+          "default": {
+            "skipClientSelection": false,
+            "autoConfigureSpecForged": true,
+            "createDefaultProfile": true
+          },
+          "description": "Preferences for quick setup workflow"
         }
       }
     }

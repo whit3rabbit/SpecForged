@@ -20,34 +20,34 @@ export class McpCommandHandler {
             vscode.commands.registerCommand('specforged.mcp.updateDesign', this.handleUpdateDesign.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.updateTasks', this.handleUpdateTasks.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.deleteSpec', this.handleDeleteSpec.bind(this)),
-            
+
             // Task operations
             vscode.commands.registerCommand('specforged.mcp.updateTaskStatus', this.handleUpdateTaskStatus.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.addUserStory', this.handleAddUserStory.bind(this)),
-            
+
             // File operations
             vscode.commands.registerCommand('specforged.mcp.createFile', this.handleCreateFile.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.readFile', this.handleReadFile.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.writeFile', this.handleWriteFile.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.deleteFile', this.handleDeleteFile.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.createDirectory', this.handleCreateDirectory.bind(this)),
-            
+
             // Sync operations
             vscode.commands.registerCommand('specforged.mcp.getSyncStatus', this.handleGetSyncStatus.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.forcSync', this.handleForceSync.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.listSpecifications', this.handleListSpecifications.bind(this)),
-            
+
             // Conflict operations
             vscode.commands.registerCommand('specforged.mcp.getConflicts', this.handleGetConflicts.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.resolveConflict', this.handleResolveConflict.bind(this)),
-            
+
             // Queue operations
             vscode.commands.registerCommand('specforged.mcp.queueOperation', this.handleQueueOperation.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.getOperationQueue', this.handleGetOperationQueue.bind(this))
         ];
 
         context.subscriptions.push(...commands);
-        
+
         console.log('MCP commands registered successfully');
     }
 
@@ -58,7 +58,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: createSpec', params);
-            
+
             const result = await this.fileOperationService.createSpecification(
                 params.name,
                 params.description || '',
@@ -89,7 +89,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: updateRequirements', { specId: params.specId });
-            
+
             const result = await this.fileOperationService.updateSpecificationFile(
                 params.specId,
                 'requirements.md',
@@ -119,7 +119,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: updateDesign', { specId: params.specId });
-            
+
             const result = await this.fileOperationService.updateSpecificationFile(
                 params.specId,
                 'design.md',
@@ -149,7 +149,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: updateTasks', { specId: params.specId });
-            
+
             const result = await this.fileOperationService.updateSpecificationFile(
                 params.specId,
                 'tasks.md',
@@ -178,7 +178,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: deleteSpec', { specId: params.specId });
-            
+
             const result = await this.fileOperationService.deleteSpecification(params.specId);
 
             if (result.success) {
@@ -205,7 +205,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: updateTaskStatus', params);
-            
+
             const result = await this.fileOperationService.updateTaskStatus(
                 params.specId,
                 params.taskNumber,
@@ -238,7 +238,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: addUserStory', { specId: params.specId });
-            
+
             const result = await this.fileOperationService.addUserStory(
                 params.specId,
                 params.asA,
@@ -270,7 +270,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: createFile', { path: params.path });
-            
+
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
                 return {
@@ -303,7 +303,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: readFile', { path: params.path });
-            
+
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
                 return {
@@ -320,7 +320,7 @@ export class McpCommandHandler {
             return {
                 success: true,
                 message: `File read: ${params.path}`,
-                data: { 
+                data: {
                     content: decoder.decode(content),
                     path: filePath.fsPath
                 }
@@ -340,7 +340,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: writeFile', { path: params.path });
-            
+
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
                 return {
@@ -373,7 +373,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: deleteFile', { path: params.path });
-            
+
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
                 return {
@@ -404,7 +404,7 @@ export class McpCommandHandler {
     }): Promise<FileOperationResult> {
         try {
             console.log('MCP Command: createDirectory', { path: params.path });
-            
+
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
                 return {
@@ -434,7 +434,7 @@ export class McpCommandHandler {
     private async handleGetSyncStatus(): Promise<any> {
         try {
             console.log('MCP Command: getSyncStatus');
-            
+
             const syncState = this.mcpSyncService.getSyncState();
             const conflicts = this.conflictResolver.getActiveConflicts();
 
@@ -464,13 +464,13 @@ export class McpCommandHandler {
     private async handleForceSync(): Promise<any> {
         try {
             console.log('MCP Command: forceSync');
-            
+
             // Process pending operations
             await this.mcpSyncService.processOperations();
-            
+
             // Clean up old operations
             await this.mcpSyncService.cleanupOldOperations();
-            
+
             return {
                 success: true,
                 message: 'Force sync completed',
@@ -503,9 +503,9 @@ export class McpCommandHandler {
     private async handleGetConflicts(): Promise<any> {
         try {
             console.log('MCP Command: getConflicts');
-            
+
             const conflicts = this.conflictResolver.getActiveConflicts();
-            
+
             return {
                 success: true,
                 message: `Found ${conflicts.length} active conflicts`,
@@ -526,12 +526,12 @@ export class McpCommandHandler {
     }): Promise<any> {
         try {
             console.log('MCP Command: resolveConflict', params);
-            
+
             const resolved = await this.conflictResolver.resolveConflict(
                 params.conflictId,
                 params.resolution as any
             );
-            
+
             return {
                 success: resolved,
                 message: resolved ? 'Conflict resolved' : 'Failed to resolve conflict',
@@ -553,16 +553,16 @@ export class McpCommandHandler {
     }): Promise<any> {
         try {
             console.log('MCP Command: queueOperation', { type: params.type });
-            
+
             const operation = McpOperationFactory.createOperation(
                 params.type as McpOperationType,
                 params.params,
                 params.priority || 1,
                 'mcp'
             );
-            
+
             await this.mcpSyncService.queueOperation(operation);
-            
+
             return {
                 success: true,
                 message: 'Operation queued successfully',
@@ -580,9 +580,9 @@ export class McpCommandHandler {
     private async handleGetOperationQueue(): Promise<any> {
         try {
             console.log('MCP Command: getOperationQueue');
-            
+
             const queue = this.mcpSyncService.getOperationQueue();
-            
+
             return {
                 success: true,
                 message: `Found ${queue.operations.length} operations in queue`,

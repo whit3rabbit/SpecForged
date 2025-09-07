@@ -130,6 +130,51 @@ pipx uninstall specforged
 
 ⚠️ **Important**: For local development work, you need MCP servers that can write to your project files. HTTP-based deployments run on remote servers and cannot write to your local project directories.
 
+## Cloud Deployment (Smithery)
+
+SpecForged can be deployed to [Smithery.ai](https://smithery.ai) for cloud-hosted MCP access:
+
+### Configuration Files
+
+The repository includes the required Smithery configuration:
+
+- **`smithery.yaml`**: Container runtime configuration
+- **`Dockerfile`**: Multi-stage build with Python + uv
+- **HTTP Server**: Streamable HTTP MCP server via `main_http.py`
+
+### Deployment Process
+
+1. **Fork/Clone** this repository to your GitHub account
+2. **Connect to Smithery**: Visit [smithery.ai/new](https://smithery.ai/new) and connect your GitHub repo
+3. **Deploy**: Click "Deploy" - Smithery will build the Docker container and host the MCP server
+4. **Access**: Your server will be available at `https://server.smithery.ai/your-server/mcp`
+
+### Features Available in Cloud Deployment
+
+- ✅ **Mode Classification**: Intelligent routing of user requests
+- ✅ **Specification Analysis**: Read and analyze existing specifications
+- ✅ **Requirements Guidance**: EARS notation and requirements advice
+- ✅ **Workflow Planning**: Task generation and project planning
+- ❌ **File Modifications**: Disabled for security (use local installation for development)
+
+### Usage with MCP Clients
+
+Configure your MCP client to use the Smithery-hosted server:
+
+```json
+{
+  "mcpServers": {
+    "specforged": {
+      "command": "curl",
+      "args": ["-X", "POST", "https://server.smithery.ai/your-server/mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+**Recommendation**: Use Smithery deployment for demonstrations and read-only analysis, but prefer local installation (`pipx install specforged`) for active development work.
+
 ## IDE & Host Integration
 
 Below are collapsible, focused setup guides. Expand only what you need.

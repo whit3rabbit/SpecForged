@@ -123,7 +123,7 @@ export interface HeartbeatOperation extends McpOperationBase {
     };
 }
 
-export type McpOperation = 
+export type McpOperation =
     | CreateSpecOperation
     | UpdateRequirementsOperation
     | UpdateDesignOperation
@@ -313,7 +313,7 @@ export class McpOperationValidator {
     }
 
     static canRetry(operation: McpOperation): boolean {
-        return operation.status === McpOperationStatus.FAILED && 
+        return operation.status === McpOperationStatus.FAILED &&
                operation.retryCount < operation.maxRetries;
     }
 
@@ -321,7 +321,7 @@ export class McpOperationValidator {
         const operationTime = new Date(operation.timestamp).getTime();
         const now = Date.now();
         const maxAge = maxAgeHours * 60 * 60 * 1000; // Convert to milliseconds
-        
+
         return (now - operationTime) > maxAge;
     }
 }

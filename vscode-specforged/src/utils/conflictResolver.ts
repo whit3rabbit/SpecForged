@@ -99,7 +99,7 @@ export class ConflictResolver {
 
     async detectConflict(operation: McpOperation, existingOperations: McpOperation[]): Promise<Conflict | null> {
         // Check for duplicate operations
-        const duplicate = existingOperations.find(existing => 
+        const duplicate = existingOperations.find(existing =>
             existing.id !== operation.id &&
             existing.type === operation.type &&
             JSON.stringify(existing.params) === JSON.stringify(operation.params) &&
@@ -128,7 +128,7 @@ export class ConflictResolver {
         // Check if operation is outdated (timestamp is too old)
         const operationAge = Date.now() - new Date(operation.timestamp).getTime();
         const maxAge = 5 * 60 * 1000; // 5 minutes
-        
+
         if (operationAge > maxAge && operation.status === McpOperationStatus.PENDING) {
             return this.createConflict(
                 ConflictType.OUTDATED_OPERATION,
@@ -160,16 +160,16 @@ export class ConflictResolver {
 
         try {
             const success = await this.applyResolution(conflict, finalResolution);
-            
+
             if (success) {
                 conflict.resolved = true;
                 conflict.resolution = finalResolution;
                 conflict.resolvedBy = resolution ? 'user' : 'system';
                 conflict.resolvedAt = new Date().toISOString();
-                
+
                 console.log(`Resolved conflict ${conflictId} with resolution: ${finalResolution}`);
             }
-            
+
             return success;
         } catch (error) {
             console.error(`Failed to resolve conflict ${conflictId}:`, error);
@@ -181,19 +181,19 @@ export class ConflictResolver {
         switch (resolution) {
             case ConflictResolution.EXTENSION_WINS:
                 return this.applyExtensionWins(conflict);
-            
+
             case ConflictResolution.MCP_WINS:
                 return this.applyMcpWins(conflict);
-            
+
             case ConflictResolution.MERGE:
                 return this.applyMerge(conflict);
-            
+
             case ConflictResolution.RETRY:
                 return this.applyRetry(conflict);
-            
+
             case ConflictResolution.CANCEL:
                 return this.applyCancel(conflict);
-            
+
             default:
                 return false;
         }
@@ -247,7 +247,7 @@ export class ConflictResolver {
     private async applyCancel(conflict: Conflict): Promise<boolean> {
         // Cancel all operations in conflict
         for (const operation of conflict.operations) {
-            if (operation.status === McpOperationStatus.PENDING || 
+            if (operation.status === McpOperationStatus.PENDING ||
                 operation.status === McpOperationStatus.IN_PROGRESS) {
                 operation.status = McpOperationStatus.CANCELLED;
                 operation.error = 'Cancelled due to conflict resolution';
@@ -259,25 +259,25 @@ export class ConflictResolver {
     private async attemptMerge(conflict: Conflict): Promise<boolean> {
         // This is a simplified merge implementation
         // In practice, this would need to be much more sophisticated
-        
+
         const operations = conflict.operations;
         if (operations.length !== 2) {
             return false; // Can only merge two operations currently
         }
 
         const [op1, op2] = operations;
-        
+
         // Only merge if they're the same type and resource
-        if (op1.type !== op2.type || 
+        if (op1.type !== op2.type ||
             this.getResourceIdentifier(op1) !== this.getResourceIdentifier(op2)) {
             return false;
         }
 
         // For text content operations, attempt a simple merge
-        if (op1.type === McpOperationType.UPDATE_REQUIREMENTS || 
+        if (op1.type === McpOperationType.UPDATE_REQUIREMENTS ||
             op1.type === McpOperationType.UPDATE_DESIGN ||
             op1.type === McpOperationType.UPDATE_TASKS) {
-            
+
             return this.mergeTextContent(op1 as any, op2 as any);
         }
 
@@ -288,24 +288,24 @@ export class ConflictResolver {
         // This is a very basic merge - in practice you'd want something more sophisticated
         const content1 = op1.params.content || '';
         const content2 = op2.params.content || '';
-        
+
         // If contents are the same, no conflict
         if (content1 === content2) {
             op2.status = McpOperationStatus.CANCELLED;
             op2.error = 'Duplicate content, merged with first operation';
             return true;
         }
-        
+
         // Simple line-based merge
         const lines1 = content1.split('\n');
         const lines2 = content2.split('\n');
         const mergedLines = [...new Set([...lines1, ...lines2])]; // Remove duplicates
-        
+
         // Update the first operation with merged content
         op1.params.content = mergedLines.join('\n');
         op2.status = McpOperationStatus.CANCELLED;
         op2.error = 'Merged with first operation';
-        
+
         return true;
     }
 
@@ -365,17 +365,17 @@ export class ConflictResolver {
         const resourceId = this.getResourceIdentifier(operation);
         const operationTime = new Date(operation.timestamp).getTime();
         const concurrencyWindow = 60 * 1000; // 1 minute
-        
+
         return existingOperations.filter(existing => {
             if (existing.id === operation.id) return false;
-            
+
             const existingResourceId = this.getResourceIdentifier(existing);
             if (resourceId !== existingResourceId) return false;
-            
+
             const existingTime = new Date(existing.timestamp).getTime();
             const timeDiff = Math.abs(operationTime - existingTime);
-            
-            return timeDiff <= concurrencyWindow && 
+
+            return timeDiff <= concurrencyWindow &&
                    existing.status !== McpOperationStatus.COMPLETED &&
                    existing.status !== McpOperationStatus.CANCELLED;
         });
@@ -399,13 +399,13 @@ export class ConflictResolver {
     }
 
     private createConflict(
-        type: ConflictType, 
-        operations: McpOperation[], 
+        type: ConflictType,
+        operations: McpOperation[],
         description: string
     ): Conflict {
         const conflictId = `conflict-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         const strategy = this.resolutionStrategies.get(type);
-        
+
         const conflict: Conflict = {
             id: conflictId,
             type,
@@ -417,12 +417,12 @@ export class ConflictResolver {
         };
 
         this.conflicts.set(conflictId, conflict);
-        
+
         // Auto-resolve if possible
         if (strategy?.autoResolve) {
             setTimeout(() => this.resolveConflict(conflictId), 100);
         }
-        
+
         return conflict;
     }
 
@@ -460,10 +460,10 @@ export class ConflictResolver {
 
     async cleanupResolvedConflicts(maxAgeHours: number = 24): Promise<void> {
         const cutoff = Date.now() - (maxAgeHours * 60 * 60 * 1000);
-        
+
         for (const [id, conflict] of this.conflicts.entries()) {
-            if (conflict.resolved && 
-                conflict.resolvedAt && 
+            if (conflict.resolved &&
+                conflict.resolvedAt &&
                 new Date(conflict.resolvedAt).getTime() < cutoff) {
                 this.conflicts.delete(id);
             }

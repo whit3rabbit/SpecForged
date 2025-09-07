@@ -109,10 +109,10 @@ export class StatusBarManager {
 
     private updateProgressStatus(): void {
         const current = this.specManager.getCurrentSpecification();
-        
+
         if (current && current.spec.tasks.length > 0) {
             const progress = TaskHelper.calculateProgress(current.spec.tasks);
-            
+
             if (progress.total > 0) {
                 const icon = this.getProgressIcon(progress.percentage);
                 this.progressStatusItem.text = `${icon} ${progress.percentage}%`;
@@ -164,7 +164,7 @@ export class StatusBarManager {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
         }
-        
+
         this.statusBarItem.dispose();
         this.mcpStatusItem.dispose();
         this.progressStatusItem.dispose();

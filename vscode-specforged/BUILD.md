@@ -20,7 +20,7 @@ This guide covers how to build, test, and package the SpecForged VS Code extensi
    ```bash
    npm run compile
    ```
-   
+
    Or watch for changes:
    ```bash
    npm run watch
@@ -61,7 +61,7 @@ npm run lint
    ```bash
    npm run package
    ```
-   
+
    This creates a `.vsix` file that can be installed in VS Code.
 
 3. **Install the packaged extension:**

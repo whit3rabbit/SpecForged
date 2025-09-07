@@ -13,7 +13,7 @@ export class SpecificationManager {
 
     async refresh(): Promise<void> {
         this.specifications.clear();
-        
+
         if (!vscode.workspace.workspaceFolders) {
             return;
         }
@@ -26,7 +26,7 @@ export class SpecificationManager {
     private async scanWorkspaceForSpecs(workspaceFolder: vscode.WorkspaceFolder): Promise<void> {
         for (const folderName of this.specificationFolders) {
             const specsDir = vscode.Uri.joinPath(workspaceFolder.uri, folderName);
-            
+
             try {
                 const stat = await vscode.workspace.fs.stat(specsDir);
                 if (stat.type === vscode.FileType.Directory) {
@@ -41,12 +41,12 @@ export class SpecificationManager {
     private async scanSpecificationDirectory(specsDir: vscode.Uri): Promise<void> {
         try {
             const entries = await vscode.workspace.fs.readDirectory(specsDir);
-            
+
             for (const [name, type] of entries) {
                 if (type === vscode.FileType.Directory) {
                     const specDir = vscode.Uri.joinPath(specsDir, name);
                     const parsedSpec = await SpecParser.parseSpecificationDirectory(specDir);
-                    
+
                     if (parsedSpec) {
                         this.specifications.set(parsedSpec.spec.id, parsedSpec);
                     }
@@ -84,7 +84,7 @@ export class SpecificationManager {
 
     async findSpecificationDirectories(): Promise<vscode.Uri[]> {
         const dirs: vscode.Uri[] = [];
-        
+
         if (!vscode.workspace.workspaceFolders) {
             return dirs;
         }
@@ -92,7 +92,7 @@ export class SpecificationManager {
         for (const workspaceFolder of vscode.workspace.workspaceFolders) {
             for (const folderName of this.specificationFolders) {
                 const specsDir = vscode.Uri.joinPath(workspaceFolder.uri, folderName);
-                
+
                 try {
                     const stat = await vscode.workspace.fs.stat(specsDir);
                     if (stat.type === vscode.FileType.Directory) {
@@ -109,13 +109,13 @@ export class SpecificationManager {
 
     async createSpecificationDirectory(workspaceFolder: vscode.WorkspaceFolder): Promise<vscode.Uri> {
         const specsDir = vscode.Uri.joinPath(workspaceFolder.uri, this.specificationFolders[0]);
-        
+
         try {
             await vscode.workspace.fs.createDirectory(specsDir);
         } catch (error) {
             // Directory might already exist
         }
-        
+
         return specsDir;
     }
 

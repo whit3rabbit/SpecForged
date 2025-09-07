@@ -54,21 +54,21 @@ export class McpSetupWizard {
 
             // Check if SpecForged is installed
             const isInstalled = await this.mcpManager.isSpecForgedInstalled();
-            
+
             if (!isInstalled) {
                 progress.report({ increment: 20, message: 'Installing SpecForged...' });
-                
+
                 const installResult = await this.mcpManager.installSpecForged();
                 if (!installResult.success) {
                     vscode.window.showErrorMessage(installResult.message);
                     return false;
                 }
-                
+
                 vscode.window.showInformationMessage(installResult.message);
             }
 
             progress.report({ increment: 50, message: 'Detecting IDEs...' });
-            
+
             // Detect and configure installed IDEs
             await this.mcpManager.detectExistingConfigs();
             const installedIdes = this.mcpManager.getInstalledIdes();
@@ -77,9 +77,9 @@ export class McpSetupWizard {
             const ideCount = installedIdes.length;
 
             for (const ide of installedIdes) {
-                progress.report({ 
-                    increment: 50 / ideCount, 
-                    message: `Configuring ${ide.name}...` 
+                progress.report({
+                    increment: 50 / ideCount,
+                    message: `Configuring ${ide.name}...`
                 });
 
                 const ideKey = Object.keys(this.mcpManager['supportedIdes'])
@@ -144,10 +144,10 @@ export class McpSetupWizard {
 
     private async handleInstallation(): Promise<void> {
         const isInstalled = await this.mcpManager.isSpecForgedInstalled();
-        
+
         const action = await vscode.window.showInformationMessage(
-            isInstalled 
-                ? 'SpecForged is already installed. Would you like to update it?' 
+            isInstalled
+                ? 'SpecForged is already installed. Would you like to update it?'
                 : 'SpecForged is not installed. Would you like to install it?',
             isInstalled ? 'Update' : 'Install',
             'Cancel'
@@ -172,7 +172,7 @@ export class McpSetupWizard {
 
     private async handleIdeConfiguration(): Promise<void> {
         const availableIdes = this.mcpManager.getAvailableIdes();
-        
+
         const ideItems = availableIdes.map(ide => ({
             label: `${ide.installed ? '$(check)' : '$(x)'} ${ide.name}`,
             description: ide.detected ? 'Already configured' : 'Not configured',
@@ -200,7 +200,7 @@ export class McpSetupWizard {
 
         if (ideKey) {
             const result = await this.mcpManager.setupMcpForIde(ideKey);
-            
+
             if (result.success) {
                 vscode.window.showInformationMessage(result.message);
             } else {
@@ -211,7 +211,7 @@ export class McpSetupWizard {
 
     private async handleProjectConfiguration(): Promise<void> {
         const result = await this.mcpManager.createProjectMcpConfig();
-        
+
         if (result.success) {
             const message = `${result.message} at ${result.path}`;
             vscode.window.showInformationMessage(message, 'Open Config').then(action => {

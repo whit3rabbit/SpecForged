@@ -16,7 +16,7 @@ graph TD
     B --> E[Create Status Bar]
     B --> F[Register Commands]
     B --> G[Setup File Watchers]
-    
+
     G --> H[Scan for Specifications]
     H --> I[Update UI State]
     I --> J[Ready for User Interaction]

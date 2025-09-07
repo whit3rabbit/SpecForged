@@ -29,7 +29,7 @@ export class TaskHelper {
         if (childNumber === parentNumber) {
             return false;
         }
-        
+
         return childNumber.startsWith(parentNumber + '.');
     }
 
@@ -45,18 +45,18 @@ export class TaskHelper {
         return tasks.sort((a, b) => {
             const aParts = a.task_number.split('.').map((n: string) => parseInt(n, 10));
             const bParts = b.task_number.split('.').map((n: string) => parseInt(n, 10));
-            
+
             const maxLength = Math.max(aParts.length, bParts.length);
-            
+
             for (let i = 0; i < maxLength; i++) {
                 const aVal = aParts[i] || 0;
                 const bVal = bParts[i] || 0;
-                
+
                 if (aVal !== bVal) {
                     return aVal - bVal;
                 }
             }
-            
+
             return 0;
         });
     }
@@ -66,7 +66,7 @@ export class TaskHelper {
         const completed = tasks.filter(t => t.status === 'completed').length;
         const in_progress = tasks.filter(t => t.status === 'in_progress').length;
         const pending = tasks.filter(t => t.status === 'pending').length;
-        
+
         return {
             total,
             completed,

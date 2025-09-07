@@ -7,10 +7,26 @@ cloud deployment scenarios (though local development is recommended).
 """
 
 import os
+
 import uvicorn
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 from src.specforged.server import create_server
+
+
+def health_check(request):
+    """Health check endpoint for deployment monitoring"""
+    return JSONResponse(
+        {
+            "status": "healthy",
+            "service": "SpecForge HTTP MCP Server",
+            "version": "0.3.2",
+            "transport": "http",
+            "endpoints": {"mcp": "/mcp", "health": "/health"},
+        }
+    )
 
 
 def main():
@@ -21,6 +37,9 @@ def main():
 
     # Get the Starlette HTTP app
     app = mcp_server.streamable_http_app()
+
+    # Add health check route
+    app.router.routes.append(Route("/health", health_check, methods=["GET"]))
 
     # Add CORS middleware for web access
     app.add_middleware(

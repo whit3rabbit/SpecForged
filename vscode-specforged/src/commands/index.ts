@@ -110,7 +110,7 @@ export function setupCommands(
             await specificationManager.refresh();
             specProvider.refresh();
         });
-        
+
         vscode.window.showInformationMessage('Specifications synced successfully!');
     });
 
@@ -119,7 +119,7 @@ export function setupCommands(
         try {
             await toggleTaskStatus(specId, taskNumber, specificationManager);
             specProvider.refresh();
-            
+
             // Show brief feedback
             const spec = specificationManager.getSpecification(specId);
             if (spec) {
@@ -138,11 +138,11 @@ export function setupCommands(
     // Show Current Spec Command
     const showCurrentSpecCommand = vscode.commands.registerCommand('specforged.showCurrentSpec', async () => {
         const current = specificationManager.getCurrentSpecification();
-        
+
         if (current) {
             const progress = TaskHelper.calculateProgress(current.spec.tasks);
             const message = `Current: ${current.spec.name} (${progress.completed}/${progress.total} tasks)`;
-            
+
             vscode.window.showInformationMessage(message, 'Open Requirements', 'Open Tasks')
                 .then(selection => {
                     if (selection === 'Open Requirements') {
@@ -188,7 +188,7 @@ export function setupCommands(
     const switchToSmitheryCommand = vscode.commands.registerCommand('specforged.switchToSmithery', async () => {
         const config = vscode.workspace.getConfiguration('specforged');
         await config.update('mcpServerType', 'smithery', vscode.ConfigurationTarget.Workspace);
-        
+
         const result = await mcpManager.initializeConnection();
         if (result.success) {
             vscode.window.showInformationMessage('Switched to Smithery server successfully!');
@@ -201,7 +201,7 @@ export function setupCommands(
     const switchToLocalCommand = vscode.commands.registerCommand('specforged.switchToLocal', async () => {
         const config = vscode.workspace.getConfiguration('specforged');
         await config.update('mcpServerType', 'local', vscode.ConfigurationTarget.Workspace);
-        
+
         const result = await mcpManager.initializeConnection();
         if (result.success) {
             vscode.window.showInformationMessage('Switched to local server successfully!');
@@ -248,9 +248,9 @@ export function setupCommands(
                 placeholder: 'https://your-server.example.com/mcp',
                 value: config.get<string>('mcpServerUrl', '')
             });
-            
+
             if (!url) return;
-            
+
             await config.update('mcpServerUrl', url, vscode.ConfigurationTarget.Workspace);
         } else if (selection.value === 'smithery') {
             const serverName = await vscode.window.showInputBox({
@@ -258,14 +258,14 @@ export function setupCommands(
                 placeholder: 'specforged',
                 value: config.get<string>('smitheryServerName', 'specforged')
             });
-            
+
             if (!serverName) return;
-            
+
             await config.update('smitheryServerName', serverName, vscode.ConfigurationTarget.Workspace);
         }
 
         await config.update('mcpServerType', selection.value, vscode.ConfigurationTarget.Workspace);
-        
+
         const result = await mcpManager.initializeConnection();
         if (result.success) {
             vscode.window.showInformationMessage(`Configured ${selection.value} server successfully!`);
@@ -278,7 +278,7 @@ export function setupCommands(
     const testConnectionCommand = vscode.commands.registerCommand('specforged.testConnection', async () => {
         const result = await mcpManager.initializeConnection();
         const serverStatus = await mcpManager.getServerStatus();
-        
+
         if (result.success) {
             vscode.window.showInformationMessage(
                 `✅ MCP ${serverStatus.type} server connection successful!\n${result.message}`,
@@ -321,7 +321,7 @@ async function quickStartInitialization(
         cancellable: false
     }, async (progress) => {
         progress.report({ increment: 0, message: 'Checking SpecForged installation...' });
-        
+
         const isInstalled = await mcpManager.isSpecForgedInstalled();
         if (!isInstalled) {
             progress.report({ increment: 25, message: 'Installing SpecForged...' });
@@ -332,12 +332,12 @@ async function quickStartInitialization(
         }
 
         progress.report({ increment: 50, message: 'Setting up MCP configuration...' });
-        
+
         // Configure for VS Code by default
         await mcpManager.setupMcpForIde('vscode');
 
         progress.report({ increment: 75, message: 'Creating specifications directory...' });
-        
+
         // Create specifications directory
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (workspaceFolder) {
