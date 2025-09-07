@@ -162,9 +162,7 @@ def _load_specification_context(
     return context
 
 
-def setup_workflow_tools(
-    mcp: FastMCP, spec_manager: SpecificationManager
-) -> None:
+def setup_workflow_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
     """Setup workflow-related MCP tools"""
 
     @mcp.tool()
@@ -224,9 +222,7 @@ def setup_workflow_tools(
 
             # Renumber tasks to maintain hierarchy
             spec = spec_manager.specs[effective_spec_id]
-            spec_manager.plan_generator._number_tasks_hierarchically(
-                spec.tasks
-            )
+            spec_manager.plan_generator._number_tasks_hierarchically(spec.tasks)
 
             spec_manager.save_specification(effective_spec_id)
 
@@ -239,9 +235,7 @@ def setup_workflow_tools(
                 "task_id": task.id,
                 "task_number": task.task_number,
                 "title": task.title,
-                "message": (
-                    f"Task {task.task_number} added to implementation plan"
-                ),
+                "message": (f"Task {task.task_number} added to implementation plan"),
             }
 
         except Exception as e:
@@ -304,9 +298,7 @@ def setup_workflow_tools(
             }
 
         # CRITICAL: Validate prerequisites before execution
-        validation = _validate_execution_prerequisites(
-            spec_manager, effective_spec_id
-        )
+        validation = _validate_execution_prerequisites(spec_manager, effective_spec_id)
 
         if not validation["valid"]:
             return {
@@ -316,37 +308,30 @@ def setup_workflow_tools(
                 "suggestions": validation["suggestions"],
                 "help": {
                     "description": (
-                        "Tasks require completed requirements and "
-                        "design phases"
+                        "Tasks require completed requirements and " "design phases"
                     ),
                     "workflow": [
                         "1. Add requirements using add_requirement()",
                         "2. Create design using update_design()",
-                        "3. Generate tasks using "
-                        "generate_implementation_plan()",
+                        "3. Generate tasks using " "generate_implementation_plan()",
                         "4. Then execute tasks using execute_task()",
                     ],
                 },
             }
 
         # CRITICAL: Load specification context before execution
-        spec_context = _load_specification_context(
-            spec_manager, effective_spec_id
-        )
+        spec_context = _load_specification_context(spec_manager, effective_spec_id)
 
         if spec_context["error"]:
             return {
                 "status": "error",
                 "message": (
-                    f"Failed to load specification context: "
-                    f"{spec_context['error']}"
+                    f"Failed to load specification context: " f"{spec_context['error']}"
                 ),
             }
 
         # Update task status
-        spec_manager.update_task_status(
-            effective_spec_id, task_id, "in_progress"
-        )
+        spec_manager.update_task_status(effective_spec_id, task_id, "in_progress")
 
         if ctx:
             await ctx.info(f"🚀 Executing task {task_id}: {task.title}")
@@ -372,12 +357,9 @@ def setup_workflow_tools(
             "execution_steps": [
                 "1. Review the requirements.md content above to understand "
                 "user needs",
-                "2. Study the design.md content to follow the planned "
-                "architecture",
-                "3. Implement the task following the design patterns and "
-                "components",
-                "4. Ensure implementation satisfies the linked EARS "
-                "requirements",
+                "2. Study the design.md content to follow the planned " "architecture",
+                "3. Implement the task following the design patterns and " "components",
+                "4. Ensure implementation satisfies the linked EARS " "requirements",
                 "5. Create tests using the provided test template",
                 "6. Validate implementation against the specification",
             ],
@@ -408,15 +390,11 @@ def setup_workflow_tools(
         await asyncio.sleep(1)
 
         if ctx:
-            await ctx.info(
-                "📝 Task marked as completed - ensure tests were created"
-            )
+            await ctx.info("📝 Task marked as completed - ensure tests were created")
             await ctx.report_progress(5, 6)
 
         # Mark as completed
-        spec_manager.update_task_status(
-            effective_spec_id, task_id, "completed"
-        )
+        spec_manager.update_task_status(effective_spec_id, task_id, "completed")
 
         if ctx:
             await ctx.report_progress(6, 6)
@@ -487,9 +465,7 @@ def setup_workflow_tools(
                     "spec_id": effective_spec_id,
                     "previous_phase": spec.current_phase.value,
                     "current_phase": target_phase,
-                    "message": (
-                        f"Workflow transitioned to {target_phase} phase"
-                    ),
+                    "message": (f"Workflow transitioned to {target_phase} phase"),
                 }
             else:
                 return {
@@ -542,9 +518,7 @@ def setup_workflow_tools(
                 # Check if all dependencies are completed
                 deps_completed = True
                 for dep_id in task.dependencies:
-                    dep_task = next(
-                        (t for t in all_tasks if t.id == dep_id), None
-                    )
+                    dep_task = next((t for t in all_tasks if t.id == dep_id), None)
                     if dep_task and not dep_task.is_completed:
                         deps_completed = False
                         break
@@ -565,7 +539,5 @@ def setup_workflow_tools(
             "spec_id": effective_spec_id,
             "available_tasks": available_tasks,
             "count": len(available_tasks),
-            "message": (
-                f"Found {len(available_tasks)} tasks ready to work on"
-            ),
+            "message": (f"Found {len(available_tasks)} tasks ready to work on"),
         }
