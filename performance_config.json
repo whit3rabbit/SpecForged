@@ -1,0 +1,132 @@
+{
+  "queue_processor": {
+    "description": "Performance configuration for the Python queue processor",
+    "max_queue_size": 10000,
+    "max_batch_size": 50,
+    "batch_timeout_ms": 1000,
+    "lru_cache_size": 1000,
+    "enable_streaming_json": true,
+    "json_chunk_size": 8192,
+    "memory_limit_mb": 100,
+    "enable_compression": true,
+    "parallel_processing": 3,
+    "debounce_ms": 250,
+    "performance_targets": {
+      "max_memory_usage_mb": 150,
+      "min_throughput_ops_per_sec": 50,
+      "max_processing_time_ms": 5000,
+      "min_cache_hit_rate": 0.8,
+      "max_json_parse_time_ms": 1000,
+      "max_file_io_time_ms": 2000
+    }
+  },
+  "vscode_extension": {
+    "description": "Performance configuration for the VS Code extension",
+    "processing_interval_ms": 2000,
+    "heartbeat_interval_ms": 30000,
+    "cleanup_interval_ms": 1800000,
+    "performance_optimization_interval_ms": 300000,
+    "max_operation_age_hours": 12,
+    "max_queue_size": 10000,
+    "max_batch_size": 50,
+    "batch_timeout_ms": 1000,
+    "debounce_delay_ms": 250,
+    "parallel_processing_limit": 3,
+    "cache_expiration_ms": 300000,
+    "memory_limit_mb": 100,
+    "enable_streaming_processing": true,
+    "enable_operation_batching": true,
+    "enable_performance_monitoring": true,
+    "compression_threshold": 100,
+    "performance_targets": {
+      "max_file_watcher_response_ms": 500,
+      "min_batch_efficiency": 0.9,
+      "max_memory_usage_mb": 120,
+      "min_cache_hit_rate": 0.85,
+      "max_operation_processing_ms": 1000
+    }
+  },
+  "monitoring": {
+    "description": "Performance monitoring and alerting configuration",
+    "enable_metrics_collection": true,
+    "metrics_retention_hours": 24,
+    "alert_thresholds": {
+      "high_memory_usage_mb": 150,
+      "low_throughput_ops_per_sec": 25,
+      "high_processing_time_ms": 10000,
+      "low_cache_hit_rate": 0.7,
+      "high_error_rate": 0.1,
+      "queue_size_warning": 5000,
+      "queue_size_critical": 8000
+    },
+    "performance_dashboard": {
+      "update_interval_ms": 5000,
+      "metrics_to_display": [
+        "operations_processed",
+        "avg_processing_time_ms",
+        "memory_usage_mb",
+        "cache_hit_rate",
+        "queue_throughput",
+        "batch_efficiency",
+        "error_rate"
+      ]
+    }
+  },
+  "optimization_strategies": {
+    "description": "Automatic optimization strategies",
+    "auto_cache_cleanup": {
+      "enabled": true,
+      "trigger_memory_mb": 80,
+      "target_memory_mb": 60
+    },
+    "auto_queue_cleanup": {
+      "enabled": true,
+      "trigger_queue_size": 7000,
+      "target_queue_size": 5000,
+      "max_operation_age_hours": 6
+    },
+    "auto_compression": {
+      "enabled": true,
+      "trigger_file_size_mb": 5,
+      "compression_algorithm": "gzip"
+    },
+    "dynamic_batching": {
+      "enabled": true,
+      "min_batch_size": 5,
+      "max_batch_size": 100,
+      "adaptive_sizing": true
+    },
+    "intelligent_caching": {
+      "enabled": true,
+      "cache_hot_operations": true,
+      "predictive_caching": false,
+      "cache_priority_boost": 1.5
+    }
+  },
+  "environment_specific": {
+    "development": {
+      "description": "Settings optimized for development",
+      "max_queue_size": 1000,
+      "memory_limit_mb": 50,
+      "enable_debug_logging": true,
+      "performance_monitoring": false
+    },
+    "testing": {
+      "description": "Settings optimized for testing",
+      "max_queue_size": 500,
+      "memory_limit_mb": 25,
+      "enable_debug_logging": false,
+      "performance_monitoring": true,
+      "strict_performance_targets": true
+    },
+    "production": {
+      "description": "Settings optimized for production",
+      "max_queue_size": 20000,
+      "memory_limit_mb": 200,
+      "enable_debug_logging": false,
+      "performance_monitoring": true,
+      "enable_compression": true,
+      "parallel_processing": 5
+    }
+  }
+}

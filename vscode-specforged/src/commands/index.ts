@@ -240,26 +240,26 @@ export function setupCommands(
             placeHolder: 'Select MCP server type'
         });
 
-        if (!selection) return;
+        if (!selection) {return;}
 
         if (selection.value === 'custom') {
             const url = await vscode.window.showInputBox({
                 prompt: 'Enter custom MCP server URL',
-                placeholder: 'https://your-server.example.com/mcp',
+                placeHolder: 'https://your-server.example.com/mcp',
                 value: config.get<string>('mcpServerUrl', '')
             });
 
-            if (!url) return;
+            if (!url) {return;}
 
             await config.update('mcpServerUrl', url, vscode.ConfigurationTarget.Workspace);
         } else if (selection.value === 'smithery') {
             const serverName = await vscode.window.showInputBox({
                 prompt: 'Enter Smithery server name',
-                placeholder: 'specforged',
+                placeHolder: 'specforged',
                 value: config.get<string>('smitheryServerName', 'specforged')
             });
 
-            if (!serverName) return;
+            if (!serverName) {return;}
 
             await config.update('smitheryServerName', serverName, vscode.ConfigurationTarget.Workspace);
         }

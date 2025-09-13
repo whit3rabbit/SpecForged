@@ -37,7 +37,7 @@ export class EnhancedStatusBarManager implements vscode.Disposable {
             100 // Priority
         );
         this.statusBarItem.name = 'SpecForged';
-        
+
         // Create MCP status bar item
         this.mcpStatusBarItem = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Left,
@@ -90,8 +90,8 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
                 }
 
                 this.statusBarItem.command = 'specforged.showCurrentSpec';
-                this.statusBarItem.color = progressPercent === 100 ? 
-                    new vscode.ThemeColor('statusBarItem.prominentForeground') : 
+                this.statusBarItem.color = progressPercent === 100 ?
+                    new vscode.ThemeColor('statusBarItem.prominentForeground') :
                     undefined;
             }
 
@@ -108,7 +108,7 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
         try {
             const discovery = await this.discoveryService.discoverMcpEcosystem();
             const serverStatus = await this.mcpManager.getServerStatus();
-            
+
             const installedClients = discovery.clients.filter(c => c.isInstalled).length;
             const configuredClients = discovery.configuredClients;
             const totalServers = discovery.servers.size;
@@ -123,7 +123,7 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
                     progress: this.getOverallProgress()
                 },
                 mcp: {
-                    connected: serverStatus.online,
+                    connected: serverStatus.connected,
                     clientsCount: installedClients,
                     configuredClients,
                     serversCount: totalServers,
@@ -179,66 +179,66 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
     }
 
     private createSpecificationTooltip(
-        currentSpec: string | null, 
-        specs: any[], 
+        currentSpec: string | null,
+        specs: any[],
         progressPercent: number,
         completedTasks: number,
         totalTasks: number
     ): vscode.MarkdownString {
         const tooltip = new vscode.MarkdownString();
-        
+
         tooltip.appendMarkdown(`**SpecForged** - Specification-driven development\n\n`);
-        
+
         if (currentSpec) {
             tooltip.appendMarkdown(`**Current Spec:** ${currentSpec}\n`);
         }
-        
+
         tooltip.appendMarkdown(`**Specifications:** ${specs.length}\n`);
         tooltip.appendMarkdown(`**Overall Progress:** ${progressPercent}% (${completedTasks}/${totalTasks} tasks)\n\n`);
-        
+
         tooltip.appendMarkdown(`**Quick Actions:**\n`);
         tooltip.appendMarkdown(`• [View Current Spec](command:specforged.showCurrentSpec)\n`);
         tooltip.appendMarkdown(`• [Create New Spec](command:specforged.createSpec)\n`);
         tooltip.appendMarkdown(`• [Open Requirements](command:specforged.openRequirements)\n`);
         tooltip.appendMarkdown(`• [Open Tasks](command:specforged.openTasks)\n`);
-        
+
         return tooltip;
     }
 
     private createMcpTooltip(discovery: any, serverStatus: any): vscode.MarkdownString {
         const tooltip = new vscode.MarkdownString();
-        
+
         tooltip.appendMarkdown(`**MCP Ecosystem Status**\n\n`);
-        
+
         tooltip.appendMarkdown(`**Clients:** ${discovery.configuredClients}/${discovery.totalClients} configured\n`);
         tooltip.appendMarkdown(`**Servers:** ${discovery.servers.size} configured\n`);
         tooltip.appendMarkdown(`**Connection:** ${serverStatus.connected ? '🟢 Connected' : '🔴 Disconnected'}\n`);
-        
+
         if (discovery.recommendations.length > 0) {
             const highPriority = discovery.recommendations.filter((r: any) => r.priority === 'high').length;
             const mediumPriority = discovery.recommendations.filter((r: any) => r.priority === 'medium').length;
-            
+
             tooltip.appendMarkdown(`\n**Recommendations:** ${discovery.recommendations.length} total\n`);
-            if (highPriority > 0) tooltip.appendMarkdown(`• 🔴 ${highPriority} high priority\n`);
-            if (mediumPriority > 0) tooltip.appendMarkdown(`• 🟡 ${mediumPriority} medium priority\n`);
+            if (highPriority > 0) {tooltip.appendMarkdown(`• 🔴 ${highPriority} high priority\n`);}
+            if (mediumPriority > 0) {tooltip.appendMarkdown(`• 🟡 ${mediumPriority} medium priority\n`);}
         }
-        
+
         // Show installed clients
         if (discovery.clients.length > 0) {
             tooltip.appendMarkdown(`\n**Detected Clients:**\n`);
             discovery.clients.forEach((client: any) => {
-                const status = client.isInstalled ? 
+                const status = client.isInstalled ?
                     (client.configExists ? '✅' : '⚠️') : '❌';
                 tooltip.appendMarkdown(`• ${status} ${client.displayName}\n`);
             });
         }
-        
+
         tooltip.appendMarkdown(`\n**Quick Actions:**\n`);
         tooltip.appendMarkdown(`• [Open Dashboard](command:specforged.openMcpDashboard)\n`);
         tooltip.appendMarkdown(`• [Quick Setup](command:specforged.quickMcpSetup)\n`);
         tooltip.appendMarkdown(`• [Troubleshoot](command:specforged.troubleshootSetup)\n`);
         tooltip.appendMarkdown(`• [Refresh Status](command:specforged.refreshMcpDetection)\n`);
-        
+
         return tooltip;
     }
 
@@ -255,7 +255,7 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
     }
 
     private shouldShowNotification(oldState: StatusBarState | null, newState: StatusBarState): boolean {
-        if (!oldState) return false;
+        if (!oldState) {return false;}
 
         // Show notification when MCP setup improves significantly
         if (oldState.mcp.configuredClients === 0 && newState.mcp.configuredClients > 0) {
@@ -276,7 +276,7 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
     }
 
     private showStateChangeNotification(oldState: StatusBarState | null, newState: StatusBarState): void {
-        if (!oldState) return;
+        if (!oldState) {return;}
 
         if (oldState.mcp.configuredClients === 0 && newState.mcp.configuredClients > 0) {
             vscode.window.showInformationMessage(
@@ -337,7 +337,7 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
         const specs = this.specificationManager.getSpecifications();
         const totalTasks = this.getTotalTasks(specs);
         const completedTasks = this.getCompletedTasks(specs);
-        
+
         return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     }
 
@@ -400,7 +400,7 @@ No specifications found. [Initialize project](command:specforged.initialize) to 
             clearInterval(this.discoveryUpdateInterval);
             this.discoveryUpdateInterval = null;
         }
-        
+
         this.statusBarItem.dispose();
         this.mcpStatusBarItem.dispose();
     }

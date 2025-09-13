@@ -44,8 +44,8 @@ if command -v node >/dev/null 2>&1; then
     NODE_VERSION=$(node --version)
     print_success "Node.js found: $NODE_VERSION"
     
-    # Check if version is 18 or higher
-    MAJOR_VERSION=$(echo $NODE_VERSION | sed 's/v//' | cut -d. -f1)
+    # Check if version is 18 or higher using Node.js itself for robust parsing
+    MAJOR_VERSION=$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "0")
     if [[ $MAJOR_VERSION -lt 18 ]]; then
         print_warning "Node.js version $NODE_VERSION detected. Version 18+ recommended."
         echo "Consider upgrading: https://nodejs.org/"
@@ -117,25 +117,67 @@ else
     echo "  or: pipx install specforged"
 fi
 
-# Check for Claude Desktop
-CLAUDE_CONFIG_PATH="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
-if [[ -f "$CLAUDE_CONFIG_PATH" ]]; then
+# Check for Claude Desktop - Platform agnostic
+case "$(uname -s)" in
+    Darwin)
+        CLAUDE_CONFIG_PATH="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+        ;;
+    Linux)
+        CLAUDE_CONFIG_PATH="$HOME/.config/Claude/claude_desktop_config.json"
+        ;;
+    CYGWIN*|MINGW32*|MSYS*|MINGW*)
+        CLAUDE_CONFIG_PATH="$HOME/AppData/Roaming/Claude/claude_desktop_config.json"
+        ;;
+    *)
+        CLAUDE_CONFIG_PATH=""
+        ;;
+esac
+
+if [[ -n "$CLAUDE_CONFIG_PATH" && -f "$CLAUDE_CONFIG_PATH" ]]; then
     print_success "Claude Desktop configuration found"
 else
     print_warning "Claude Desktop not configured. Install from: https://claude.ai/download"
 fi
 
-# Check for Cursor
-CURSOR_PATH="/Applications/Cursor.app"
-if [[ -d "$CURSOR_PATH" ]]; then
+# Check for Cursor - Platform agnostic
+case "$(uname -s)" in
+    Darwin)
+        CURSOR_PATH="/Applications/Cursor.app"
+        ;;
+    Linux)
+        CURSOR_PATH="/usr/bin/cursor"
+        ;;
+    CYGWIN*|MINGW32*|MSYS*|MINGW*)
+        CURSOR_PATH="$HOME/AppData/Local/Programs/cursor/Cursor.exe"
+        ;;
+    *)
+        CURSOR_PATH=""
+        ;;
+esac
+
+if [[ -n "$CURSOR_PATH" && (-d "$CURSOR_PATH" || -f "$CURSOR_PATH") ]]; then
     print_success "Cursor found"
 else
     print_warning "Cursor not found. Install from: https://cursor.so/"
 fi
 
-# Check for Windsurf
-WINDSURF_PATH="/Applications/Windsurf.app"
-if [[ -d "$WINDSURF_PATH" ]]; then
+# Check for Windsurf - Platform agnostic
+case "$(uname -s)" in
+    Darwin)
+        WINDSURF_PATH="/Applications/Windsurf.app"
+        ;;
+    Linux)
+        WINDSURF_PATH="/usr/bin/windsurf"
+        ;;
+    CYGWIN*|MINGW32*|MSYS*|MINGW*)
+        WINDSURF_PATH="$HOME/AppData/Local/Programs/windsurf/Windsurf.exe"
+        ;;
+    *)
+        WINDSURF_PATH=""
+        ;;
+esac
+
+if [[ -n "$WINDSURF_PATH" && (-d "$WINDSURF_PATH" || -f "$WINDSURF_PATH") ]]; then
     print_success "Windsurf found"
 else
     print_warning "Windsurf not found. Install from: https://codeium.com/windsurf"

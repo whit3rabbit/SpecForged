@@ -1,19 +1,33 @@
 # SpecForged API Reference
 
-**Version:** 0.3.1  
-**Protocol:** Model Context Protocol (MCP)  
+**Version:** 0.3.2
+**Protocol:** Model Context Protocol (MCP)
 **Language:** Python 3.10+
 
 ## Overview
 
 SpecForged is a Model Context Protocol (MCP) server that implements specification-driven development with EARS notation, intelligent mode classification, and structured workflow management. This document provides a comprehensive API reference for integrating with SpecForged.
 
+### New in v0.3.2: Enhanced Operation Queue & VS Code Integration
+
+SpecForged now includes a comprehensive MCP ecosystem with advanced features:
+
+- **Complete MCP Ecosystem**: VS Code extension + MCP server + queue processing
+- **File-based IPC**: Reliable inter-process communication between extension and server  
+- **Advanced Conflict Resolution**: Smart detection with multiple resolution strategies
+- **Operation Queue Management**: Visual UI for monitoring and controlling operations
+- **Multi-Server Support**: Seamless switching between local, cloud, and custom servers
+- **Real-time Synchronization**: Bidirectional sync with comprehensive error recovery
+- **Performance Optimization**: Batching, caching, and resource management
+- **Security Validation**: Comprehensive input validation and access control
+
 ### Supported Integration Methods
 
-1. **MCP Protocol (stdio)** - Local development, VS Code extension
-2. **HTTP/WebSocket API** - Cloud deployment, web applications
-3. **VS Code Extension** - Rich IDE integration with UI components
-4. **Smithery Cloud** - Managed cloud deployment
+1. **MCP Protocol (stdio)** - Local development, traditional MCP clients
+2. **HTTP/WebSocket API** - Cloud deployment, web applications  
+3. **VS Code Extension** - Complete ecosystem with rich UI and operation management
+4. **Smithery Cloud** - Managed cloud deployment with team collaboration
+5. **File-based IPC** - Advanced communication protocol for VS Code integration
 
 ### Connection Examples
 
@@ -45,7 +59,9 @@ const mcpClient = new McpClient({
 
 ## MCP Tools API
 
-### 🎯 Classification Tools
+All MCP tools support both traditional stdio communication and the enhanced file-based IPC system for VS Code extension integration.
+
+### 🎯 Enhanced Classification Tools
 
 #### `classify_mode`
 Classify user input to determine intent (chat/do/spec modes).
@@ -92,8 +108,8 @@ Create a new specification with requirements, design, and tasks files.
 **Signature:**
 ```python
 async def create_spec(
-    name: str, 
-    description: str = "", 
+    name: str,
+    description: str = "",
     spec_id: Optional[str] = None
 ) -> Dict[str, Any]
 ```
@@ -162,7 +178,7 @@ Add user story with EARS-formatted acceptance criteria.
 ```python
 async def add_requirement(
     as_a: str,
-    i_want: str, 
+    i_want: str,
     so_that: str,
     spec_id: Optional[str] = None,
     ears_requirements: Optional[List[Dict[str, str]]] = None
@@ -184,7 +200,7 @@ async def add_requirement(
     "system_response": "redirect to dashboard"
   },
   {
-    "condition": "IF login fails 3 times", 
+    "condition": "IF login fails 3 times",
     "system_response": "lock account for 15 minutes"
   }
 ]
@@ -230,7 +246,7 @@ async def update_design(
     "description": "Handles login/logout HTTP endpoints"
   },
   {
-    "name": "TokenService", 
+    "name": "TokenService",
     "description": "JWT token generation and validation"
   }
 ]
@@ -250,7 +266,7 @@ async def list_specifications() -> Dict[str, Any]
   "specifications": [
     {
       "spec_id": "user-auth",
-      "name": "User Authentication System", 
+      "name": "User Authentication System",
       "status": "IN_PROGRESS",
       "phase": "DESIGN",
       "is_current": true,
@@ -313,7 +329,7 @@ async def get_specification_details(
 {
   "spec_id": "user-auth",
   "name": "User Authentication System",
-  "description": "Handle user login, registration, and session management", 
+  "description": "Handle user login, registration, and session management",
   "status": "IN_PROGRESS",
   "phase": "IMPLEMENTATION",
   "user_stories": [
@@ -332,7 +348,7 @@ async def get_specification_details(
   },
   "files": {
     "requirements": "/path/to/requirements.md",
-    "design": "/path/to/design.md", 
+    "design": "/path/to/design.md",
     "tasks": "/path/to/tasks.md"
   },
   "content": {
@@ -368,7 +384,7 @@ async def generate_implementation_plan(
 ```json
 {
   "status": "success",
-  "spec_id": "user-auth", 
+  "spec_id": "user-auth",
   "tasks_created": 15,
   "message": "Implementation plan generated with 15 hierarchical tasks",
   "stats": {
@@ -400,7 +416,7 @@ async def check_task(
 {
   "status": "success",
   "spec_id": "user-auth",
-  "task_number": "1.1", 
+  "task_number": "1.1",
   "task_title": "Create login form component",
   "message": "Task 1.1 marked as completed",
   "progress": 33.3,
@@ -415,7 +431,7 @@ Mark a task as pending (uncheck the checkbox).
 ```python
 async def uncheck_task(
     task_number: str,
-    spec_id: Optional[str] = None  
+    spec_id: Optional[str] = None
 ) -> Dict[str, Any]
 ```
 
@@ -441,7 +457,7 @@ async def bulk_check_tasks(
   "spec_id": "user-auth",
   "checked_tasks": ["1.1", "1.2", "2.1"],
   "skipped_tasks": [],
-  "message": "3 tasks marked as completed", 
+  "message": "3 tasks marked as completed",
   "progress": 45.8
 }
 ```
@@ -467,7 +483,7 @@ async def get_task_details(
   "is_completed": false,
   "subtasks": [
     {
-      "task_number": "1.1.1", 
+      "task_number": "1.1.1",
       "title": "Design form layout",
       "is_completed": true
     }
@@ -501,7 +517,7 @@ async def get_task_status_summary(
   },
   "phase_progress": {
     "requirements": "completed",
-    "design": "completed", 
+    "design": "completed",
     "implementation": "in_progress",
     "review": "pending"
   },
@@ -540,7 +556,7 @@ async def get_next_available_tasks(
   ],
   "blocked_tasks": [
     {
-      "task_number": "3.1", 
+      "task_number": "3.1",
       "title": "Deploy authentication service",
       "blocked_by": ["2.1", "2.2"],
       "blocking_reason": "Requires API endpoints to be completed"
@@ -595,13 +611,365 @@ async def transition_workflow_phase(
 
 **Phase Validation Rules:**
 - REQUIREMENTS → DESIGN: Must have user stories
-- DESIGN → IMPLEMENTATION: Must have design documentation 
+- DESIGN → IMPLEMENTATION: Must have design documentation
 - IMPLEMENTATION → REVIEW: Must have tasks generated
 - REVIEW → COMPLETED: Must have all tasks completed
 
 ---
 
-### 📁 Filesystem Tools
+### 🔄 Operation Queue Management Tools
+
+#### `get_queue_status`
+Get current operation queue status and statistics.
+
+**Signature:**
+```python
+async def get_queue_status() -> Dict[str, Any]
+```
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "queue_stats": {
+    "total_operations": 25,
+    "pending": 5,
+    "in_progress": 2,
+    "completed": 15,
+    "failed": 2,
+    "conflicts": 1
+  },
+  "performance_metrics": {
+    "processing_rate": "3.2 ops/min",
+    "average_completion_time": "2.1s",
+    "success_rate": "88%",
+    "queue_size_trend": "stable"
+  },
+  "oldest_pending_operation": {
+    "id": "op_1704830400123",
+    "type": "UPDATE_REQUIREMENTS",
+    "created_at": "2025-01-09T10:30:00Z",
+    "age_seconds": 120
+  }
+}
+```
+
+#### `retry_failed_operations`
+Retry operations that have failed with error recovery.
+
+**Signature:**
+```python
+async def retry_failed_operations(
+    operation_ids: Optional[List[str]] = None,
+    max_retries: int = 3
+) -> Dict[str, Any]
+```
+
+**Parameters:**
+- `operation_ids` (array, optional): Specific operation IDs to retry. If omitted, retries all failed operations
+- `max_retries` (integer, optional): Maximum retry attempts per operation
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "retried_operations": ["op_123", "op_456", "op_789"],
+  "results": {
+    "successful_retries": 2,
+    "still_failing": 1,
+    "permanently_failed": 0
+  },
+  "message": "2 of 3 operations successfully retried"
+}
+```
+
+#### `cancel_operations`
+Cancel pending operations in the queue.
+
+**Signature:**
+```python
+async def cancel_operations(
+    operation_ids: Optional[List[str]] = None,
+    cancel_all: bool = False
+) -> Dict[str, Any]
+```
+
+#### `clear_completed_operations`
+Clean up completed operations from queue history.
+
+**Signature:**
+```python
+async def clear_completed_operations(
+    older_than_hours: int = 24,
+    keep_recent_count: int = 50
+) -> Dict[str, Any]
+```
+
+### 🛡️ Conflict Resolution Tools
+
+#### `get_conflicts`
+Get list of active conflicts requiring resolution.
+
+**Signature:**
+```python
+async def get_conflicts() -> Dict[str, Any]
+```
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "conflicts": [
+    {
+      "id": "conflict_abc123",
+      "type": "CONCURRENT_MODIFICATION",
+      "severity": "medium",
+      "operations": ["op_1234", "op_5678"],
+      "resource_path": "user-auth/requirements.md",
+      "description": "Two operations attempting to modify requirements.md simultaneously",
+      "created_at": "2025-01-09T10:31:00Z",
+      "auto_resolvable": false,
+      "recommended_resolution": ["USER_DECIDE", "MERGE"],
+      "affected_lines": "15-23, 45-52"
+    }
+  ],
+  "total_conflicts": 1,
+  "auto_resolvable_conflicts": 0,
+  "user_intervention_required": 1
+}
+```
+
+#### `resolve_conflict`
+Resolve a specific conflict using chosen strategy.
+
+**Signature:**
+```python
+async def resolve_conflict(
+    conflict_id: str,
+    resolution: str,
+    user_choice: Optional[str] = None,
+    merge_content: Optional[str] = None
+) -> Dict[str, Any]
+```
+
+**Parameters:**
+- `conflict_id` (string, required): Unique conflict identifier
+- `resolution` (string, required): Resolution strategy: "MERGE", "EXTENSION_WINS", "MCP_WINS", "USER_DECIDE", "CANCEL"
+- `user_choice` (string, optional): User's choice for USER_DECIDE resolution
+- `merge_content` (string, optional): Manually merged content for complex conflicts
+
+**Resolution Strategies:**
+- **MERGE**: Automatically merge compatible changes
+- **EXTENSION_WINS**: Use extension operation (local changes win)
+- **MCP_WINS**: Use MCP server operation (remote changes win)
+- **USER_DECIDE**: Use provided user_choice parameter
+- **CANCEL**: Cancel conflicting operations
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "conflict_id": "conflict_abc123",
+  "resolution_applied": "MERGE",
+  "operations_affected": ["op_1234", "op_5678"],
+  "result": {
+    "merge_successful": true,
+    "conflicts_remaining": 0,
+    "backup_created": ".specifications/user-auth/requirements.md.backup"
+  },
+  "message": "Conflict resolved successfully using MERGE strategy"
+}
+```
+
+#### `get_conflict_details`
+Get detailed information about a specific conflict.
+
+**Signature:**
+```python
+async def get_conflict_details(conflict_id: str) -> Dict[str, Any]
+```
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "conflict": {
+    "id": "conflict_abc123",
+    "type": "CONCURRENT_MODIFICATION",
+    "operations": [
+      {
+        "id": "op_1234",
+        "type": "UPDATE_REQUIREMENTS",
+        "source": "extension",
+        "changes": {
+          "lines_modified": "15-23",
+          "content_preview": "## User Story US-003..."
+        }
+      },
+      {
+        "id": "op_5678", 
+        "type": "UPDATE_REQUIREMENTS",
+        "source": "mcp_server",
+        "changes": {
+          "lines_modified": "20-25",
+          "content_preview": "### Acceptance Criteria..."
+        }
+      }
+    ],
+    "overlap_analysis": {
+      "conflicting_lines": "20-23",
+      "compatible_changes": "15-19, 24-25",
+      "merge_complexity": "medium"
+    },
+    "resolution_options": [
+      {
+        "strategy": "MERGE",
+        "success_probability": 0.75,
+        "description": "Automatically merge compatible changes"
+      },
+      {
+        "strategy": "USER_DECIDE",
+        "success_probability": 1.0,
+        "description": "Manual resolution with user guidance"
+      }
+    ]
+  }
+}
+```
+
+### 📊 Performance & Monitoring Tools
+
+#### `get_performance_metrics`
+Get comprehensive performance metrics for the MCP ecosystem.
+
+**Signature:**
+```python
+async def get_performance_metrics() -> Dict[str, Any]
+```
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "metrics": {
+    "queue_performance": {
+      "operations_per_minute": 3.2,
+      "average_completion_time_ms": 2150,
+      "success_rate_percent": 88.5,
+      "error_rate_percent": 11.5,
+      "queue_size_trend": "stable"
+    },
+    "file_operations": {
+      "read_operations": 145,
+      "write_operations": 67,
+      "delete_operations": 3,
+      "average_file_io_time_ms": 45,
+      "failed_operations": 2
+    },
+    "memory_usage": {
+      "queue_memory_mb": 12.5,
+      "cache_memory_mb": 8.3,
+      "total_memory_mb": 45.2,
+      "memory_trend": "increasing_slowly"
+    },
+    "conflict_resolution": {
+      "total_conflicts": 15,
+      "auto_resolved": 12,
+      "manually_resolved": 2,
+      "pending_resolution": 1,
+      "auto_resolution_rate_percent": 80.0
+    }
+  },
+  "timestamp": "2025-01-09T10:45:00Z"
+}
+```
+
+#### `reset_performance_metrics`
+Reset performance counters and statistics.
+
+**Signature:**
+```python
+async def reset_performance_metrics() -> Dict[str, Any]
+```
+
+### 🔧 System Maintenance Tools
+
+#### `validate_system_integrity`
+Perform comprehensive system validation checks.
+
+**Signature:**
+```python
+async def validate_system_integrity() -> Dict[str, Any]
+```
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "validation_results": {
+    "queue_files": {
+      "valid": true,
+      "issues": []
+    },
+    "specification_files": {
+      "valid": true,
+      "checked_files": 15,
+      "invalid_files": 0,
+      "issues": []
+    },
+    "file_permissions": {
+      "valid": true,
+      "issues": []
+    },
+    "configuration": {
+      "valid": true,
+      "missing_settings": [],
+      "deprecated_settings": []
+    },
+    "mcp_connection": {
+      "valid": true,
+      "server_reachable": true,
+      "response_time_ms": 123
+    }
+  },
+  "overall_health": "excellent",
+  "recommendations": []
+}
+```
+
+#### `cleanup_system_files`
+Clean up temporary files and optimize system performance.
+
+**Signature:**
+```python
+async def cleanup_system_files(
+    cleanup_type: str = "standard",
+    force: bool = False
+) -> Dict[str, Any]
+```
+
+**Parameters:**
+- `cleanup_type` (string, optional): Type of cleanup: "minimal", "standard", "aggressive"
+- `force` (boolean, optional): Force cleanup even if operations are pending
+
+**Returns:**
+```json
+{
+  "status": "success",
+  "cleanup_results": {
+    "temp_files_removed": 23,
+    "backup_files_removed": 5,
+    "cache_files_cleaned": 12,
+    "log_files_rotated": 3,
+    "space_freed_mb": 125.6
+  },
+  "message": "System cleanup completed successfully"
+}
+```
+
+---
+
+### 📁 Enhanced Filesystem Tools
 
 #### `read_file`
 Read a UTF-8 text file within project root.
@@ -681,7 +1049,7 @@ Access requirements.md content for a specification.
 ```json
 {
   "jsonrpc": "2.0",
-  "method": "resources/read", 
+  "method": "resources/read",
   "params": {
     "uri": "spec://user-auth/requirements"
   }
@@ -707,7 +1075,7 @@ Access requirements.md content for a specification.
 #### `spec://{spec_id}/design`
 Access design.md content for a specification.
 
-#### `spec://{spec_id}/tasks`  
+#### `spec://{spec_id}/tasks`
 Access tasks.md content for a specification (checkbox format).
 
 ---
@@ -737,7 +1105,7 @@ Interactive prompts guide users through specification workflows.
 **Example Request:**
 ```json
 {
-  "jsonrpc": "2.0", 
+  "jsonrpc": "2.0",
   "method": "prompts/get",
   "params": {
     "name": "ears_requirement_prompt"
@@ -765,6 +1133,309 @@ Interactive prompts guide users through specification workflows.
 
 ---
 
+## Operation Queue & Conflict Resolution API
+
+### Overview
+
+SpecForged v0.2.1+ includes a sophisticated operation queue system that handles all MCP operations asynchronously with advanced conflict detection and resolution capabilities.
+
+### Operation Queue Management
+
+#### Operation Types
+All MCP operations are queued and processed with the following types:
+
+```typescript
+enum McpOperationType {
+    CREATE_SPEC = 'create_spec',
+    UPDATE_REQUIREMENTS = 'update_requirements',
+    UPDATE_DESIGN = 'update_design',
+    UPDATE_TASKS = 'update_tasks',
+    UPDATE_TASK_STATUS = 'update_task_status',
+    ADD_USER_STORY = 'add_user_story',
+    SYNC_STATUS = 'sync_status',
+    FORCE_SYNC = 'force_sync'
+}
+```
+
+#### Operation Status
+Operations progress through the following states:
+
+```typescript
+enum McpOperationStatus {
+    PENDING = 'pending',
+    IN_PROGRESS = 'in_progress',
+    COMPLETED = 'completed',
+    FAILED = 'failed',
+    CANCELLED = 'cancelled',
+    CONFLICT = 'conflict'
+}
+```
+
+#### Operation Priority
+Operations can be prioritized for processing order:
+
+```typescript
+enum McpOperationPriority {
+    LOW = 'low',
+    NORMAL = 'normal',
+    HIGH = 'high',
+    URGENT = 'urgent'
+}
+```
+
+### Conflict Detection
+
+#### Conflict Types
+The system detects the following types of conflicts:
+
+```typescript
+enum ConflictType {
+    // File-level conflicts
+    CONCURRENT_MODIFICATION = 'concurrent_modification',
+    RESOURCE_LOCKED = 'resource_locked',
+    PERMISSION_DENIED = 'permission_denied',
+    RESOURCE_NOT_FOUND = 'resource_not_found',
+
+    // Operation-level conflicts
+    DUPLICATE_OPERATION = 'duplicate_operation',
+    OUTDATED_OPERATION = 'outdated_operation',
+    INVALID_STATE = 'invalid_state',
+    PRIORITY_CONFLICT = 'priority_conflict',
+
+    // Dependency conflicts
+    DEPENDENCY_CONFLICT = 'dependency_conflict',
+    CIRCULAR_DEPENDENCY = 'circular_dependency',
+    VERSION_MISMATCH = 'version_mismatch'
+}
+```
+
+#### Conflict Detection Rules
+
+**Concurrent Modification**
+- Multiple operations targeting the same file within a time window
+- File modification timestamp changes between operation creation and execution
+
+**Duplicate Operation**
+- Identical operation type, parameters, and target resource
+- Operations with same content hash in the queue
+
+**Resource Locked**
+- File system locks preventing write access
+- Another process holding exclusive file access
+
+**Dependency Conflict**
+- Operations requiring completion of other pending operations
+- Missing prerequisite operations or resources
+
+**Circular Dependency**
+- Operations that depend on each other creating a cycle
+- Detected using dependency graph analysis
+
+### Conflict Resolution
+
+#### Resolution Strategies
+The system supports multiple resolution strategies:
+
+```typescript
+enum ConflictResolution {
+    // Automatic strategies
+    EXTENSION_WINS = 'extension_wins',    // Use extension operation
+    MCP_WINS = 'mcp_wins',               // Use MCP server operation
+    MERGE = 'merge',                     // Attempt automatic merge
+
+    // Manual strategies
+    USER_DECIDE = 'user_decide',         // Prompt user for decision
+
+    // Operational strategies
+    RETRY = 'retry',                     // Retry after delay
+    CANCEL = 'cancel',                   // Cancel conflicting operation
+    DEFER = 'defer',                     // Postpone operation
+    REORDER = 'reorder',                 // Change execution order
+    SPLIT = 'split'                      // Split into smaller operations
+}
+```
+
+#### Automatic Resolution Rules
+
+**Duplicate Operations**
+- Resolution: `CANCEL` (cancel newer duplicate)
+- Keep the first operation, cancel subsequent identical operations
+
+**Concurrent Modifications**
+- Resolution: `USER_DECIDE` or `MERGE`
+- Attempt automatic merge for compatible changes
+- Prompt user for complex conflicts
+
+**Resource Locked**
+- Resolution: `RETRY`
+- Exponential backoff retry with maximum attempts
+
+**Priority Conflicts**
+- Resolution: `REORDER`
+- Reorder operations based on priority levels
+
+#### Manual Resolution Interface
+
+When `USER_DECIDE` resolution is required, the VS Code extension presents:
+
+1. **Conflict Details**: Description of conflicting operations
+2. **Affected Files**: List of files that would be modified
+3. **Resolution Options**: Available strategies for the conflict type
+4. **Preview**: Show what each resolution would result in
+5. **User Choice**: Allow user to select preferred resolution
+
+### Operation Queue API
+
+#### Queue Status
+Get current queue status and statistics:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "get_queue_status",
+    "arguments": {}
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "total_operations": 15,
+  "pending": 3,
+  "in_progress": 2,
+  "completed": 8,
+  "failed": 1,
+  "conflicts": 1,
+  "processing_rate": "2.3 ops/min",
+  "average_completion_time": "1.2s",
+  "conflicts_resolved": 5,
+  "auto_resolution_rate": "80%"
+}
+```
+
+#### Retry Failed Operations
+Retry operations that have failed:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "retry_failed_operations",
+    "arguments": {
+      "operation_ids": ["op_123", "op_456"],
+      "max_retries": 3
+    }
+  }
+}
+```
+
+#### Resolve Conflicts
+Manually resolve detected conflicts:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "resolve_conflict",
+    "arguments": {
+      "conflict_id": "conflict_789",
+      "resolution": "MERGE",
+      "user_choice": "keep_both_with_merge"
+    }
+  }
+}
+```
+
+### File-based IPC Protocol
+
+The operation queue uses file-based inter-process communication between the VS Code extension and MCP server:
+
+#### Queue File Structure
+```
+.vscode/specforged/
+├── operation_queue.json     # Pending operations
+├── operation_results.json   # Completed operations
+├── sync_state.json         # Synchronization state
+└── conflicts.json          # Active conflicts
+```
+
+#### Operation Queue Format
+```json
+{
+  "operations": [
+    {
+      "id": "op_1234567890",
+      "type": "UPDATE_REQUIREMENTS",
+      "status": "PENDING",
+      "priority": "NORMAL",
+      "created_at": "2025-01-09T10:30:00Z",
+      "parameters": {
+        "spec_name": "user-auth",
+        "content": "Updated requirements content..."
+      },
+      "retry_count": 0,
+      "max_retries": 3,
+      "timeout": 30000,
+      "dependencies": [],
+      "metadata": {
+        "source": "extension",
+        "user_id": "developer"
+      }
+    }
+  ],
+  "version": "1.0",
+  "last_updated": "2025-01-09T10:30:00Z"
+}
+```
+
+#### Conflict Format
+```json
+{
+  "conflicts": [
+    {
+      "id": "conflict_abc123",
+      "type": "CONCURRENT_MODIFICATION",
+      "operations": ["op_1234", "op_5678"],
+      "description": "Two operations attempting to modify requirements.md simultaneously",
+      "severity": "medium",
+      "resource_path": "user-auth/requirements.md",
+      "affected_files": ["requirements.md"],
+      "recommendations": ["USER_DECIDE", "MERGE", "RETRY"],
+      "auto_resolvable": false,
+      "created_at": "2025-01-09T10:31:00Z",
+      "resolution_attempts": 0,
+      "metadata": {
+        "file_size": 2048,
+        "last_modified": "2025-01-09T10:29:00Z"
+      }
+    }
+  ]
+}
+```
+
+### Performance Considerations
+
+#### Optimization Features
+- **Operation Batching**: Group related operations for efficiency
+- **Debouncing**: Prevent rapid-fire duplicate operations
+- **LRU Caching**: Cache operation results for quick retrieval
+- **Queue Size Limits**: Prevent memory issues with large queues
+- **Cleanup Routines**: Automatic removal of old completed operations
+
+#### Monitoring Metrics
+- Operation processing rate (ops/minute)
+- Average completion time
+- Conflict resolution success rate
+- Queue size and memory usage
+- File system operation latency
+
+---
+
 ## VS Code Extension API
 
 ### Commands
@@ -775,7 +1446,7 @@ Interactive prompts guide users through specification workflows.
 - **`specforged.showCurrentSpec`** - Display current active specification
 - **`specforged.syncSpecs`** - Manual sync with MCP server
 
-#### File Operations  
+#### File Operations
 - **`specforged.openRequirements`** - Open requirements.md file
 - **`specforged.openDesign`** - Open design.md file
 - **`specforged.openTasks`** - Open tasks.md file
@@ -788,7 +1459,7 @@ Interactive prompts guide users through specification workflows.
 #### Server Management
 - **`specforged.setupMcp`** - MCP server configuration wizard
 - **`specforged.switchToLocal`** - Use local MCP server
-- **`specforged.switchToSmithy`** - Use Smithery cloud server  
+- **`specforged.switchToSmithy`** - Use Smithery cloud server
 - **`specforged.switchToCustom`** - Use custom HTTP server
 - **`specforged.testConnection`** - Test MCP connection
 
@@ -879,7 +1550,7 @@ Content-Type: application/json
 Response:
 {
   "result": {
-    "spec_id": "user-auth", 
+    "spec_id": "user-auth",
     "name": "User Authentication System",
     "status": "DRAFT",
     "phase": "REQUIREMENTS"
@@ -926,7 +1597,7 @@ ws.onmessage = (event) => {
 #### HTTP Status Codes
 - **200** - Success
 - **400** - Bad Request (invalid parameters)
-- **401** - Unauthorized (missing/invalid API key) 
+- **401** - Unauthorized (missing/invalid API key)
 - **404** - Not Found (specification/task not found)
 - **422** - Unprocessable Entity (validation failed)
 - **500** - Internal Server Error
@@ -959,38 +1630,38 @@ from typing import Dict, Any
 class SpecForgedClient:
     def __init__(self, server_path: str = "specforged"):
         self.server_path = server_path
-        
+
     def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Call MCP tool via stdio."""
         message = {
-            "jsonrpc": "2.0", 
+            "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
             "params": {"name": name, "arguments": arguments}
         }
-        
+
         process = subprocess.Popen(
             [self.server_path],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             text=True
         )
-        
+
         stdout, _ = process.communicate(json.dumps(message))
         return json.loads(stdout)
-    
+
     def create_specification(self, name: str, description: str = "") -> Dict[str, Any]:
         """Create a new specification."""
         return self.call_tool("create_spec", {
             "name": name,
             "description": description
         })
-    
+
     def add_user_story(self, as_a: str, i_want: str, so_that: str) -> Dict[str, Any]:
         """Add user story to current specification."""
         return self.call_tool("add_requirement", {
             "as_a": as_a,
-            "i_want": i_want, 
+            "i_want": i_want,
             "so_that": so_that
         })
 
@@ -1004,7 +1675,7 @@ result = client.create_specification(
 )
 print(f"Created spec: {result['spec_id']}")
 
-# Add user story  
+# Add user story
 story = client.add_user_story(
     as_a="shopper",
     i_want="to add items to my cart",
@@ -1116,11 +1787,11 @@ curl -X POST http://localhost:8080/mcp/tools/call \
     }
   }'
 
-# Add requirement  
+# Add requirement
 curl -X POST http://localhost:8080/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "tool": "add_requirement", 
+    "tool": "add_requirement",
     "arguments": {
       "as_a": "customer",
       "i_want": "to pay with credit card",
@@ -1168,7 +1839,7 @@ curl -X POST http://localhost:8080/mcp/tools/call \
 ### 2. EARS Requirements
 - Use all 5 EARS patterns for comprehensive coverage:
   - **Ubiquitous**: Always-active system behavior
-  - **Event-driven**: Response to specific events  
+  - **Event-driven**: Response to specific events
   - **State-driven**: Behavior in specific states
   - **Optional**: Feature-conditional behavior
   - **Unwanted**: Error handling and edge cases
@@ -1218,7 +1889,7 @@ curl -X POST http://localhost:8080/mcp/tools/call \
 
 ### Smithery Cloud
 - **Free Tier**: 1000 requests/month
-- **Pro Tier**: 10,000 requests/month  
+- **Pro Tier**: 10,000 requests/month
 - **Enterprise**: Custom limits
 - **Rate limit**: 100 requests/minute
 
@@ -1236,7 +1907,7 @@ curl -X POST http://localhost:8080/mcp/tools/call \
 **Problem**: Missing requirements or design documentation.
 **Solution**: Complete requirements phase and add substantial design content.
 
-#### "Task not found" 
+#### "Task not found"
 **Problem**: Invalid task number format.
 **Solution**: Use hierarchical format: `"1"`, `"1.1"`, `"2.3.1"`.
 
@@ -1252,7 +1923,7 @@ export SPECFORGE_DEBUG=1
 specforged
 
 # HTTP server with debug
-export SPECFORGE_DEBUG=1  
+export SPECFORGE_DEBUG=1
 specforged-http --log-level debug
 ```
 
@@ -1290,7 +1961,7 @@ logging.getLogger('specforged').setLevel(logging.DEBUG)
 ## Support
 
 - **GitHub Issues**: https://github.com/whit3rabbit/SpecForge/issues
-- **Documentation**: https://github.com/whit3rabbit/SpecForge#readme  
+- **Documentation**: https://github.com/whit3rabbit/SpecForge#readme
 - **PyPI**: https://pypi.org/project/specforged/
 - **Smithery**: https://smithery.ai
 

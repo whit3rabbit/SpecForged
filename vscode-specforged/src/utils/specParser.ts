@@ -164,26 +164,26 @@ export class SpecParser {
             const id = idMatch ? idMatch[1] : `US-${i.toString().padStart(3, '0')}`;
 
             // Find story components
-            let as_a = '';
-            let i_want = '';
-            let so_that = '';
+            let asA = '';
+            let iWant = '';
+            let soThat = '';
 
             for (const line of lines) {
                 const asMatch = line.match(/\*\*As a\*\*\s+(.+),?/);
                 const wantMatch = line.match(/\*\*I want\*\*\s+(.+),?/);
                 const soMatch = line.match(/\*\*So that\*\*\s+(.+)/);
 
-                if (asMatch) as_a = asMatch[1];
-                if (wantMatch) i_want = wantMatch[1];
-                if (soMatch) so_that = soMatch[1];
+                if (asMatch) {asA = asMatch[1];}
+                if (wantMatch) {iWant = wantMatch[1];}
+                if (soMatch) {soThat = soMatch[1];}
             }
 
-            if (as_a && i_want && so_that) {
+            if (asA && iWant && soThat) {
                 stories.push({
                     id,
-                    as_a,
-                    i_want,
-                    so_that,
+                    as_a: asA,
+                    i_want: iWant,
+                    so_that: soThat,
                     requirements: []
                 });
             }

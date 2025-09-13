@@ -43,6 +43,8 @@ dependencies = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "smithery>=0.1.23",
+    "pyyaml>=6.0.0",
+    "psutil>=6.0.0",
 ]
 
 [project.scripts]
@@ -101,10 +103,13 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 ignore_missing_imports = true
+explicit_package_bases = true
+mypy_path = "src"
 
 [tool.flake8]
 max-line-length = 101
 extend-ignore = ["E203", "W503"]
+exclude = [".venv", "venv", "node_modules", ".git", "__pycache__", "*.egg-info"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

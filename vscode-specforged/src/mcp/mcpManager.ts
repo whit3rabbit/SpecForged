@@ -6,6 +6,23 @@ import { exec } from 'child_process';
 import { McpSyncService } from '../services/mcpSyncService';
 import { McpOperationFactory, McpOperationType, McpSyncState } from '../models/mcpOperation';
 
+// Declare fetch for Node.js 18+ or provide a polyfill
+declare global {
+    function fetch(input: string, init?: RequestInit): Promise<Response>;
+    interface Response {
+        ok: boolean;
+        status: number;
+        statusText: string;
+        json(): Promise<any>;
+    }
+    interface RequestInit {
+        method?: string;
+        headers?: Record<string, string>;
+        body?: string;
+        signal?: AbortSignal;
+    }
+}
+
 const execAsync = promisify(exec);
 
 export interface McpServerConfig {
@@ -583,7 +600,10 @@ export class McpManager {
             throw new Error('MCP sync service not initialized');
         }
 
-        const operation = McpOperationFactory.createOperation(type, params, 1, 'extension');
+        const operation = McpOperationFactory.createOperation(type, params, {
+            priority: 1,
+            source: 'extension'
+        });
         await this.mcpSyncService.queueOperation(operation);
     }
 

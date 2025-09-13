@@ -68,8 +68,8 @@ export class EnhancedMcpCommandsHandler {
         // Show results in a quickpick
         const items = discovery.clients.map(client => ({
             label: `${client.isInstalled ? '✅' : '❌'} ${client.displayName}`,
-            detail: client.isInstalled ? 
-                (client.configExists ? '⚙️ Configured' : '⚠️ Not configured') : 
+            detail: client.isInstalled ?
+                (client.configExists ? '⚙️ Configured' : '⚠️ Not configured') :
                 'Not installed',
             description: client.version || 'Unknown version',
             client
@@ -94,7 +94,7 @@ export class EnhancedMcpCommandsHandler {
 
     private async showMcpStatus(): Promise<void> {
         const discovery = await this.discoveryService.discoverMcpEcosystem();
-        
+
         const statusText = [
             `# MCP Ecosystem Status`,
             ``,
@@ -103,7 +103,7 @@ export class EnhancedMcpCommandsHandler {
             `**Servers Found:** ${discovery.servers.size}`,
             ``,
             `## Clients`,
-            ...discovery.clients.map(client => 
+            ...discovery.clients.map(client =>
                 `- ${client.isInstalled ? '✅' : '❌'} **${client.displayName}** ${client.configExists ? '⚙️' : '⚪'}`
             ),
             ``,
@@ -128,16 +128,16 @@ export class EnhancedMcpCommandsHandler {
 
     private async quickMcpSetup(): Promise<void> {
         const discovery = await this.discoveryService.discoverMcpEcosystem();
-        
+
         // Find the most suitable client for quick setup
         const installedClients = discovery.clients.filter(c => c.isInstalled);
-        
+
         if (installedClients.length === 0) {
             const installChoice = await vscode.window.showInformationMessage(
                 'No MCP clients detected. Would you like to see installation instructions?',
                 'View Instructions', 'Cancel'
             );
-            
+
             if (installChoice === 'View Instructions') {
                 await this.showInstallationInstructions();
             }
@@ -146,7 +146,7 @@ export class EnhancedMcpCommandsHandler {
 
         // Use the highest priority installed client
         const bestClient = installedClients.sort((a, b) => b.priority - a.priority)[0];
-        
+
         const shouldSetup = await vscode.window.showInformationMessage(
             `Quick setup will configure SpecForged for ${bestClient.displayName}. Continue?`,
             'Yes', 'Choose Different Client', 'Cancel'
@@ -207,15 +207,15 @@ export class EnhancedMcpCommandsHandler {
 
     private async selectMcpClient(): Promise<void> {
         const discovery = await this.discoveryService.discoverMcpEcosystem();
-        
+
         const items = discovery.clients.map(client => ({
             label: client.displayName,
-            detail: client.isInstalled ? 
-                (client.configExists ? 'Already configured' : 'Ready to configure') : 
+            detail: client.isInstalled ?
+                (client.configExists ? 'Already configured' : 'Ready to configure') :
                 'Not installed',
             description: `Priority: ${client.priority}${client.version ? ` • Version: ${client.version}` : ''}`,
-            iconPath: client.isInstalled ? 
-                new vscode.ThemeIcon('check') : 
+            iconPath: client.isInstalled ?
+                new vscode.ThemeIcon('check') :
                 new vscode.ThemeIcon('x'),
             client
         }));
@@ -233,7 +233,7 @@ export class EnhancedMcpCommandsHandler {
                     `${selected.client.displayName} is not installed. Would you like to see installation instructions?`,
                     'View Instructions', 'Cancel'
                 );
-                
+
                 if (install === 'View Instructions') {
                     await this.showClientInstallationInstructions(selected.client);
                 }
@@ -261,11 +261,11 @@ export class EnhancedMcpCommandsHandler {
             cancellable: false
         }, async (progress) => {
             progress.report({ increment: 0, message: 'Creating configuration...' });
-            
+
             try {
                 await this.setupSpecForgedForClient(client);
                 progress.report({ increment: 100, message: 'Configuration complete!' });
-                
+
                 vscode.window.showInformationMessage(
                     `SpecForged configured for ${client.displayName}!`,
                     'Test Connection', 'View Config'
@@ -318,7 +318,7 @@ export class EnhancedMcpCommandsHandler {
             }
         });
 
-        if (!name) return;
+        if (!name) {return;}
 
         const description = await vscode.window.showInputBox({
             title: 'Profile Description',
@@ -340,7 +340,7 @@ export class EnhancedMcpCommandsHandler {
             }
         );
 
-        if (!clients || clients.length === 0) return;
+        if (!clients || clients.length === 0) {return;}
 
         // For now, create a profile with SpecForged server
         const servers = {
@@ -353,12 +353,12 @@ export class EnhancedMcpCommandsHandler {
             }
         };
 
-        const profile = await this.syncService.createProfile(
+        const profile = await this.syncService.createProfile({
             name,
-            description || '',
+            description: description || '',
             servers,
-            clients.map(c => c.client.id)
-        );
+            targetClients: clients.map(c => c.client.id)
+        });
 
         vscode.window.showInformationMessage(
             `Created sync profile '${profile.name}'`,
@@ -374,7 +374,7 @@ export class EnhancedMcpCommandsHandler {
 
     private async applySyncProfile(profileId?: string): Promise<void> {
         let profile;
-        
+
         if (profileId) {
             profile = this.syncService.getProfile(profileId);
         } else {
@@ -397,14 +397,14 @@ export class EnhancedMcpCommandsHandler {
                 }
             );
 
-            if (!selected) return;
+            if (!selected) {return;}
             profile = selected.profile;
         }
 
-        if (!profile) return;
+        if (!profile) {return;}
 
         const operation = await this.syncService.syncProfile(profile.id);
-        
+
         vscode.window.showInformationMessage(
             `Applying sync profile '${profile.name}'...`,
             'View Progress'
@@ -415,7 +415,7 @@ export class EnhancedMcpCommandsHandler {
 
     private async manageSyncProfiles(): Promise<void> {
         const profiles = this.syncService.getProfiles();
-        
+
         if (profiles.length === 0) {
             const create = await vscode.window.showInformationMessage(
                 'No sync profiles found.',
@@ -439,7 +439,7 @@ export class EnhancedMcpCommandsHandler {
             placeHolder: 'Select profile to manage'
         });
 
-        if (!selected) return;
+        if (!selected) {return;}
 
         const action = await vscode.window.showQuickPick([
             { label: '▶️ Apply Profile', action: 'apply' },
@@ -450,7 +450,7 @@ export class EnhancedMcpCommandsHandler {
             placeHolder: 'Choose action'
         });
 
-        if (!action) return;
+        if (!action) {return;}
 
         switch (action.action) {
             case 'apply':
@@ -519,7 +519,7 @@ export class EnhancedMcpCommandsHandler {
             });
         }
 
-        if (!serverName) return;
+        if (!serverName) {return;}
 
         // Implementation for server installation
         vscode.window.showInformationMessage(`Installing ${serverName}...`);
@@ -602,14 +602,14 @@ export class EnhancedMcpCommandsHandler {
             }
         );
 
-        if (!clients || clients.length === 0) return;
+        if (!clients || clients.length === 0) {return;}
 
         vscode.window.showInformationMessage('Configuration backup functionality coming soon!');
     }
 
     private async restoreConfiguration(): Promise<void> {
         const backups = this.syncService.getBackups();
-        
+
         if (backups.length === 0) {
             vscode.window.showInformationMessage('No backups found.');
             return;
@@ -639,7 +639,7 @@ export class EnhancedMcpCommandsHandler {
 
     private async manageBackups(): Promise<void> {
         const backups = this.syncService.getBackups();
-        
+
         if (backups.length === 0) {
             vscode.window.showInformationMessage('No backups found.');
             return;
@@ -654,7 +654,7 @@ export class EnhancedMcpCommandsHandler {
             placeHolder: 'Choose action'
         });
 
-        if (!action) return;
+        if (!action) {return;}
 
         switch (action.action) {
             case 'view':
@@ -699,7 +699,7 @@ export class EnhancedMcpCommandsHandler {
 
     private async generateDiagnosticReport(): Promise<void> {
         const discovery = await this.discoveryService.discoverMcpEcosystem();
-        
+
         const report = [
             '# SpecForged MCP Diagnostic Report',
             `Generated: ${new Date().toISOString()}`,
@@ -734,7 +734,7 @@ export class EnhancedMcpCommandsHandler {
                 ''
             ]).flat(),
             '## Recommendations',
-            ...discovery.recommendations.map(rec => 
+            ...discovery.recommendations.map(rec =>
                 `- [${rec.priority.toUpperCase()}] ${rec.title}: ${rec.description}`
             ),
             '',
@@ -752,7 +752,7 @@ export class EnhancedMcpCommandsHandler {
 
     private async troubleshootSetup(): Promise<void> {
         const discovery = await this.discoveryService.discoverMcpEcosystem();
-        
+
         if (discovery.recommendations.length === 0) {
             vscode.window.showInformationMessage('No issues detected!');
             return;
@@ -772,7 +772,7 @@ export class EnhancedMcpCommandsHandler {
         if (selected) {
             // Handle specific recommendations
             const rec = selected.recommendation;
-            
+
             if (rec.type === 'install_client' && rec.clientId) {
                 await this.showClientInstallationInstructions(
                     await this.discoveryService.getClientById(rec.clientId)
@@ -819,7 +819,7 @@ After installing a client:
     }
 
     private async showClientInstallationInstructions(client: McpClient | null): Promise<void> {
-        if (!client) return;
+        if (!client) {return;}
 
         const instructions: Record<string, string> = {
             claude: 'Download Claude Desktop from: https://claude.ai/download',
@@ -830,7 +830,7 @@ After installing a client:
         };
 
         const instruction = instructions[client.id] || 'Check the official website for installation instructions.';
-        
+
         vscode.window.showInformationMessage(
             `Install ${client.displayName}: ${instruction}`,
             'Open Website'
@@ -843,7 +843,7 @@ After installing a client:
                     zed: 'https://zed.dev',
                     neovim: 'https://neovim.io'
                 };
-                
+
                 const url = urls[client.id];
                 if (url) {
                     vscode.env.openExternal(vscode.Uri.parse(url));

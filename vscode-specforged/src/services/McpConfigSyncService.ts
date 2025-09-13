@@ -9,6 +9,9 @@ export interface ConfigSyncProfile {
     description: string;
     servers: Record<string, ServerConfig>;
     targetClients: string[];
+    syncOptions?: any;
+    isActive?: boolean;
+    lastSync?: Date | null;
     created: Date;
     lastModified: Date;
 }
@@ -19,6 +22,7 @@ export interface ServerConfig {
     args: string[];
     env: Record<string, string>;
     enabled: boolean;
+    priority?: number;
     clientSpecificOverrides?: Record<string, Partial<ServerConfig>>;
 }
 
@@ -68,20 +72,23 @@ export class McpConfigSyncService {
         this.loadBackups();
     }
 
-    async createProfile(name: string, description: string, servers: Record<string, ServerConfig>, targetClients: string[]): Promise<ConfigSyncProfile> {
+    async createProfile(profileData: Partial<ConfigSyncProfile> & { name: string }): Promise<ConfigSyncProfile> {
         const profile: ConfigSyncProfile = {
-            id: this.generateId(),
-            name,
-            description,
-            servers,
-            targetClients,
+            id: profileData.id || this.generateId(),
+            name: profileData.name,
+            description: profileData.description || '',
+            servers: profileData.servers || {},
+            targetClients: profileData.targetClients || [],
+            syncOptions: profileData.syncOptions,
+            isActive: profileData.isActive || false,
+            lastSync: profileData.lastSync || null,
             created: new Date(),
             lastModified: new Date()
         };
 
         this.profiles.set(profile.id, profile);
         await this.saveProfiles();
-        
+
         return profile;
     }
 
@@ -93,7 +100,7 @@ export class McpConfigSyncService {
 
         Object.assign(profile, updates, { lastModified: new Date() });
         await this.saveProfiles();
-        
+
         return profile;
     }
 
@@ -108,7 +115,7 @@ export class McpConfigSyncService {
     }
 
     getProfiles(): ConfigSyncProfile[] {
-        return Array.from(this.profiles.values()).sort((a, b) => 
+        return Array.from(this.profiles.values()).sort((a, b) =>
             b.lastModified.getTime() - a.lastModified.getTime()
         );
     }
@@ -129,10 +136,10 @@ export class McpConfigSyncService {
         };
 
         this.operations.set(operation.id, operation);
-        
+
         // Start sync in background
         this.executeSyncOperation(operation);
-        
+
         return operation;
     }
 
@@ -143,7 +150,7 @@ export class McpConfigSyncService {
         }
 
         const clients = targetClients || profile.targetClients;
-        
+
         const operation: SyncOperation = {
             id: this.generateId(),
             type: 'sync_profile',
@@ -154,10 +161,10 @@ export class McpConfigSyncService {
         };
 
         this.operations.set(operation.id, operation);
-        
+
         // Start sync in background
         this.executeSyncOperation(operation);
-        
+
         return operation;
     }
 
@@ -167,7 +174,7 @@ export class McpConfigSyncService {
 
         try {
             const discovery = await this.discoveryService.discoverMcpEcosystem();
-            
+
             for (const clientId of operation.targetClients) {
                 const client = discovery.clients.find(c => c.id === clientId);
                 if (!client) {
@@ -193,7 +200,7 @@ export class McpConfigSyncService {
 
             const allSuccessful = Object.values(operation.results).every(r => r.success);
             operation.status = allSuccessful ? 'completed' : 'failed';
-            
+
         } catch (error) {
             operation.status = 'failed';
             operation.error = error instanceof Error ? error.message : 'Unknown error';
@@ -206,10 +213,10 @@ export class McpConfigSyncService {
 
     private async syncToClient(client: McpClient, operation: SyncOperation): Promise<SyncResult> {
         const configPath = this.expandPath(client.configPath);
-        
+
         // Create backup first
         const backup = await this.createBackup(client, configPath);
-        
+
         try {
             // Load existing config
             let existingConfig: any = {};
@@ -251,14 +258,14 @@ export class McpConfigSyncService {
                     console.error('Failed to restore backup:', restoreError);
                 }
             }
-            
+
             throw error;
         }
     }
 
     private async mergeConfigurations(clientId: string, existingConfig: any, operation: SyncOperation): Promise<any> {
         const newConfig = { ...existingConfig };
-        
+
         // Ensure mcpServers object exists
         if (!newConfig.mcpServers) {
             newConfig.mcpServers = {};
@@ -343,7 +350,7 @@ export class McpConfigSyncService {
 
         this.backups.push(backup);
         await this.saveBackups();
-        
+
         return backup;
     }
 
@@ -369,7 +376,7 @@ export class McpConfigSyncService {
     async cleanupBackups(olderThanDays: number = 30): Promise<number> {
         const cutoffDate = new Date(Date.now() - (olderThanDays * 24 * 60 * 60 * 1000));
         const toDelete = this.backups.filter(b => b.timestamp < cutoffDate);
-        
+
         let deletedCount = 0;
         for (const backup of toDelete) {
             try {
@@ -450,7 +457,7 @@ export class McpConfigSyncService {
             if (fs.existsSync(profilesPath)) {
                 const content = fs.readFileSync(profilesPath, 'utf8');
                 const profiles = JSON.parse(content);
-                
+
                 for (const profile of profiles) {
                     profile.created = new Date(profile.created);
                     profile.lastModified = new Date(profile.lastModified);
@@ -466,11 +473,11 @@ export class McpConfigSyncService {
         try {
             const profilesPath = path.join(this.context.globalStorageUri.fsPath, 'sync-profiles.json');
             const profilesDir = path.dirname(profilesPath);
-            
+
             if (!fs.existsSync(profilesDir)) {
                 fs.mkdirSync(profilesDir, { recursive: true });
             }
-            
+
             const profiles = Array.from(this.profiles.values());
             fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
         } catch (error) {
@@ -484,7 +491,7 @@ export class McpConfigSyncService {
             if (fs.existsSync(backupsPath)) {
                 const content = fs.readFileSync(backupsPath, 'utf8');
                 const backups = JSON.parse(content);
-                
+
                 this.backups = backups.map((b: any) => ({
                     ...b,
                     timestamp: new Date(b.timestamp)
@@ -499,11 +506,11 @@ export class McpConfigSyncService {
         try {
             const backupsPath = path.join(this.context.globalStorageUri.fsPath, 'backups.json');
             const backupsDir = path.dirname(backupsPath);
-            
+
             if (!fs.existsSync(backupsDir)) {
                 fs.mkdirSync(backupsDir, { recursive: true });
             }
-            
+
             fs.writeFileSync(backupsPath, JSON.stringify(this.backups, null, 2));
         } catch (error) {
             console.error('Failed to save backups:', error);
@@ -540,7 +547,7 @@ export class McpConfigSyncService {
                 operation.status = 'cancelled';
             }
         }
-        
+
         this.operations.clear();
     }
 }

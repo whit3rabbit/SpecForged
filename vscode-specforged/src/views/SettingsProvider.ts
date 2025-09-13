@@ -29,7 +29,7 @@ export interface SettingsProfile {
 
 export class SettingsProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'specforged.settings';
-    
+
     private _view?: vscode.WebviewView;
     private _refreshInterval?: NodeJS.Timer;
     private _currentProfile: SettingsProfile | null = null;
@@ -79,7 +79,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
 
     private async _loadCurrentProfile() {
         const config = vscode.workspace.getConfiguration('specforged');
-        
+
         this._currentProfile = {
             id: 'default',
             name: 'Default Configuration',
@@ -110,7 +110,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
             await this._loadCurrentProfile();
             const discoveryResult = await this.discoveryService.discoverMcpEcosystem(true);
             const profiles = await this._getAllProfiles();
-            
+
             this._view.webview.postMessage({
                 command: 'updateData',
                 data: {
@@ -130,7 +130,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
     private async _getAllProfiles(): Promise<SettingsProfile[]> {
         // Get saved profiles from extension context
         const savedProfiles = this.context.globalState.get<SettingsProfile[]>('settingsProfiles', []);
-        
+
         return [
             this._currentProfile!,
             ...savedProfiles.filter(p => p.id !== 'default')
@@ -144,11 +144,11 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                 canConfigure: client.isInstalled,
                 configurationStatus: this._getClientConfigStatus(client)
             })),
-            servers: Array.from(result.servers.entries()).map(([name, config]) => ({
-                name,
+            servers: Array.from(result.servers.entries()).map(([serverName, config]) => ({
                 ...config,
+                name: serverName,
                 canEnable: true,
-                currentlyEnabled: this._currentProfile?.serverConfigs[name]?.enabled ?? false
+                currentlyEnabled: this._currentProfile?.serverConfigs[serverName]?.enabled ?? false
             }))
         };
     }
@@ -334,7 +334,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('specforged');
             await config.update(key, value, vscode.ConfigurationTarget.Global);
-            
+
             await this._loadCurrentProfile();
             this._showNotification('success', `Updated ${key} setting`);
             await this._refreshData();
@@ -347,10 +347,10 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('specforged');
             const currentConfigs = config.get<Record<string, any>>('serverConfigs', {});
-            
+
             currentConfigs[serverId] = serverConfig;
             await config.update('serverConfigs', currentConfigs, vscode.ConfigurationTarget.Global);
-            
+
             await this._loadCurrentProfile();
             this._showNotification('success', `Updated ${serverId} server configuration`);
             await this._refreshData();
@@ -363,7 +363,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('specforged');
             await config.update('clientTargets', targets, vscode.ConfigurationTarget.Global);
-            
+
             await this._loadCurrentProfile();
             this._showNotification('success', 'Updated client targets');
             await this._refreshData();
@@ -376,21 +376,21 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         try {
             const presets = this._getConfigurationPresets();
             const preset = presets.find(p => p.id === presetId);
-            
+
             if (!preset) {
                 throw new Error(`Preset ${presetId} not found`);
             }
 
             const config = vscode.workspace.getConfiguration('specforged');
-            
+
             // Apply all settings from preset
             for (const [key, value] of Object.entries(preset.settings)) {
                 await config.update(key, value, vscode.ConfigurationTarget.Global);
             }
-            
+
             await config.update('serverConfigs', preset.serverConfigs, vscode.ConfigurationTarget.Global);
             await config.update('clientTargets', preset.clientTargets, vscode.ConfigurationTarget.Global);
-            
+
             await this._loadCurrentProfile();
             this._showNotification('success', `Applied ${preset.name} preset`);
             await this._refreshData();
@@ -424,7 +424,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
 
             const savedProfiles = profiles.filter(p => p.id !== 'default');
             await this.context.globalState.update('settingsProfiles', savedProfiles);
-            
+
             this._showNotification('success', `Saved profile: ${newProfile.name}`);
             await this._refreshData();
         } catch (error) {
@@ -436,7 +436,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         try {
             const profiles = await this._getAllProfiles();
             const profile = profiles.find(p => p.id === profileId);
-            
+
             if (!profile) {
                 throw new Error(`Profile ${profileId} not found`);
             }
@@ -445,18 +445,18 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                 await this._loadCurrentProfile();
             } else {
                 const config = vscode.workspace.getConfiguration('specforged');
-                
+
                 // Apply profile settings
                 for (const [key, value] of Object.entries(profile.settings)) {
                     await config.update(key, value, vscode.ConfigurationTarget.Global);
                 }
-                
+
                 await config.update('serverConfigs', profile.serverConfigs, vscode.ConfigurationTarget.Global);
                 await config.update('clientTargets', profile.clientTargets, vscode.ConfigurationTarget.Global);
-                
+
                 await this._loadCurrentProfile();
             }
-            
+
             this._showNotification('success', `Loaded profile: ${profile.name}`);
             await this._refreshData();
         } catch (error) {
@@ -472,9 +472,9 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
 
             const profiles = await this._getAllProfiles();
             const updatedProfiles = profiles.filter(p => p.id !== profileId && p.id !== 'default');
-            
+
             await this.context.globalState.update('settingsProfiles', updatedProfiles);
-            
+
             this._showNotification('success', 'Profile deleted');
             await this._refreshData();
         } catch (error) {
@@ -522,7 +522,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
 
             if (uri && uri[0]) {
                 const data = await vscode.workspace.fs.readFile(uri[0]);
-                const importData = JSON.parse(data.toString('utf8'));
+                const importData = JSON.parse(Buffer.from(data).toString('utf8'));
 
                 if (!importData.profiles || !Array.isArray(importData.profiles)) {
                     throw new Error('Invalid settings file format');
@@ -534,7 +534,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                     'Replace All', 'Merge', 'Cancel'
                 );
 
-                if (action === 'Cancel') return;
+                if (action === 'Cancel') {return;}
 
                 if (action === 'Replace All') {
                     const profilesToSave = importData.profiles.filter((p: any) => p.id !== 'default');
@@ -543,7 +543,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                     const currentProfiles = await this._getAllProfiles();
                     const importedProfiles = importData.profiles.filter((p: any) => p.id !== 'default');
                     const mergedProfiles = [...currentProfiles.filter(p => p.id !== 'default')];
-                    
+
                     for (const imported of importedProfiles) {
                         const existingIndex = mergedProfiles.findIndex(p => p.id === imported.id);
                         if (existingIndex >= 0) {
@@ -552,7 +552,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                             mergedProfiles.push(imported);
                         }
                     }
-                    
+
                     await this.context.globalState.update('settingsProfiles', mergedProfiles);
                 }
 
@@ -572,18 +572,18 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                 'Reset', 'Cancel'
             );
 
-            if (action !== 'Reset') return;
+            if (action !== 'Reset') {return;}
 
             const config = vscode.workspace.getConfiguration('specforged');
             const defaultSettings = this._getConfigurationPresets()[0].settings; // Use minimal preset as default
-            
+
             for (const [key, value] of Object.entries(defaultSettings)) {
                 await config.update(key, value, vscode.ConfigurationTarget.Global);
             }
-            
+
             await config.update('serverConfigs', {}, vscode.ConfigurationTarget.Global);
             await config.update('clientTargets', ['claude'], vscode.ConfigurationTarget.Global);
-            
+
             await this._loadCurrentProfile();
             this._showNotification('success', 'Settings reset to defaults');
             await this._refreshData();
@@ -595,13 +595,12 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
     private async _testConfiguration() {
         try {
             this._showNotification('info', 'Testing configuration...');
-            
+
             // Test MCP discovery
             const discoveryResult = await this.discoveryService.discoverMcpEcosystem(true);
-            
-            // Test configuration sync
-            await this.configSyncService.validateAllConfigurations();
-            
+
+            // TODO: Test configuration sync - method not yet implemented
+
             const results = {
                 discovery: {
                     clientsDetected: discoveryResult.clients.length,
@@ -962,7 +961,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
 <body>
     <div class="settings-container">
         <div class="notification" id="notification"></div>
-        
+
         <div class="settings-section">
             <div class="section-header">
                 <h2 class="section-title">Profile Management</h2>
@@ -971,7 +970,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                     <button class="btn" onclick="importSettings()">Import</button>
                 </div>
             </div>
-            
+
             <div class="profile-manager">
                 <div class="profile-selector">
                     <select id="profileSelect" onchange="loadProfile(this.value)">
@@ -989,7 +988,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
             <div class="section-header">
                 <h2 class="section-title">Configuration Presets</h2>
             </div>
-            
+
             <div class="preset-grid" id="presetGrid">
                 <!-- Presets will be populated by JavaScript -->
             </div>
@@ -1000,7 +999,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                 <h2 class="section-title">General Settings</h2>
                 <button class="btn" onclick="testConfiguration()">Test Configuration</button>
             </div>
-            
+
             <div id="generalSettings">
                 <!-- Settings will be populated by JavaScript -->
             </div>
@@ -1010,7 +1009,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
             <div class="section-header">
                 <h2 class="section-title">MCP Clients</h2>
             </div>
-            
+
             <div class="client-grid" id="clientGrid">
                 <!-- Clients will be populated by JavaScript -->
             </div>
@@ -1020,7 +1019,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
             <div class="section-header">
                 <h2 class="section-title">MCP Servers</h2>
             </div>
-            
+
             <div class="server-list" id="serverList">
                 <!-- Servers will be populated by JavaScript -->
             </div>
@@ -1030,7 +1029,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
             <div class="section-header">
                 <h2 class="section-title">Advanced</h2>
             </div>
-            
+
             <div class="setting-item">
                 <div class="setting-info">
                     <div class="setting-label">Reset to Defaults</div>
@@ -1053,7 +1052,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         // Handle messages from extension
         window.addEventListener('message', event => {
             const message = event.data;
-            
+
             switch (message.command) {
                 case 'updateData':
                     currentData = message.data;
@@ -1070,7 +1069,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
 
         function updateUI() {
             if (!currentData) return;
-            
+
             updateProfileSelector();
             updatePresets();
             updateGeneralSettings();
@@ -1081,7 +1080,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         function updateProfileSelector() {
             const select = document.getElementById('profileSelect');
             select.innerHTML = '';
-            
+
             currentData.availableProfiles.forEach(profile => {
                 const option = document.createElement('option');
                 option.value = profile.id;
@@ -1096,17 +1095,17 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         function updatePresets() {
             const grid = document.getElementById('presetGrid');
             grid.innerHTML = '';
-            
+
             currentData.presets.forEach(preset => {
                 const card = document.createElement('div');
                 card.className = 'preset-card';
                 card.onclick = () => applyPreset(preset.id);
-                
+
                 card.innerHTML = \`
                     <div class="preset-name">\${preset.name}</div>
                     <div class="preset-description">\${preset.description}</div>
                 \`;
-                
+
                 grid.appendChild(card);
             });
         }
@@ -1114,7 +1113,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         function updateGeneralSettings() {
             const container = document.getElementById('generalSettings');
             container.innerHTML = '';
-            
+
             const settings = [
                 { key: 'autoDiscovery', label: 'Auto Discovery', description: 'Automatically discover MCP clients and servers', type: 'boolean' },
                 { key: 'showRecommendations', label: 'Show Recommendations', description: 'Display setup recommendations', type: 'boolean' },
@@ -1135,24 +1134,24 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                 { key: 'refreshInterval', label: 'Refresh Interval (seconds)', description: 'How often to refresh MCP status', type: 'number' },
                 { key: 'maxBackups', label: 'Max Backups', description: 'Maximum number of configuration backups to keep', type: 'number' }
             ];
-            
+
             settings.forEach(setting => {
                 const item = document.createElement('div');
                 item.className = 'setting-item';
-                
+
                 let controlHtml = '';
                 const currentValue = currentData.currentProfile.settings[setting.key];
-                
+
                 if (setting.type === 'boolean') {
                     controlHtml = \`
                         <label class="toggle-switch">
-                            <input type="checkbox" \${currentValue ? 'checked' : ''} 
+                            <input type="checkbox" \${currentValue ? 'checked' : ''}
                                    onchange="updateSetting('\${setting.key}', this.checked)">
                             <span class="slider"></span>
                         </label>
                     \`;
                 } else if (setting.type === 'select') {
-                    const options = setting.options.map(opt => 
+                    const options = setting.options.map(opt =>
                         \`<option value="\${opt.value}" \${currentValue === opt.value ? 'selected' : ''}>\${opt.label}</option>\`
                     ).join('');
                     controlHtml = \`
@@ -1162,16 +1161,16 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                     \`;
                 } else if (setting.type === 'number') {
                     controlHtml = \`
-                        <input type="number" value="\${currentValue || ''}" 
+                        <input type="number" value="\${currentValue || ''}"
                                onchange="updateSetting('\${setting.key}', parseInt(this.value))">
                     \`;
                 } else if (setting.type === 'url') {
                     controlHtml = \`
-                        <input type="url" value="\${currentValue || ''}" 
+                        <input type="url" value="\${currentValue || ''}"
                                onchange="updateSetting('\${setting.key}', this.value)">
                     \`;
                 }
-                
+
                 item.innerHTML = \`
                     <div class="setting-info">
                         <div class="setting-label">\${setting.label}</div>
@@ -1181,7 +1180,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                         \${controlHtml}
                     </div>
                 \`;
-                
+
                 container.appendChild(item);
             });
         }
@@ -1189,14 +1188,14 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         function updateClientGrid() {
             const grid = document.getElementById('clientGrid');
             grid.innerHTML = '';
-            
+
             currentData.discoveryData.clients.forEach(client => {
                 const card = document.createElement('div');
                 card.className = 'client-card';
-                
+
                 const isEnabled = currentData.currentProfile.clientTargets.includes(client.id);
                 const statusStyle = \`background-color: \${client.configurationStatus.color}; color: white;\`;
-                
+
                 card.innerHTML = \`
                     <div class="client-name">\${client.displayName}</div>
                     <div class="client-status" style="\${statusStyle}">
@@ -1204,13 +1203,13 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                     </div>
                     <div style="margin-top: 10px;">
                         <label>
-                            <input type="checkbox" \${isEnabled ? 'checked' : ''} 
+                            <input type="checkbox" \${isEnabled ? 'checked' : ''}
                                    onchange="toggleClient('\${client.id}', this.checked)">
                             Enable for SpecForged
                         </label>
                     </div>
                 \`;
-                
+
                 grid.appendChild(card);
             });
         }
@@ -1218,13 +1217,13 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         function updateServerList() {
             const list = document.getElementById('serverList');
             list.innerHTML = '';
-            
+
             currentData.availableServers.forEach(server => {
                 const item = document.createElement('div');
                 item.className = 'server-item';
-                
+
                 const config = currentData.currentProfile.serverConfigs[server.id] || { enabled: false, priority: 1 };
-                
+
                 item.innerHTML = \`
                     <div class="server-info">
                         <div class="server-name">\${server.name}</div>
@@ -1235,13 +1234,13 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
                         <input type="number" value="\${config.priority}" min="1" max="10"
                                onchange="updateServerConfig('\${server.id}', 'priority', parseInt(this.value))">
                         <label class="toggle-switch">
-                            <input type="checkbox" \${config.enabled ? 'checked' : ''} 
+                            <input type="checkbox" \${config.enabled ? 'checked' : ''}
                                    onchange="updateServerConfig('\${server.id}', 'enabled', this.checked)">
                             <span class="slider"></span>
                         </label>
                     </div>
                 \`;
-                
+
                 list.appendChild(item);
             });
         }
@@ -1316,7 +1315,7 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
             notification.textContent = message;
             notification.className = \`notification \${type}\`;
             notification.style.display = 'block';
-            
+
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 5000);
@@ -1325,10 +1324,10 @@ export class SettingsProvider implements vscode.WebviewViewProvider {
         function showTestResults(results) {
             const message = \`Configuration Test Results:
 • Clients detected: \${results.discovery.clientsDetected}
-• Servers detected: \${results.discovery.serversDetected}  
+• Servers detected: \${results.discovery.serversDetected}
 • Configured clients: \${results.discovery.configured}
 • Issues found: \${results.discovery.errors.length}\`;
-            
+
             showNotification(results.discovery.errors.length > 0 ? 'warning' : 'success', message);
         }
     </script>

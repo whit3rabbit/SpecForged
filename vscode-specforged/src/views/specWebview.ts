@@ -34,7 +34,7 @@ export class SpecWebview {
     }
 
     private setupWebviewMessageHandling(spec: ParsedSpecification) {
-        if (!this.panel) return;
+        if (!this.panel) {return;}
 
         this.panel.webview.onDidReceiveMessage(
             async (message) => {
@@ -66,12 +66,16 @@ export class SpecWebview {
             vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'styles', 'webview.css')
         );
 
+        // Generate a random nonce for CSP
+        const nonce = this.generateNonce();
+
         return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel?.webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src ${this.panel?.webview.cspSource} data:; font-src ${this.panel?.webview.cspSource};">
                 <title>SpecForged: ${spec.spec.name}</title>
                 <link href="${cssUri}" rel="stylesheet">
                 <style>
@@ -109,7 +113,7 @@ export class SpecWebview {
                     </main>
                 </div>
 
-                <script>
+                <script nonce="${nonce}">
                     ${this.getWebviewScript()}
                 </script>
             </body>
@@ -353,7 +357,7 @@ export class SpecWebview {
                             <h4>Acceptance Criteria</h4>
                             ${story.requirements.map(req => `
                                 <div class="ears-requirement">
-                                    <strong>[${req.id}]</strong> ${this.highlightEARS(req.to_ears_string())}
+                                    <strong>[${req.id}]</strong> ${this.highlightEARS(`${req.condition} THE SYSTEM SHALL ${req.system_response}`)}
                                 </div>
                             `).join('')}
                         ` : ''}
@@ -450,7 +454,7 @@ export class SpecWebview {
                         <div class="task-meta">
                             ${task.linked_requirements.length > 0 ? `
                                 <div class="task-requirements">
-                                    ${task.linked_requirements.map(req =>
+                                    ${task.linked_requirements.map((req: string) =>
                                         `<span class="requirement-tag">${req}</span>`
                                     ).join('')}
                                 </div>
@@ -524,6 +528,16 @@ export class SpecWebview {
     private getTasksBadge(spec: ParsedSpecification): string {
         const progress = TaskHelper.calculateProgress(spec.spec.tasks);
         return `(${progress.completed}/${progress.total})`;
+    }
+
+    private generateNonce(): string {
+        // Generate a cryptographically secure random nonce
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < 32; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
     }
 
     private getWebviewScript(): string {

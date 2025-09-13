@@ -127,11 +127,11 @@ export class StatusBarManager {
     }
 
     private getProgressIcon(percentage: number): string {
-        if (percentage === 0) return '$(circle-outline)';
-        if (percentage < 25) return '$(circle-quarter)';
-        if (percentage < 50) return '$(circle-half)';
-        if (percentage < 75) return '$(circle-three-quarter)';
-        if (percentage < 100) return '$(circle-filled)';
+        if (percentage === 0) {return '$(circle-outline)';}
+        if (percentage < 25) {return '$(circle-quarter)';}
+        if (percentage < 50) {return '$(circle-half)';}
+        if (percentage < 75) {return '$(circle-three-quarter)';}
+        if (percentage < 100) {return '$(circle-filled)';}
         return '$(check-all)';
     }
 

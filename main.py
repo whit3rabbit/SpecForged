@@ -7,7 +7,9 @@ development with EARS notation, intelligent mode classification, and
 structured workflow management.
 """
 
+import asyncio
+
 from src.specforged.server import run_server
 
 if __name__ == "__main__":
-    run_server()
+    asyncio.run(run_server())

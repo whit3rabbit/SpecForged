@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Python Quality Check",
+  "description": "Runs tests, linting, and type checking on Python code changes to ensure release readiness",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.py",
+      "tests/**/*.py",
+      "main.py",
+      "main_http.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Python files have been updated. Run the following quality checks to ensure the code is ready for release:\n\n1. Run tests:\n   uv run pytest tests/ -v\n\n2. Lint code:\n   uv run black --check src/ tests/\n   uv run flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503\n\n3. Type check:\n   uv run mypy src/\n\nThese are the same checks that run in the release GitHub action, so running them now will help catch any issues before release."
+  }
+}

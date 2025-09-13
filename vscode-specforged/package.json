@@ -2,8 +2,9 @@
   "name": "vscode-specforged",
   "displayName": "SpecForged Enhanced",
   "description": "Advanced MCP ecosystem management with unified configuration, auto-discovery, and seamless integration across Cursor, Windsurf, Claude, and more",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "specforged",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/whit3rabbit/SpecForge"
@@ -59,6 +60,11 @@
           "when": "specforged.mcpSyncEnabled"
         },
         {
+          "id": "specforged.notificationHistory",
+          "name": "Notification History",
+          "when": "specforged.enableNotifications"
+        },
+        {
           "id": "specforged.mcpDashboard",
           "name": "MCP Dashboard",
           "when": "specforged.enableDashboard"
@@ -70,7 +76,7 @@
         },
         {
           "id": "specforged.mcpServers",
-          "name": "MCP Servers", 
+          "name": "MCP Servers",
           "when": "specforged.hasServers"
         },
         {
@@ -193,6 +199,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "specforged.showOperationQueue",
+        "title": "Show Operation Queue",
+        "category": "SpecForged",
+        "icon": "$(list-ordered)"
+      },
+      {
         "command": "specforged.clearCompletedOperations",
         "title": "Clear Completed Operations",
         "category": "SpecForged",
@@ -215,6 +227,30 @@
         "title": "Show Operation Details",
         "category": "SpecForged",
         "icon": "$(info)"
+      },
+      {
+        "command": "specforged.cancelOperation",
+        "title": "Cancel Operation",
+        "category": "SpecForged",
+        "icon": "$(x)"
+      },
+      {
+        "command": "specforged.retryOperation",
+        "title": "Retry Operation",
+        "category": "SpecForged",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "specforged.showConflictDashboard",
+        "title": "Show Conflict Dashboard",
+        "category": "SpecForged",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "specforged.autoResolveConflicts",
+        "title": "Auto-Resolve Conflicts",
+        "category": "SpecForged",
+        "icon": "$(wand)"
       },
       {
         "command": "specforged.forceSync",
@@ -395,6 +431,48 @@
         "title": "Open Settings",
         "category": "SpecForged Settings",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "specforged.showNotificationPreferences",
+        "title": "Notification Preferences",
+        "category": "SpecForged Notifications",
+        "icon": "$(bell)"
+      },
+      {
+        "command": "specforged.refreshNotificationHistory",
+        "title": "Refresh",
+        "category": "SpecForged Notifications",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "specforged.clearNotificationHistory",
+        "title": "Clear History",
+        "category": "SpecForged Notifications",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "specforged.clearDismissedNotifications",
+        "title": "Clear Dismissed",
+        "category": "SpecForged Notifications",
+        "icon": "$(close)"
+      },
+      {
+        "command": "specforged.toggleNotificationGroupByDate",
+        "title": "Toggle Group by Date",
+        "category": "SpecForged Notifications",
+        "icon": "$(calendar)"
+      },
+      {
+        "command": "specforged.toggleShowDismissedNotifications",
+        "title": "Toggle Show Dismissed",
+        "category": "SpecForged Notifications",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "specforged.testNotification",
+        "title": "Test Notification",
+        "category": "SpecForged Notifications",
+        "icon": "$(beaker)"
       }
     ],
     "menus": {
@@ -438,6 +516,41 @@
           "command": "specforged.forceSync",
           "when": "view == specforged.operationQueue",
           "group": "navigation@4"
+        },
+        {
+          "command": "specforged.autoResolveConflicts",
+          "when": "view == specforged.operationQueue",
+          "group": "navigation@5"
+        },
+        {
+          "command": "specforged.refreshNotificationHistory",
+          "when": "view == specforged.notificationHistory",
+          "group": "navigation@1"
+        },
+        {
+          "command": "specforged.showNotificationPreferences",
+          "when": "view == specforged.notificationHistory",
+          "group": "navigation@2"
+        },
+        {
+          "command": "specforged.toggleNotificationGroupByDate",
+          "when": "view == specforged.notificationHistory",
+          "group": "navigation@3"
+        },
+        {
+          "command": "specforged.toggleShowDismissedNotifications",
+          "when": "view == specforged.notificationHistory",
+          "group": "navigation@4"
+        },
+        {
+          "command": "specforged.clearDismissedNotifications",
+          "when": "view == specforged.notificationHistory",
+          "group": "navigation@5"
+        },
+        {
+          "command": "specforged.clearNotificationHistory",
+          "when": "view == specforged.notificationHistory",
+          "group": "navigation@6"
         }
       ],
       "view/item/context": [
@@ -470,6 +583,16 @@
           "command": "specforged.resolveConflict",
           "when": "view == specforged.operationQueue && viewItem == conflict",
           "group": "conflict@1"
+        },
+        {
+          "command": "specforged.retryOperation",
+          "when": "view == specforged.operationQueue && viewItem == operation",
+          "group": "operation@2"
+        },
+        {
+          "command": "specforged.cancelOperation",
+          "when": "view == specforged.operationQueue && viewItem == operation",
+          "group": "operation@3"
         }
       ],
       "commandPalette": [
@@ -546,6 +669,22 @@
           "when": "false"
         },
         {
+          "command": "specforged.cancelOperation",
+          "when": "false"
+        },
+        {
+          "command": "specforged.retryOperation",
+          "when": "false"
+        },
+        {
+          "command": "specforged.showConflictDashboard",
+          "when": "false"
+        },
+        {
+          "command": "specforged.autoResolveConflicts",
+          "when": "false"
+        },
+        {
           "command": "specforged.forceSync",
           "when": "false"
         }
@@ -582,7 +721,13 @@
         "specforged.defaultIde": {
           "type": "string",
           "default": "auto",
-          "enum": ["auto", "vscode", "cursor", "windsurf", "claude"],
+          "enum": [
+            "auto",
+            "vscode",
+            "cursor",
+            "windsurf",
+            "claude"
+          ],
           "description": "Default IDE for MCP configuration"
         },
         "specforged.enableWebview": {
@@ -593,7 +738,11 @@
         "specforged.mcpServerType": {
           "type": "string",
           "default": "local",
-          "enum": ["local", "smithery", "custom"],
+          "enum": [
+            "local",
+            "smithery",
+            "custom"
+          ],
           "enumDescriptions": [
             "Local SpecForged installation (requires 'pipx install specforged')",
             "Smithery cloud-hosted server (https://smithery.ai)",
@@ -667,9 +816,15 @@
           "items": {
             "type": "object",
             "properties": {
-              "name": { "type": "string" },
-              "description": { "type": "string" },
-              "enabled": { "type": "boolean" }
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
             }
           },
           "default": [],
@@ -678,7 +833,11 @@
         "specforged.preferredProtocol": {
           "type": "string",
           "default": "stdio",
-          "enum": ["stdio", "http", "websocket"],
+          "enum": [
+            "stdio",
+            "http",
+            "websocket"
+          ],
           "enumDescriptions": [
             "Standard input/output protocol (local servers)",
             "HTTP protocol (remote servers, cloud)",
@@ -713,7 +872,13 @@
         "specforged.logLevel": {
           "type": "string",
           "default": "info",
-          "enum": ["error", "warn", "info", "debug", "trace"],
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
           "description": "Logging level for extension output"
         },
         "specforged.serverRegistry": {
@@ -737,9 +902,15 @@
         "specforged.quickSetupPreferences": {
           "type": "object",
           "properties": {
-            "skipClientSelection": { "type": "boolean" },
-            "autoConfigureSpecForged": { "type": "boolean" },
-            "createDefaultProfile": { "type": "boolean" }
+            "skipClientSelection": {
+              "type": "boolean"
+            },
+            "autoConfigureSpecForged": {
+              "type": "boolean"
+            },
+            "createDefaultProfile": {
+              "type": "boolean"
+            }
           },
           "default": {
             "skipClientSelection": false,
@@ -747,35 +918,553 @@
             "createDefaultProfile": true
           },
           "description": "Preferences for quick setup workflow"
+        },
+        "specforged.notifications.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable operation status notifications"
+        },
+        "specforged.notifications.showSuccess": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for successful operations"
+        },
+        "specforged.notifications.showFailure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for failed operations"
+        },
+        "specforged.notifications.showProgress": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show progress notifications for long-running operations"
+        },
+        "specforged.notifications.showConflicts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for operation conflicts"
+        },
+        "specforged.notifications.duration": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Duration in milliseconds for auto-hiding notifications"
+        },
+        "specforged.notifications.enableSounds": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable notification sounds"
+        },
+        "specforged.notifications.enableBadges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable notification badges"
+        },
+        "specforged.notifications.quietHours.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable quiet hours to suppress notifications"
+        },
+        "specforged.notifications.quietHours.startTime": {
+          "type": "string",
+          "default": "22:00",
+          "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
+          "description": "Start time for quiet hours (HH:MM format)"
+        },
+        "specforged.notifications.quietHours.endTime": {
+          "type": "string",
+          "default": "08:00",
+          "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
+          "description": "End time for quiet hours (HH:MM format)"
+        },
+        "specforged.notifications.priorityFilter": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 3,
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "enumDescriptions": [
+            "Low",
+            "Normal",
+            "High",
+            "Urgent"
+          ],
+          "description": "Minimum operation priority to show notifications for"
+        },
+        "specforged.notifications.operationTypeFilters": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "create_spec",
+              "update_requirements",
+              "update_design",
+              "update_tasks",
+              "add_user_story",
+              "update_task_status",
+              "delete_spec",
+              "set_current_spec",
+              "sync_status",
+              "heartbeat"
+            ]
+          },
+          "default": [
+            "create_spec",
+            "update_requirements",
+            "update_design",
+            "update_tasks",
+            "add_user_story",
+            "update_task_status",
+            "delete_spec",
+            "set_current_spec",
+            "sync_status",
+            "heartbeat"
+          ],
+          "description": "Operation types to show notifications for"
+        },
+        "specforged.queue.maxSize": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 100,
+          "maximum": 100000,
+          "description": "Maximum operation queue size"
+        },
+        "specforged.queue.processingIntervalMs": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 100,
+          "maximum": 60000,
+          "description": "Queue processing interval in milliseconds"
+        },
+        "specforged.queue.heartbeatIntervalMs": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "maximum": 300000,
+          "description": "Heartbeat interval in milliseconds"
+        },
+        "specforged.queue.enableBatching": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable operation batching for better performance"
+        },
+        "specforged.queue.maxBatchSize": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum operations per batch"
+        },
+        "specforged.queue.batchTimeoutMs": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Batch collection timeout in milliseconds"
+        },
+        "specforged.queue.enableCompression": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable data compression for large operations"
+        },
+        "specforged.queue.compressionThreshold": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 10000,
+          "description": "Minimum operations count to trigger compression"
+        },
+        "specforged.queue.enableStreaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable streaming processing for large datasets"
+        },
+        "specforged.queue.cleanupIntervalMs": {
+          "type": "number",
+          "default": 1800000,
+          "minimum": 60000,
+          "maximum": 86400000,
+          "description": "Queue cleanup interval in milliseconds (30 minutes default)"
+        },
+        "specforged.queue.maxOperationAgeHours": {
+          "type": "number",
+          "default": 12,
+          "minimum": 1,
+          "maximum": 168,
+          "description": "Maximum age for operations in hours before cleanup"
+        },
+        "specforged.queue.parallelProcessingLimit": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Maximum parallel operation processing threads"
+        },
+        "specforged.queue.enableConcurrentProcessing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable concurrent processing of operations"
+        },
+        "specforged.performance.memoryLimitMb": {
+          "type": "number",
+          "default": 100,
+          "minimum": 50,
+          "maximum": 2048,
+          "description": "Memory limit in MB for extension operations"
+        },
+        "specforged.performance.enableMemoryMonitoring": {
+          "type": "boolean",
+          "default": true,
+          "description": "Monitor memory usage and show warnings"
+        },
+        "specforged.performance.memoryWarningThresholdMb": {
+          "type": "number",
+          "default": 80,
+          "minimum": 10,
+          "maximum": 2048,
+          "description": "Memory usage threshold for warnings in MB"
+        },
+        "specforged.performance.enableCaching": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable result caching for better performance"
+        },
+        "specforged.performance.cacheSize": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Maximum cache entries"
+        },
+        "specforged.performance.cacheTtlSeconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 30,
+          "maximum": 3600,
+          "description": "Cache time-to-live in seconds"
+        },
+        "specforged.performance.enableFileWatcherDebouncing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Debounce file watcher events to reduce CPU usage"
+        },
+        "specforged.performance.debounceDelayMs": {
+          "type": "number",
+          "default": 250,
+          "minimum": 50,
+          "maximum": 2000,
+          "description": "File watcher debounce delay in milliseconds"
+        },
+        "specforged.performance.enablePerformanceMonitoring": {
+          "type": "boolean",
+          "default": true,
+          "description": "Monitor and report performance metrics"
+        },
+        "specforged.performance.metricsCollectionIntervalSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 10,
+          "maximum": 300,
+          "description": "Performance metrics collection interval in seconds"
+        },
+        "specforged.security.enableStrictValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable strict input validation and sanitization"
+        },
+        "specforged.security.maxInputSizeBytes": {
+          "type": "number",
+          "default": 1048576,
+          "minimum": 1024,
+          "maximum": 10485760,
+          "description": "Maximum input size in bytes (1MB default)"
+        },
+        "specforged.security.enableRateLimiting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable rate limiting for operations"
+        },
+        "specforged.security.maxRequestsPerMinute": {
+          "type": "number",
+          "default": 100,
+          "minimum": 10,
+          "maximum": 1000,
+          "description": "Maximum requests per minute"
+        },
+        "specforged.security.rateLimitWindowSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 30,
+          "maximum": 3600,
+          "description": "Rate limiting time window in seconds"
+        },
+        "specforged.security.enableDataSanitization": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sanitize user input and file paths"
+        },
+        "specforged.security.sanitizeFilePaths": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sanitize file paths to prevent directory traversal"
+        },
+        "specforged.security.sanitizeUserInput": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sanitize user input to prevent injection attacks"
+        },
+        "specforged.security.enableAuditLogging": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable audit logging for security events"
+        },
+        "specforged.security.auditLogRetentionDays": {
+          "type": "number",
+          "default": 30,
+          "minimum": 7,
+          "maximum": 365,
+          "description": "Audit log retention period in days"
+        },
+        "specforged.conflictResolution.defaultStrategy": {
+          "type": "string",
+          "default": "ask_user",
+          "enum": [
+            "ask_user",
+            "server_wins",
+            "client_wins",
+            "merge",
+            "skip"
+          ],
+          "enumDescriptions": [
+            "Ask user to resolve conflicts manually",
+            "Server version always wins",
+            "Client version always wins",
+            "Attempt automatic merge",
+            "Skip conflicting operations"
+          ],
+          "description": "Default conflict resolution strategy"
+        },
+        "specforged.conflictResolution.enableAutoMerge": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automatic conflict resolution when possible"
+        },
+        "specforged.conflictResolution.mergeStrategies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "timestamp_based",
+              "content_based",
+              "user_preference",
+              "size_based"
+            ]
+          },
+          "default": [
+            "timestamp_based",
+            "content_based"
+          ],
+          "description": "Conflict resolution merge strategies to try"
+        },
+        "specforged.featureFlags.enableExperimentalFeatures": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable experimental features (may be unstable)"
+        },
+        "specforged.featureFlags.enableBetaFeatures": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable beta features for testing"
+        },
+        "specforged.featureFlags.rolloutGroup": {
+          "type": "string",
+          "default": "stable",
+          "enum": [
+            "stable",
+            "beta",
+            "alpha",
+            "internal"
+          ],
+          "enumDescriptions": [
+            "Stable release features only",
+            "Beta features enabled",
+            "Alpha features enabled (early adopter)",
+            "Internal/development features enabled"
+          ],
+          "description": "Feature rollout group membership"
+        },
+        "specforged.diagnostics.enableDetailedLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable detailed diagnostic logging"
+        },
+        "specforged.diagnostics.logToFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write diagnostic logs to file"
+        },
+        "specforged.diagnostics.maxLogFileSizeMb": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum diagnostic log file size in MB"
+        },
+        "specforged.diagnostics.enableTroubleshootingMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable troubleshooting mode with enhanced diagnostics"
+        },
+        "specforged.diagnostics.collectPerformanceMetrics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Collect and report performance metrics"
+        },
+        "specforged.diagnostics.enableHealthChecks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run periodic health checks on connections and services"
+        },
+        "specforged.diagnostics.healthCheckIntervalSeconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 60,
+          "maximum": 3600,
+          "description": "Health check interval in seconds"
+        },
+        "specforged.ui.theme": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "light",
+            "dark",
+            "high_contrast"
+          ],
+          "enumDescriptions": [
+            "Follow VS Code theme",
+            "Light theme",
+            "Dark theme",
+            "High contrast theme"
+          ],
+          "description": "UI theme preference for SpecForged panels"
+        },
+        "specforged.ui.compactMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use compact UI layout to save space"
+        },
+        "specforged.ui.showAdvancedOptions": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show advanced configuration options in UI"
+        },
+        "specforged.ui.enableAnimations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable UI animations and transitions"
+        },
+        "specforged.ui.showTooltips": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show helpful tooltips in the interface"
+        },
+        "specforged.accessibility.enableScreenReaderSupport": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable screen reader accessibility support"
+        },
+        "specforged.accessibility.enableKeyboardNavigation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable full keyboard navigation"
+        },
+        "specforged.accessibility.highContrastMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable high contrast mode for better visibility"
+        },
+        "specforged.accessibility.announceOperations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Announce operation status to screen readers"
+        },
+        "specforged.workspace.enableMultiRoot": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable multi-root workspace support"
+        },
+        "specforged.workspace.crossWorkspaceSync": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable synchronization across multiple workspaces"
+        },
+        "specforged.workspace.autoSwitchContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically switch context when changing workspace folders"
+        },
+        "specforged.environment": {
+          "type": "string",
+          "default": "production",
+          "enum": [
+            "development",
+            "testing",
+            "staging",
+            "production"
+          ],
+          "enumDescriptions": [
+            "Development environment with debug features",
+            "Testing environment with validation enabled",
+            "Staging environment for pre-production testing",
+            "Production environment with optimized settings"
+          ],
+          "description": "Runtime environment configuration"
         }
       }
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run bundle",
     "compile": "tsc -p ./",
+    "bundle": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify --sourcemap",
+    "bundle-dev": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
     "watch": "tsc -watch -p ./",
+    "watch-bundle": "npm run bundle-dev -- --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
+    "lint-fix": "eslint src --ext ts --fix",
     "test": "node ./out/test/runTest.js",
+    "clean": "rm -rf out",
     "package": "vsce package",
     "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
     "@types/node": "16.x",
+    "@types/sinon": "^17.0.4",
+    "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
-    "eslint": "^8.28.0",
-    "typescript": "^4.9.4",
     "@vscode/test-electron": "^2.2.0",
     "@vscode/vsce": "^2.15.0",
-    "glob": "^8.1.0"
+    "esbuild": "^0.25.9",
+    "eslint": "^8.28.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "sinon": "^21.0.0",
+    "typescript": "^4.9.4"
   },
   "dependencies": {
     "yaml": "^2.3.4"
   },
-  "icon": "resources/icons/specforged.svg",
   "galleryBanner": {
     "color": "#1e3a8a",
     "theme": "dark"

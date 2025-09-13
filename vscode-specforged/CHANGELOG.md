@@ -2,6 +2,30 @@
 
 All notable changes to the "vscode-specforged" extension will be documented in this file.
 
+## [0.2.1] - 2025-01-XX
+
+### Added
+- **Operation Queue System**: Asynchronous operation processing with priority handling
+- **Conflict Resolution**: Automatic detection and resolution of concurrent modifications
+- **Atomic File Operations**: Safe file operations with backup and restore functionality
+- **Enhanced MCP Sync Service**: Robust operation queue management with retry logic
+- **Real-time Operation Monitoring**: Live updates for operation status and progress
+- **Conflict Resolution UI**: Interactive interface for manual conflict resolution
+
+### Enhanced
+- **McpSyncService**: Refactored with atomic file operations and conflict detection
+- **Operation Models**: Added comprehensive TypeScript interfaces for all operation types
+- **Error Handling**: Improved error recovery with exponential backoff retry logic
+- **File System Safety**: Atomic write operations with temporary files and rename
+- **Status Tracking**: Enhanced operation status management with detailed progress
+
+### Technical Improvements
+- Added `AtomicFileOperations` utility for safe file system operations
+- Implemented `ConflictResolver` service for conflict detection and resolution
+- Enhanced `McpOperationFactory` with type-safe operation creation
+- Added comprehensive operation validation with `McpOperationValidator`
+- Improved error handling with `AtomicFileOperationError` types
+
 ## [0.1.0] - 2024-01-XX
 
 ### Added

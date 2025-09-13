@@ -72,16 +72,67 @@ specifications/
 
 🎉 **SpecForged is now available on [PyPI](https://pypi.org/project/specforged/)!**
 
-### 🧙‍♂️ Interactive Project Wizard (Recommended)
+SpecForged works **completely independently** of any IDE or extension. You can use it as:
+- 🖥️ **Standalone CLI tool** for project management
+- 🌐 **HTTP MCP server** for web clients  
+- 🐳 **Docker container** for cloud deployment
+- 🔌 **Local MCP server** for Claude Desktop, Cursor, etc.
 
-The fastest way to get started with SpecForged is using the **interactive project wizard** - your guided companion for creating complete specifications:
+### 🚀 One-Line Installation
+
+**Linux/macOS:**
+```bash
+curl -sSL https://raw.githubusercontent.com/whit3rabbit/SpecForge/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/whit3rabbit/SpecForge/main/install.ps1 | iex
+```
+
+### 📦 Manual Installation
+
+Choose your preferred method:
 
 ```bash
-# Install specforged
+# Recommended: Isolated installation
 pipx install specforged
 
-# Set up with your LLM (Claude Code, Cursor, etc.)
-# Then simply say: "Start specforge wizard for my project"
+# Standard pip installation  
+pip install --user specforged
+
+# Modern Python package manager
+uv tool install specforged
+
+# Docker deployment
+docker run -d -p 8080:8080 -v $(pwd):/workspace specforged/specforged
+```
+
+### 🎯 Quick Start Guide
+
+```bash
+# 1. Navigate to your project
+cd /path/to/your/project
+
+# 2. Initialize SpecForged
+specforged init
+
+# 3. Check project status  
+specforged status
+
+# 4. Start the server
+specforged serve
+
+# 5. Connect from any MCP client!
+```
+
+### 🧙‍♂️ Interactive Project Wizard (VS Code Extension)
+
+If you're using the VS Code extension, the **interactive project wizard** provides guided setup:
+
+```bash
+# In VS Code with SpecForged extension installed
+# Simply say: "Start specforge wizard for my project"
 ```
 
 The wizard will guide you through:
@@ -97,11 +148,99 @@ Available project templates:
 - `python-lib`: Python library
 - `microservice`: Microservice architecture
 
-### Quick Installation
+### 📋 Standalone Usage
+
+SpecForged is designed to work independently without requiring any IDE or extension:
 
 ```bash
-# Install specforged globally with pipx
-pipx install specforged
+# Complete standalone workflow
+specforged init                    # Initialize project configuration
+specforged config show            # View current settings
+specforged status                  # Check project health  
+specforged serve                   # Start MCP server
+specforged config edit            # Modify settings
+
+# Available deployment modes:
+specforged serve                   # Local MCP server (stdio)
+specforged http --port 8080       # HTTP server for web clients
+docker-compose up -d               # Docker deployment with persistence
+```
+
+**Configuration Sources (in order of precedence):**
+1. Environment variables (`SPECFORGED_*`)
+2. Project configuration (`.specforged.yaml`) 
+3. User configuration (`~/.specforged/config.yaml`)
+4. Sensible defaults
+
+**See [Standalone Usage Guide](docs/STANDALONE_USAGE.md) for complete documentation.**
+
+### 🐳 Docker Deployment
+
+**Simple deployment:**
+```bash
+# Run with project directory mounted
+docker run -d \
+  --name specforged \
+  -p 8080:8080 \
+  -v $(pwd):/workspace \
+  specforged/specforged
+
+# Health check
+curl http://localhost:8080/health
+```
+
+**Production deployment:**
+```bash
+# Use docker-compose for production
+cp .env.example .env  # Configure settings
+docker-compose --profile production up -d
+
+# Includes: reverse proxy, monitoring, auto-updates
+```
+
+### 🔧 MCP Client Configuration  
+
+**Claude Desktop (`~/.claude/claude_desktop_config.json`):**
+```json
+{
+  "mcpServers": {
+    "specforged": {
+      "command": "specforged",
+      "args": []
+    }
+  }
+}
+```
+
+**Cursor (`.cursor/mcp_settings.json`):**
+```json
+{
+  "mcpServers": {
+    "specforged": {
+      "command": "specforged",
+      "args": [],
+      "env": {
+        "SPECFORGE_PROJECT_ROOT": "/path/to/project"
+      }
+    }
+  }
+}
+```
+
+**HTTP Client (for web applications):**
+```javascript
+// Connect to HTTP server
+const mcpClient = new MCPClient('http://localhost:8080/mcp');
+```
+
+### 📖 Documentation
+
+- **[Standalone Usage Guide](docs/STANDALONE_USAGE.md)** - Complete standalone setup and usage
+- **[Extension Development](docs/EXTENSION_DEVELOPMENT.md)** - VS Code extension integration
+- **[API Documentation](docs/API.md)** - MCP tools and resources reference
+- **[Testing Guide](docs/TESTING_SCENARIOS.md)** - Testing and validation scenarios
+
+### Legacy Installation
 
 # Verify installation
 specforged --version
@@ -299,7 +438,7 @@ pipx install specforged
 }
 ```
 
-**Advanced Configuration** (recommended for reliable project detection):
+**Enhanced Configuration** (with operation queue support):
 
 ```json
 {
@@ -309,22 +448,23 @@ pipx install specforged
       "args": [],
       "env": {
         "SPECFORGE_PROJECT_ROOT": "/absolute/path/to/your/project",
-        "SPECFORGE_BASE_DIR": ".specifications"
+        "SPECFORGE_BASE_DIR": ".specifications",
+        "SPECFORGE_ENABLE_QUEUE": "true",
+        "SPECFORGE_QUEUE_TIMEOUT": "30000"
       }
     }
   }
 }
 ```
 
-Use the advanced configuration when:
-- Working with multiple projects
-- Basic config fails to detect your project root correctly
-- You need explicit control over where specifications are stored
+**Hybrid Workflow (Recommended):**
+1. **Claude Desktop**: Natural language specification development
+2. **VS Code Extension**: Visual operation queue management and file operations
+3. **File-based IPC**: Seamless communication between both tools
 
 Config file paths:
-
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`
+- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`  
 - Linux: `~/.config/Claude/claude_desktop_config.json`
 
 </details>

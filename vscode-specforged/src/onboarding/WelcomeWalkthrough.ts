@@ -23,7 +23,7 @@ interface OnboardingState {
 export class WelcomeWalkthrough {
     private webviewPanel: vscode.WebviewPanel | undefined;
     private currentState: OnboardingState;
-    
+
     private readonly steps: OnboardingStep[] = [
         {
             id: 'welcome',
@@ -133,10 +133,10 @@ export class WelcomeWalkthrough {
         // 1. First time setup (no state saved)
         // 2. User explicitly requested it
         // 3. Major issues detected that need attention
-        
+
         const config = vscode.workspace.getConfiguration('specforged');
         const showOnStartup = config.get<boolean>('showWelcomeWalkthrough', true);
-        
+
         if (!showOnStartup) {
             return false;
         }
@@ -151,7 +151,7 @@ export class WelcomeWalkthrough {
             const discovery = await this.discoveryService.discoverMcpEcosystem();
             const hasConfiguredClients = discovery.configuredClients > 0;
             const hasHighPriorityIssues = discovery.recommendations.some(r => r.priority === 'high');
-            
+
             // Show if no configured clients or high priority issues
             return !hasConfiguredClients || hasHighPriorityIssues;
         } catch (error) {
@@ -188,7 +188,7 @@ export class WelcomeWalkthrough {
 
     private async executeStepAction(stepId: string): Promise<void> {
         const step = this.steps.find(s => s.id === stepId);
-        if (!step?.action) return;
+        if (!step?.action) {return;}
 
         try {
             this.sendMessage({
@@ -274,7 +274,7 @@ export class WelcomeWalkthrough {
 
     private async performDiscovery(): Promise<void> {
         await this.discoveryService.discoverMcpEcosystem(true);
-        
+
         this.sendMessage({
             command: 'discoveryResults',
             data: await this.getDiscoveryResults()
@@ -344,12 +344,12 @@ export class WelcomeWalkthrough {
             }
         };
 
-        await this.configSyncService.createProfile(
-            'Default SpecForged Profile',
-            'Default configuration profile for SpecForged across all MCP clients',
+        await this.configSyncService.createProfile({
+            name: 'Default SpecForged Profile',
+            description: 'Default configuration profile for SpecForged across all MCP clients',
             servers,
-            installedClients.map(c => c.id)
-        );
+            targetClients: installedClients.map(c => c.id)
+        });
 
         this.sendMessage({
             command: 'showMessage',
@@ -444,10 +444,10 @@ export class WelcomeWalkthrough {
     }
 
     private sendStateUpdate(): void {
-        if (!this.webviewPanel) return;
+        if (!this.webviewPanel) {return;}
 
         const currentStep = this.steps[this.currentState.currentStep];
-        
+
         this.sendMessage({
             command: 'stateUpdate',
             state: {
@@ -467,7 +467,7 @@ export class WelcomeWalkthrough {
 
     private loadState(): OnboardingState {
         const saved = this.context.globalState.get<OnboardingState>('specforged.onboardingState');
-        
+
         return saved || {
             currentStep: 0,
             completedSteps: [],
@@ -831,7 +831,7 @@ export class WelcomeWalkthrough {
         // Message handling
         window.addEventListener('message', event => {
             const message = event.data;
-            
+
             switch (message.command) {
                 case 'stateUpdate':
                     currentState = message.state;
@@ -859,20 +859,20 @@ export class WelcomeWalkthrough {
             if (!currentState) return;
 
             const step = currentState.currentStepData;
-            
+
             document.getElementById('step-icon').textContent = step.icon;
             document.getElementById('step-title').textContent = step.title;
             document.getElementById('step-description').textContent = step.description;
             document.getElementById('progress-fill').style.width = currentState.progress + '%';
-            document.getElementById('progress-text').textContent = 
+            document.getElementById('progress-text').textContent =
                 \`Step \${currentState.currentStep + 1} of \${currentState.totalSteps}\`;
 
             // Update navigation
             updateNavigation();
-            
+
             // Update step indicators
             updateStepIndicators();
-            
+
             // Update step content and actions
             updateStepContent(step);
         }
@@ -902,13 +902,13 @@ export class WelcomeWalkthrough {
             for (let i = 0; i < currentState.totalSteps; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'step-dot';
-                
+
                 if (i < currentState.currentStep) {
                     dot.classList.add('completed');
                 } else if (i === currentState.currentStep) {
                     dot.classList.add('current');
                 }
-                
+
                 container.appendChild(dot);
             }
         }
@@ -916,7 +916,7 @@ export class WelcomeWalkthrough {
         function updateStepContent(step) {
             const content = document.getElementById('step-content');
             const actions = document.getElementById('step-actions');
-            
+
             content.innerHTML = '';
             actions.innerHTML = '';
 
@@ -971,7 +971,7 @@ export class WelcomeWalkthrough {
         function updateStepStatus(stepId, status, error) {
             const actions = document.getElementById('step-actions');
             const btn = actions.querySelector('button');
-            
+
             if (btn) {
                 switch (status) {
                     case 'executing':

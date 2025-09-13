@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { FileOperationService, FileOperationResult } from '../services/fileOperationService';
 import { McpSyncService } from '../services/mcpSyncService';
-import { McpOperationFactory, McpOperationType } from '../models/mcpOperation';
+import { McpOperationFactory, McpOperationType, McpOperationPriority } from '../models/mcpOperation';
 import { ConflictResolver } from '../utils/conflictResolver';
 
-export class McpCommandHandler {
+export class McpApiHandler {
     constructor(
         private fileOperationService: FileOperationService,
         private mcpSyncService: McpSyncService,
@@ -34,7 +34,7 @@ export class McpCommandHandler {
 
             // Sync operations
             vscode.commands.registerCommand('specforged.mcp.getSyncStatus', this.handleGetSyncStatus.bind(this)),
-            vscode.commands.registerCommand('specforged.mcp.forcSync', this.handleForceSync.bind(this)),
+            vscode.commands.registerCommand('specforged.mcp.forceSync', this.handleForceSync.bind(this)),
             vscode.commands.registerCommand('specforged.mcp.listSpecifications', this.handleListSpecifications.bind(this)),
 
             // Conflict operations
@@ -59,25 +59,52 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: createSpec', params);
 
-            const result = await this.fileOperationService.createSpecification(
-                params.name,
-                params.description || '',
-                params.specId
-            );
-
-            if (result.success && result.data) {
-                // Notify sync service
-                await this.mcpSyncService.notifySpecificationChange(
-                    result.data.specId,
-                    'created'
-                );
+            // Validate parameters before queuing
+            const validation = this.validateCreateSpecParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
             }
 
-            return result;
+            // Create and queue operation
+            const operation = McpOperationFactory.createCreateSpecOperation(
+                params.name,
+                params.description,
+                params.specId,
+                {
+                    priority: McpOperationPriority.HIGH, // High priority for spec creation
+                    metadata: { source: 'mcp_command' }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
+
+            // Provide immediate user feedback
+            vscode.window.showInformationMessage(
+                `Specification "${params.name}" creation queued. Check the MCP Operations view for progress.`,
+                'View Operations'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                }
+            });
+
+            return {
+                success: true,
+                message: `Specification creation queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId || this.generateSpecId(params.name),
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to create specification: ${error.message}`,
+                message: `Failed to queue specification creation: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -90,24 +117,54 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: updateRequirements', { specId: params.specId });
 
-            const result = await this.fileOperationService.updateSpecificationFile(
-                params.specId,
-                'requirements.md',
-                params.content
-            );
-
-            if (result.success) {
-                await this.mcpSyncService.notifySpecificationChange(
-                    params.specId,
-                    'requirements_updated'
-                );
+            // Validate parameters before queuing
+            const validation = this.validateUpdateRequirementsParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
             }
 
-            return result;
+            // Create and queue operation
+            const operation = McpOperationFactory.createUpdateRequirementsOperation(
+                params.specId,
+                params.content,
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: {
+                        source: 'mcp_command',
+                        contentLength: params.content.length
+                    }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
+
+            // Provide immediate user feedback
+            vscode.window.showInformationMessage(
+                `Requirements update for "${params.specId}" queued successfully.`,
+                'View Operations'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                }
+            });
+
+            return {
+                success: true,
+                message: `Requirements update queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId,
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to update requirements: ${error.message}`,
+                message: `Failed to queue requirements update: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -120,24 +177,54 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: updateDesign', { specId: params.specId });
 
-            const result = await this.fileOperationService.updateSpecificationFile(
-                params.specId,
-                'design.md',
-                params.content
-            );
-
-            if (result.success) {
-                await this.mcpSyncService.notifySpecificationChange(
-                    params.specId,
-                    'design_updated'
-                );
+            // Validate parameters before queuing
+            const validation = this.validateUpdateDesignParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
             }
 
-            return result;
+            // Create and queue operation
+            const operation = McpOperationFactory.createUpdateDesignOperation(
+                params.specId,
+                params.content,
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: {
+                        source: 'mcp_command',
+                        contentLength: params.content.length
+                    }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
+
+            // Provide immediate user feedback
+            vscode.window.showInformationMessage(
+                `Design update for "${params.specId}" queued successfully.`,
+                'View Operations'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                }
+            });
+
+            return {
+                success: true,
+                message: `Design update queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId,
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to update design: ${error.message}`,
+                message: `Failed to queue design update: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -150,24 +237,54 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: updateTasks', { specId: params.specId });
 
-            const result = await this.fileOperationService.updateSpecificationFile(
-                params.specId,
-                'tasks.md',
-                params.content
-            );
-
-            if (result.success) {
-                await this.mcpSyncService.notifySpecificationChange(
-                    params.specId,
-                    'tasks_updated'
-                );
+            // Validate parameters before queuing
+            const validation = this.validateUpdateTasksParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
             }
 
-            return result;
+            // Create and queue operation
+            const operation = McpOperationFactory.createUpdateTasksOperation(
+                params.specId,
+                params.content,
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: {
+                        source: 'mcp_command',
+                        contentLength: params.content.length
+                    }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
+
+            // Provide immediate user feedback
+            vscode.window.showInformationMessage(
+                `Tasks update for "${params.specId}" queued successfully.`,
+                'View Operations'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                }
+            });
+
+            return {
+                success: true,
+                message: `Tasks update queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId,
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to update tasks: ${error.message}`,
+                message: `Failed to queue tasks update: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -179,20 +296,56 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: deleteSpec', { specId: params.specId });
 
-            const result = await this.fileOperationService.deleteSpecification(params.specId);
-
-            if (result.success) {
-                await this.mcpSyncService.notifySpecificationChange(
-                    params.specId,
-                    'deleted'
-                );
+            // Validate parameters before queuing
+            const validation = this.validateDeleteSpecParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
             }
 
-            return result;
+            // Create and queue operation
+            const operation = McpOperationFactory.createDeleteSpecOperation(
+                params.specId,
+                {
+                    priority: McpOperationPriority.HIGH, // High priority for deletion operations
+                    metadata: {
+                        source: 'mcp_command',
+                        confirmationRequired: true
+                    }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
+
+            // Provide immediate user feedback with warning
+            vscode.window.showWarningMessage(
+                `Specification "${params.specId}" deletion queued. This action cannot be undone.`,
+                'View Operations', 'Cancel'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                } else if (selection === 'Cancel') {
+                    // TODO: Implement operation cancellation
+                    vscode.window.showInformationMessage('Operation cancellation not yet implemented');
+                }
+            });
+
+            return {
+                success: true,
+                message: `Specification deletion queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId,
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to delete specification: ${error.message}`,
+                message: `Failed to queue specification deletion: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -206,24 +359,57 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: updateTaskStatus', params);
 
-            const result = await this.fileOperationService.updateTaskStatus(
-                params.specId,
-                params.taskNumber,
-                params.status
-            );
-
-            if (result.success) {
-                await this.mcpSyncService.notifySpecificationChange(
-                    params.specId,
-                    'task_updated'
-                );
+            // Validate parameters before queuing
+            const validation = this.validateUpdateTaskStatusParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
             }
 
-            return result;
+            // Create and queue operation
+            const operation = McpOperationFactory.createUpdateTaskStatusOperation(
+                params.specId,
+                params.taskNumber,
+                params.status,
+                {
+                    priority: McpOperationPriority.HIGH, // High priority for task status updates
+                    metadata: {
+                        source: 'mcp_command',
+                        previousStatus: 'unknown' // Could be enhanced to track previous status
+                    }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
+
+            // Provide immediate user feedback
+            vscode.window.showInformationMessage(
+                `Task status update for "${params.specId}" (task ${params.taskNumber}) queued successfully.`,
+                'View Operations'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                }
+            });
+
+            return {
+                success: true,
+                message: `Task status update queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId,
+                    taskNumber: params.taskNumber,
+                    newStatus: params.status,
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to update task status: ${error.message}`,
+                message: `Failed to queue task status update: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -239,26 +425,57 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: addUserStory', { specId: params.specId });
 
-            const result = await this.fileOperationService.addUserStory(
+            // Validate parameters before queuing
+            const validation = this.validateAddUserStoryParams(params);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
+                };
+            }
+
+            // Create and queue operation
+            const operation = McpOperationFactory.createAddUserStoryOperation(
                 params.specId,
                 params.asA,
                 params.iWant,
                 params.soThat,
-                params.requirements
+                params.requirements,
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: {
+                        source: 'mcp_command',
+                        requirementCount: params.requirements?.length || 0
+                    }
+                }
             );
 
-            if (result.success) {
-                await this.mcpSyncService.notifySpecificationChange(
-                    params.specId,
-                    'user_story_added'
-                );
-            }
+            await this.mcpSyncService.queueOperation(operation);
 
-            return result;
+            // Provide immediate user feedback
+            vscode.window.showInformationMessage(
+                `User story addition for "${params.specId}" queued successfully.`,
+                'View Operations'
+            ).then(selection => {
+                if (selection === 'View Operations') {
+                    vscode.commands.executeCommand('specforged.showOperationQueue');
+                }
+            });
+
+            return {
+                success: true,
+                message: `User story addition queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    specId: params.specId,
+                    status: 'queued'
+                }
+            };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to add user story: ${error.message}`,
+                message: `Failed to queue user story addition: ${error.message}`,
                 error: 'MCP_COMMAND_ERROR'
             };
         }
@@ -271,29 +488,45 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: createFile', { path: params.path });
 
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
+            // Validate parameters before queuing
+            const validation = this.validateCreateFileParams(params);
+            if (!validation.valid) {
                 return {
                     success: false,
-                    message: 'No workspace folder found',
-                    error: 'NO_WORKSPACE'
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
                 };
             }
 
-            const filePath = vscode.Uri.joinPath(workspaceFolder.uri, params.path);
-            const encoder = new TextEncoder();
-            await vscode.workspace.fs.writeFile(filePath, encoder.encode(params.content));
+            // Create and queue operation
+            const operation = McpOperationFactory.createOperation(
+                'file_create' as McpOperationType,
+                {
+                    path: params.path,
+                    content: params.content
+                },
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: { source: 'mcp_command' }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
 
             return {
                 success: true,
-                message: `File created: ${params.path}`,
-                data: { path: filePath.fsPath }
+                message: `File creation queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    path: params.path,
+                    status: 'queued'
+                }
             };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to create file: ${error.message}`,
-                error: 'FILE_CREATION_ERROR'
+                message: `Failed to queue file creation: ${error.message}`,
+                error: 'MCP_COMMAND_ERROR'
             };
         }
     }
@@ -341,29 +574,45 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: writeFile', { path: params.path });
 
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
+            // Validate parameters before queuing
+            const validation = this.validateWriteFileParams(params);
+            if (!validation.valid) {
                 return {
                     success: false,
-                    message: 'No workspace folder found',
-                    error: 'NO_WORKSPACE'
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
                 };
             }
 
-            const filePath = vscode.Uri.joinPath(workspaceFolder.uri, params.path);
-            const encoder = new TextEncoder();
-            await vscode.workspace.fs.writeFile(filePath, encoder.encode(params.content));
+            // Create and queue operation
+            const operation = McpOperationFactory.createOperation(
+                'file_write' as McpOperationType,
+                {
+                    path: params.path,
+                    content: params.content
+                },
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: { source: 'mcp_command' }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
 
             return {
                 success: true,
-                message: `File written: ${params.path}`,
-                data: { path: filePath.fsPath }
+                message: `File write queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    path: params.path,
+                    status: 'queued'
+                }
             };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to write file: ${error.message}`,
-                error: 'FILE_WRITE_ERROR'
+                message: `Failed to queue file write: ${error.message}`,
+                error: 'MCP_COMMAND_ERROR'
             };
         }
     }
@@ -374,27 +623,44 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: deleteFile', { path: params.path });
 
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
+            // Validate parameters before queuing
+            const validation = this.validateDeleteFileParams(params);
+            if (!validation.valid) {
                 return {
                     success: false,
-                    message: 'No workspace folder found',
-                    error: 'NO_WORKSPACE'
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
                 };
             }
 
-            const filePath = vscode.Uri.joinPath(workspaceFolder.uri, params.path);
-            await vscode.workspace.fs.delete(filePath);
+            // Create and queue operation
+            const operation = McpOperationFactory.createOperation(
+                'file_delete' as McpOperationType,
+                {
+                    path: params.path
+                },
+                {
+                    priority: McpOperationPriority.HIGH, // High priority for deletion
+                    metadata: { source: 'mcp_command' }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
 
             return {
                 success: true,
-                message: `File deleted: ${params.path}`
+                message: `File deletion queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    path: params.path,
+                    status: 'queued'
+                }
             };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to delete file: ${error.message}`,
-                error: 'FILE_DELETION_ERROR'
+                message: `Failed to queue file deletion: ${error.message}`,
+                error: 'MCP_COMMAND_ERROR'
             };
         }
     }
@@ -405,28 +671,44 @@ export class McpCommandHandler {
         try {
             console.log('MCP Command: createDirectory', { path: params.path });
 
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
+            // Validate parameters before queuing
+            const validation = this.validateCreateDirectoryParams(params);
+            if (!validation.valid) {
                 return {
                     success: false,
-                    message: 'No workspace folder found',
-                    error: 'NO_WORKSPACE'
+                    message: `Invalid parameters: ${validation.errors.join(', ')}`,
+                    error: 'VALIDATION_ERROR'
                 };
             }
 
-            const dirPath = vscode.Uri.joinPath(workspaceFolder.uri, params.path);
-            await vscode.workspace.fs.createDirectory(dirPath);
+            // Create and queue operation
+            const operation = McpOperationFactory.createOperation(
+                'directory_create' as McpOperationType,
+                {
+                    path: params.path
+                },
+                {
+                    priority: McpOperationPriority.NORMAL,
+                    metadata: { source: 'mcp_command' }
+                }
+            );
+
+            await this.mcpSyncService.queueOperation(operation);
 
             return {
                 success: true,
-                message: `Directory created: ${params.path}`,
-                data: { path: dirPath.fsPath }
+                message: `Directory creation queued successfully`,
+                data: {
+                    operationId: operation.id,
+                    path: params.path,
+                    status: 'queued'
+                }
             };
         } catch (error: any) {
             return {
                 success: false,
-                message: `Failed to create directory: ${error.message}`,
-                error: 'DIRECTORY_CREATION_ERROR'
+                message: `Failed to queue directory creation: ${error.message}`,
+                error: 'MCP_COMMAND_ERROR'
             };
         }
     }
@@ -557,8 +839,10 @@ export class McpCommandHandler {
             const operation = McpOperationFactory.createOperation(
                 params.type as McpOperationType,
                 params.params,
-                params.priority || 1,
-                'mcp'
+                {
+                    priority: params.priority || 1,
+                    source: 'mcp'
+                }
             );
 
             await this.mcpSyncService.queueOperation(operation);
@@ -595,5 +879,240 @@ export class McpCommandHandler {
                 error: 'GET_QUEUE_ERROR'
             };
         }
+    }
+
+    // Validation methods for file operations
+    private validateCreateFileParams(params: {
+        path: string,
+        content: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.path || typeof params.path !== 'string' || params.path.trim().length === 0) {
+            errors.push('Path is required and must be a non-empty string');
+        }
+
+        if (params.content === undefined || typeof params.content !== 'string') {
+            errors.push('Content is required and must be a string');
+        }
+
+        if (params.path && params.path.includes('..')) {
+            errors.push('Path traversal is not allowed');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateWriteFileParams(params: {
+        path: string,
+        content: string
+    }): { valid: boolean; errors: string[] } {
+        return this.validateCreateFileParams(params);
+    }
+
+    private validateDeleteFileParams(params: {
+        path: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.path || typeof params.path !== 'string' || params.path.trim().length === 0) {
+            errors.push('Path is required and must be a non-empty string');
+        }
+
+        if (params.path && params.path.includes('..')) {
+            errors.push('Path traversal is not allowed');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateCreateDirectoryParams(params: {
+        path: string
+    }): { valid: boolean; errors: string[] } {
+        return this.validateDeleteFileParams(params);
+    }
+
+    // Validation methods for command parameters
+    private validateCreateSpecParams(params: {
+        name: string,
+        description?: string,
+        specId?: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.name || typeof params.name !== 'string' || params.name.trim().length === 0) {
+            errors.push('Name is required and must be a non-empty string');
+        }
+
+        if (params.name && params.name.length > 100) {
+            errors.push('Name must be 100 characters or less');
+        }
+
+        if (params.description && typeof params.description !== 'string') {
+            errors.push('Description must be a string');
+        }
+
+        if (params.description && params.description.length > 500) {
+            errors.push('Description must be 500 characters or less');
+        }
+
+        if (params.specId && typeof params.specId !== 'string') {
+            errors.push('SpecId must be a string');
+        }
+
+        if (params.specId && !/^[a-z0-9-]+$/.test(params.specId)) {
+            errors.push('SpecId must contain only lowercase letters, numbers, and hyphens');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateUpdateRequirementsParams(params: {
+        specId: string,
+        content: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.specId || typeof params.specId !== 'string' || params.specId.trim().length === 0) {
+            errors.push('SpecId is required and must be a non-empty string');
+        }
+
+        if (!params.content || typeof params.content !== 'string') {
+            errors.push('Content is required and must be a string');
+        }
+
+        if (params.content && params.content.length > 100000) {
+            errors.push('Content must be 100,000 characters or less');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateUpdateDesignParams(params: {
+        specId: string,
+        content: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.specId || typeof params.specId !== 'string' || params.specId.trim().length === 0) {
+            errors.push('SpecId is required and must be a non-empty string');
+        }
+
+        if (!params.content || typeof params.content !== 'string') {
+            errors.push('Content is required and must be a string');
+        }
+
+        if (params.content && params.content.length > 100000) {
+            errors.push('Content must be 100,000 characters or less');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateUpdateTasksParams(params: {
+        specId: string,
+        content: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.specId || typeof params.specId !== 'string' || params.specId.trim().length === 0) {
+            errors.push('SpecId is required and must be a non-empty string');
+        }
+
+        if (!params.content || typeof params.content !== 'string') {
+            errors.push('Content is required and must be a string');
+        }
+
+        if (params.content && params.content.length > 100000) {
+            errors.push('Content must be 100,000 characters or less');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateAddUserStoryParams(params: {
+        specId: string,
+        asA: string,
+        iWant: string,
+        soThat: string,
+        requirements?: Array<{condition: string; systemResponse: string}>
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.specId || typeof params.specId !== 'string' || params.specId.trim().length === 0) {
+            errors.push('SpecId is required and must be a non-empty string');
+        }
+
+        if (!params.asA || typeof params.asA !== 'string' || params.asA.trim().length === 0) {
+            errors.push('AsA is required and must be a non-empty string');
+        }
+
+        if (!params.iWant || typeof params.iWant !== 'string' || params.iWant.trim().length === 0) {
+            errors.push('IWant is required and must be a non-empty string');
+        }
+
+        if (!params.soThat || typeof params.soThat !== 'string' || params.soThat.trim().length === 0) {
+            errors.push('SoThat is required and must be a non-empty string');
+        }
+
+        if (params.requirements && !Array.isArray(params.requirements)) {
+            errors.push('Requirements must be an array');
+        }
+
+        if (params.requirements) {
+            params.requirements.forEach((req, index) => {
+                if (!req.condition || typeof req.condition !== 'string') {
+                    errors.push(`Requirement ${index + 1}: condition is required and must be a string`);
+                }
+                if (!req.systemResponse || typeof req.systemResponse !== 'string') {
+                    errors.push(`Requirement ${index + 1}: systemResponse is required and must be a string`);
+                }
+            });
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateUpdateTaskStatusParams(params: {
+        specId: string,
+        taskNumber: string,
+        status: 'pending' | 'in_progress' | 'completed'
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.specId || typeof params.specId !== 'string' || params.specId.trim().length === 0) {
+            errors.push('SpecId is required and must be a non-empty string');
+        }
+
+        if (!params.taskNumber || typeof params.taskNumber !== 'string' || params.taskNumber.trim().length === 0) {
+            errors.push('TaskNumber is required and must be a non-empty string');
+        }
+
+        if (!params.status || !['pending', 'in_progress', 'completed'].includes(params.status)) {
+            errors.push('Status must be one of: pending, in_progress, completed');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private validateDeleteSpecParams(params: {
+        specId: string
+    }): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!params.specId || typeof params.specId !== 'string' || params.specId.trim().length === 0) {
+            errors.push('SpecId is required and must be a non-empty string');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    private generateSpecId(name: string): string {
+        return name
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
     }
 }

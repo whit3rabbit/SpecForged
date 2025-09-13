@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  specforged:
+    build: .
+    container_name: specforged-server
+    restart: unless-stopped
+    ports:
+      - "${SPECFORGED_PORT:-8080}:8080"
+    environment:
+      # Server configuration
+      - SPECFORGED_NAME=${SPECFORGED_NAME:-SpecForged-Docker}
+      - SPECFORGED_HOST=0.0.0.0
+      - SPECFORGED_PORT=8080
+      - SPECFORGED_LOG_LEVEL=${SPECFORGED_LOG_LEVEL:-INFO}
+      
+      # Project configuration
+      - SPECFORGE_PROJECT_ROOT=/workspace
+      - SPECFORGE_BASE_DIR=/workspace/.specifications
+      
+      # Security settings
+      - SPECFORGED_SECURITY_AUDIT=${SPECFORGED_SECURITY_AUDIT:-true}
+      - SPECFORGED_RATE_LIMITING=${SPECFORGED_RATE_LIMITING:-true}
+      - SPECFORGED_MAX_REQUESTS=${SPECFORGED_MAX_REQUESTS:-100}
+      
+      # HTTP settings
+      - SPECFORGED_CORS_ENABLED=${SPECFORGED_CORS_ENABLED:-true}
+      
+      # Development settings
+      - SPECFORGED_DEBUG=${SPECFORGED_DEBUG:-false}
+    volumes:
+      # Mount project directory for persistence
+      - "${WORKSPACE_PATH:-./workspace}:/workspace"
+      
+      # Optional: Mount user configuration
+      - "${HOME}/.specforged:/root/.specforged:ro"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Optional: Add a reverse proxy for production deployments
+  nginx:
+    image: nginx:alpine
+    container_name: specforged-proxy
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_SSL_PORT:-443}:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - "${SSL_CERTS_PATH:-./certs}:/etc/ssl/certs:ro"
+    depends_on:
+      specforged:
+        condition: service_healthy
+    profiles:
+      - production
+      - proxy
+
+  # Optional: Add a monitoring container
+  watchtower:
+    image: containrrr/watchtower
+    container_name: specforged-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400  # Check daily
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+    command: specforged-server
+    profiles:
+      - monitoring
+
+# Named volumes for data persistence
+volumes:
+  specforged_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${WORKSPACE_PATH:-./workspace}"
+
+# Network configuration
+networks:
+  default:
+    name: specforged-network
+    driver: bridge

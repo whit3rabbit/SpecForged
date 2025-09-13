@@ -1,0 +1,45 @@
+# Source files - we bundle them, so exclude from package
+src/**/*
+test/**/*
+scripts/**/*
+
+# Build and dev files
+.vscode/
+.vscode-test/
+.vscode-test-web/
+tsconfig.json
+.eslintrc.json
+*.vsix
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+.nyc_output/
+coverage/
+
+# Development only
+BUILD.md
+ARCHITECTURE.md
+CHANGELOG.md
+
+# Keep only essential files for extension
+# out/ - bundled extension code
+# package.json - extension manifest
+# README.md - user documentation
+# LICENSE - required for marketplace
+# resources/ - icons and assets

@@ -2,6 +2,23 @@ import * as vscode from 'vscode';
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 
+// Declare fetch for Node.js 18+ or provide a polyfill
+declare global {
+    function fetch(input: string, init?: RequestInit): Promise<Response>;
+    interface Response {
+        ok: boolean;
+        status: number;
+        statusText: string;
+        json(): Promise<any>;
+    }
+    interface RequestInit {
+        method?: string;
+        headers?: Record<string, string>;
+        body?: string;
+        signal?: AbortSignal;
+    }
+}
+
 export type McpProtocol = 'stdio' | 'http' | 'websocket';
 
 export interface McpConnectionConfig {
@@ -92,7 +109,7 @@ export class UniversalMcpAdapter extends EventEmitter {
     async connect(): Promise<ConnectionStatus> {
         try {
             this.emit('connecting');
-            
+
             switch (this.config.protocol) {
                 case 'stdio':
                     await this.connectStdio();
@@ -109,28 +126,28 @@ export class UniversalMcpAdapter extends EventEmitter {
 
             // Initialize connection
             await this.initialize();
-            
+
             // Start heartbeat
             this.startHeartbeat();
-            
+
             this.status.connected = true;
             this.status.error = undefined;
             this.reconnectAttempts = 0;
-            
+
             this.emit('connected', this.status);
-            
+
             return this.status;
         } catch (error) {
             this.status.connected = false;
             this.status.error = error instanceof Error ? error.message : 'Connection failed';
-            
+
             this.emit('error', error);
-            
+
             // Attempt reconnect if configured
             if (this.config.retryAttempts && this.reconnectAttempts < this.config.retryAttempts) {
                 this.scheduleReconnect();
             }
-            
+
             throw error;
         }
     }
@@ -157,11 +174,11 @@ export class UniversalMcpAdapter extends EventEmitter {
         let buffer = '';
         this.process.stdout?.on('data', (data) => {
             buffer += data.toString();
-            
+
             // Process complete JSON messages
             const lines = buffer.split('\n');
             buffer = lines.pop() || ''; // Keep incomplete line in buffer
-            
+
             for (const line of lines) {
                 if (line.trim()) {
                     try {
@@ -188,7 +205,7 @@ export class UniversalMcpAdapter extends EventEmitter {
 
         // Test connection
         await this.testHttpConnection();
-        
+
         this.connection = {
             url: this.config.url,
             apiKey: this.config.apiKey,
@@ -259,7 +276,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(initMessage);
-        
+
         if (response.error) {
             throw new Error(`Initialization failed: ${response.error.message}`);
         }
@@ -284,7 +301,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(message);
-        
+
         if (response.error) {
             throw new Error(`Tool call failed: ${response.error.message}`);
         }
@@ -300,7 +317,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(message);
-        
+
         if (response.error) {
             throw new Error(`List tools failed: ${response.error.message}`);
         }
@@ -317,7 +334,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(message);
-        
+
         if (response.error) {
             throw new Error(`Read resource failed: ${response.error.message}`);
         }
@@ -333,7 +350,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(message);
-        
+
         if (response.error) {
             throw new Error(`List resources failed: ${response.error.message}`);
         }
@@ -353,7 +370,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(message);
-        
+
         if (response.error) {
             throw new Error(`Get prompt failed: ${response.error.message}`);
         }
@@ -369,7 +386,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         };
 
         const response = await this.sendMessage(message);
-        
+
         if (response.error) {
             throw new Error(`List prompts failed: ${response.error.message}`);
         }
@@ -472,7 +489,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         // Handle notifications
         if (message.method) {
             this.emit('notification', message);
-            
+
             // Handle specific notifications
             switch (message.method) {
                 case 'notifications/tools/list_changed':
@@ -498,10 +515,10 @@ export class UniversalMcpAdapter extends EventEmitter {
                 const start = Date.now();
                 await this.ping();
                 const latency = Date.now() - start;
-                
+
                 this.status.lastPing = new Date();
                 this.status.latency = latency;
-                
+
                 this.emit('heartbeat', this.status);
             } catch (error) {
                 console.warn('Heartbeat failed:', error);
@@ -523,9 +540,9 @@ export class UniversalMcpAdapter extends EventEmitter {
     private handleConnectionError(error: any): void {
         this.status.connected = false;
         this.status.error = error instanceof Error ? error.message : 'Connection error';
-        
+
         this.emit('error', error);
-        
+
         if (this.config.retryAttempts && this.reconnectAttempts < this.config.retryAttempts) {
             this.scheduleReconnect();
         }
@@ -534,9 +551,9 @@ export class UniversalMcpAdapter extends EventEmitter {
     private handleConnectionClosed(code: number | null, signal: string | null): void {
         this.status.connected = false;
         this.status.error = `Connection closed (code: ${code}, signal: ${signal})`;
-        
+
         this.emit('disconnected', { code, signal });
-        
+
         if (this.heartbeatInterval) {
             clearInterval(this.heartbeatInterval);
             this.heartbeatInterval = null;
@@ -546,9 +563,9 @@ export class UniversalMcpAdapter extends EventEmitter {
     private scheduleReconnect(): void {
         this.reconnectAttempts++;
         const delay = (this.config.retryDelay || 5000) * Math.pow(2, this.reconnectAttempts - 1);
-        
+
         console.log(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
-        
+
         setTimeout(() => {
             console.log(`Reconnect attempt ${this.reconnectAttempts}`);
             this.connect().catch((error) => {
@@ -571,7 +588,7 @@ export class UniversalMcpAdapter extends EventEmitter {
 
     async disconnect(): Promise<void> {
         this.status.connected = false;
-        
+
         if (this.heartbeatInterval) {
             clearInterval(this.heartbeatInterval);
             this.heartbeatInterval = null;
@@ -605,7 +622,7 @@ export class UniversalMcpAdapter extends EventEmitter {
         this.disconnect().catch((error) => {
             console.error('Error during disconnect:', error);
         });
-        
+
         this.removeAllListeners();
     }
 }
