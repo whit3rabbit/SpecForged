@@ -375,7 +375,8 @@ You can exit at any time with Ctrl+C.
         if questionary.confirm("Define data models?", default=False).ask():
             data_models = (
                 questionary.text(
-                    "Data models (TypeScript interfaces or schema):", multiline=True
+                    "Data models (TypeScript interfaces or schema):",
+                    multiline=True,
                 ).ask()
                 or ""
             )

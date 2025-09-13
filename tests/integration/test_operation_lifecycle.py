@@ -11,24 +11,17 @@ and that all components integrate properly.
 import asyncio
 import json
 import time
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime
 
 import pytest
 
-from src.specforged.core.queue_processor import (
-    OperationResult,
-    OperationStatus,
-    OperationType,
-)
+from src.specforged.core.queue_processor import OperationStatus, OperationType
 
 from .fixtures import (
     IntegrationTestWorkspace,
-    MockMcpServer,
     OperationBuilder,
     PerformanceMonitor,
     create_test_operation,
-    wait_for_condition,
 )
 
 
@@ -43,7 +36,10 @@ class TestOperationLifecycle:
         # Step 1: Extension queues operation
         operation_id = await integration_workspace.simulate_extension_operation(
             OperationType.CREATE_SPEC,
-            {"name": "Test Specification", "description": "Integration test spec"},
+            {
+                "name": "Test Specification",
+                "description": "Integration test spec",
+            },
             priority=7,
         )
 
@@ -249,7 +245,7 @@ class TestOperationLifecycle:
             await integration_workspace.process_all_operations()
             await asyncio.sleep(0.1)
 
-        processing_time = time.time() - processing_start
+        time.time() - processing_start
 
         # Verify all operations completed
         results = []
@@ -300,7 +296,7 @@ class TestOperationLifecycle:
         assert result.success
 
         # Simulate external file modification (user editing file directly)
-        external_content = "# Externally Modified Requirements\n\nThis was modified outside the system."
+        external_content = "# Externally Modified Requirements\n\nThis was modified outside the system."  # noqa: E501
         await integration_workspace.simulate_file_modification(
             spec_id, "requirements.md", external_content
         )
@@ -321,18 +317,18 @@ class TestOperationLifecycle:
 
         # Check for conflict detection
         queue = await integration_workspace.get_operation_queue()
-        conflicts = [op for op in queue.operations if op.conflictIds]
+        [op for op in queue.operations if op.conflictIds]
 
         # The update operation should have detected the external modification
         # (This depends on the queue processor's file modification conflict detection)
 
         # Verify the operation still processes (conflict resolution may handle it)
-        update_result = await integration_workspace.wait_for_operation_completion(
+        await integration_workspace.wait_for_operation_completion(
             update_op_id, timeout_seconds=15
         )
 
         # Check sync state for any recorded conflicts or errors
-        sync_state = await integration_workspace.get_sync_state()
+        await integration_workspace.get_sync_state()
 
         # Verify file monitoring is working by checking sync state or conflicts
         assert (
@@ -393,7 +389,10 @@ class TestOperationLifecycle:
         # Create operation with notification tracking
         operation_id = await integration_workspace.simulate_extension_operation(
             OperationType.CREATE_SPEC,
-            {"name": "Notification Test Spec", "description": "Test notifications"},
+            {
+                "name": "Notification Test Spec",
+                "description": "Test notifications",
+            },
             priority=8,
         )
 
@@ -432,7 +431,7 @@ class TestOperationLifecycle:
         assert sync_state.mcp_server_online is True
 
         # Verify specification change was recorded
-        spec_change = next(
+        next(
             (
                 spec
                 for spec in sync_state.specifications
@@ -497,7 +496,10 @@ class TestOperationLifecycle:
 
         # Invalid parameter operation should have failed or be retrying
         invalid_op = ops_by_id[invalid_op_id]
-        assert invalid_op.status in [OperationStatus.FAILED, OperationStatus.PENDING]
+        assert invalid_op.status in [
+            OperationStatus.FAILED,
+            OperationStatus.PENDING,
+        ]
 
         # Missing dependency operation should have failed
         missing_dep_op = ops_by_id[missing_dep_op_id]
@@ -507,7 +509,7 @@ class TestOperationLifecycle:
         ]
 
         # Readonly operation might have succeeded after permissions were restored
-        readonly_op = ops_by_id[readonly_op_id]
+        ops_by_id[readonly_op_id]
         # Status depends on implementation - might succeed after retry
 
         # Verify error results were recorded
@@ -540,7 +542,10 @@ class TestOperationLifecyclePerformance:
         for i in range(num_operations):
             op_id = await integration_workspace.simulate_extension_operation(
                 OperationType.CREATE_SPEC,
-                {"name": f"Perf Test Spec {i}", "specId": f"perf-test-{i:03d}"},
+                {
+                    "name": f"Perf Test Spec {i}",
+                    "specId": f"perf-test-{i:03d}",
+                },
                 priority=5,
             )
             operation_ids.append(op_id)
@@ -587,7 +592,7 @@ class TestOperationLifecyclePerformance:
         # Performance assertions
         assert (
             completed_count >= num_operations * 0.9
-        ), f"At least 90% of operations should complete. Completed: {completed_count}/{num_operations}"
+        ), f"At least 90% of operations should complete. Completed: {completed_count}/{num_operations}"  # noqa: E501
         assert (
             perf_report["operations_per_second"] > 5
         ), f"Should process at least 5 ops/sec, got {perf_report['operations_per_second']:.2f}"
@@ -595,7 +600,7 @@ class TestOperationLifecyclePerformance:
             perf_report["average_operation_time"] < 2.0
         ), f"Average operation time should be < 2s, got {perf_report['average_operation_time']:.2f}"
 
-        print(f"Performance Report:")
+        print("Performance Report:")
         print(f"  Total time: {total_time:.2f}s")
         print(f"  Operations completed: {completed_count}/{num_operations}")
         print(f"  Operations per second: {perf_report['operations_per_second']:.2f}")

@@ -6,10 +6,9 @@ checks to prevent directory traversal attacks and ensure file operations
 stay within allowed boundaries.
 """
 
-import os
-import stat
 import logging
-from pathlib import Path, PurePath
+import os
+from pathlib import Path
 from typing import List, Optional, Set, Union
 from urllib.parse import unquote
 
@@ -279,7 +278,9 @@ class SecurePathHandler:
     """High-level secure path handling with built-in security policies."""
 
     def __init__(
-        self, project_root: Union[str, Path], specifications_dir: Union[str, Path]
+        self,
+        project_root: Union[str, Path],
+        specifications_dir: Union[str, Path],
     ):
         """
         Initialize secure path handler for SpecForge project.
@@ -307,7 +308,7 @@ class SecurePathHandler:
         self.logger = logging.getLogger(__name__)
 
         # Log initialization
-        self.logger.info(f"SecurePathHandler initialized:")
+        self.logger.info("SecurePathHandler initialized:")
         self.logger.info(f"  Project root: {self.project_root}")
         self.logger.info(f"  Specifications dir: {self.specifications_dir}")
 
@@ -371,8 +372,8 @@ class SecurePathHandler:
         Returns:
             Secure temporary file path
         """
-        import tempfile
         import secrets
+        import tempfile
 
         # Validate prefix and suffix
         if not self.path_validator.is_safe_filename(prefix):
@@ -458,7 +459,8 @@ class SecurePathHandler:
         validated_path = self.path_validator.validate_path(path, check_exists=True)
 
         try:
-            file_stat = validated_path.stat()
+            # Check if path exists before accessing
+            validated_path.stat()
 
             checks = {
                 "r": os.access(validated_path, os.R_OK),

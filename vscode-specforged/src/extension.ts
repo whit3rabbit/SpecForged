@@ -5,6 +5,7 @@ import { McpManager } from './mcp/mcpManager';
 import { SpecificationManager } from './utils/specificationManager';
 import { StatusBarManager } from './utils/statusBarManager';
 import { EnhancedStatusBarManager } from './utils/EnhancedStatusBarManager';
+import { McpStatusBarManager } from './utils/McpStatusBarManager';
 import { FileOperationService } from './services/fileOperationService';
 import { McpSyncService } from './services/mcpSyncService';
 import { McpDiscoveryService } from './services/McpDiscoveryService';
@@ -19,7 +20,9 @@ import { NotificationHistoryView } from './views/notificationHistoryView';
 import { McpDashboardProvider } from './views/McpDashboardProvider';
 import { SettingsProvider } from './views/SettingsProvider';
 import { NotificationManager } from './services/notificationManager';
+import { LiveUpdateService } from './services/LiveUpdateService';
 import { SecurityManager } from './security/securityManager';
+import { AtomicFileOperationError } from './utils/atomicFileOperations';
 
 // Enhanced service management with proper lifecycle
 interface ServiceContainer {
@@ -32,6 +35,7 @@ interface ServiceContainer {
     // Status management
     statusBarManager: StatusBarManager;
     enhancedStatusBarManager: EnhancedStatusBarManager;
+    mcpStatusBarManager: McpStatusBarManager;
 
     // File and sync services
     fileOperationService: FileOperationService;
@@ -54,6 +58,7 @@ interface ServiceContainer {
 
     // Notification system
     notificationManager: NotificationManager;
+    liveUpdateService: LiveUpdateService;
 
     // Security system
     securityManager: SecurityManager;
@@ -189,6 +194,11 @@ async function disposeServices(services: ServiceContainer): Promise<void> {
             disposalTasks.push(Promise.resolve(services.operationQueueView.dispose()));
         }
 
+        // Dispose live update service
+        if (services.liveUpdateService && typeof services.liveUpdateService.dispose === 'function') {
+            disposalTasks.push(Promise.resolve(services.liveUpdateService.dispose()));
+        }
+
         // Dispose command handlers
         if (services.enhancedMcpCommandsHandler && typeof services.enhancedMcpCommandsHandler.dispose === 'function') {
             disposalTasks.push(Promise.resolve(services.enhancedMcpCommandsHandler.dispose()));
@@ -214,6 +224,9 @@ async function disposeServices(services: ServiceContainer): Promise<void> {
         }
         if (services.enhancedStatusBarManager && typeof services.enhancedStatusBarManager.dispose === 'function') {
             disposalTasks.push(Promise.resolve(services.enhancedStatusBarManager.dispose()));
+        }
+        if (services.mcpStatusBarManager && typeof services.mcpStatusBarManager.dispose === 'function') {
+            disposalTasks.push(Promise.resolve(services.mcpStatusBarManager.dispose()));
         }
 
         // Dispose conflict resolver
@@ -334,6 +347,12 @@ async function initializeServices(context: vscode.ExtensionContext, config: Exte
 
     // Initialize notification system
     const notificationManager = new NotificationManager();
+    const liveUpdateService = new LiveUpdateService(
+        mcpSyncService,
+        conflictResolver,
+        notificationManager,
+        context
+    );
 
     // Initialize security system
     const securityManager = new SecurityManager(context);
@@ -401,6 +420,11 @@ async function initializeServices(context: vscode.ExtensionContext, config: Exte
         mcpManager,
         mcpDiscoveryService
     );
+    const mcpStatusBarManager = new McpStatusBarManager(
+        mcpSyncService,
+        conflictResolver,
+        context
+    );
 
     // Create tree views
     const specTreeDataProvider = vscode.window.createTreeView('specforged.specifications', {
@@ -424,6 +448,7 @@ async function initializeServices(context: vscode.ExtensionContext, config: Exte
         // Status management
         statusBarManager,
         enhancedStatusBarManager,
+        mcpStatusBarManager,
 
         // File and sync services
         fileOperationService,
@@ -446,6 +471,7 @@ async function initializeServices(context: vscode.ExtensionContext, config: Exte
 
         // Notification system
         notificationManager,
+        liveUpdateService,
 
         // Security system
         securityManager,
@@ -507,6 +533,7 @@ async function registerTreeViewsAndCommands(context: vscode.ExtensionContext, se
     // Register status bar managers
     context.subscriptions.push(services.statusBarManager);
     context.subscriptions.push(services.enhancedStatusBarManager);
+    context.subscriptions.push(services.mcpStatusBarManager);
 
     // Register webview providers
     context.subscriptions.push(
@@ -530,7 +557,9 @@ async function registerTreeViewsAndCommands(context: vscode.ExtensionContext, se
         mcpManager: services.mcpManager,
         specificationManager: services.specificationManager,
         statusBarManager: services.statusBarManager,
-        treeDataProvider: services.specTreeDataProvider
+        treeDataProvider: services.specTreeDataProvider,
+        liveUpdateService: services.liveUpdateService,
+        mcpSyncService: services.mcpSyncService
     });
 
     // Setup MCP commands
@@ -678,10 +707,35 @@ async function initializeMcpServices(services: ServiceContainer, config: Extensi
         await services.mcpSyncService.initialize();
         console.log('✅ MCP Sync Service initialized');
 
+    } catch (error) {
+        console.warn('⚠️ MCP sync service initialization failed:', error);
+        // Don't throw - let the extension continue without sync service
+
+        if (error instanceof AtomicFileOperationError) {
+            if (config.enableNotifications) {
+                vscode.window.showWarningMessage(
+                    error.getUserMessage(),
+                    ...error.getRecoverySuggestions()
+                );
+            }
+        } else if (config.enableNotifications) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            vscode.window.showWarningMessage(
+                `MCP sync service failed to initialize: ${errorMessage}. Some features may be limited.`
+            );
+        }
+    }
+
+    try {
         // Initialize MCP connection
         const connectionResult = await services.mcpManager.initializeConnection();
         console.log('MCP Connection:', connectionResult.message);
 
+    } catch (error) {
+        console.error('⚠️ MCP manager initialization failed:', error);
+    }
+
+    try {
         // Initialize config sync service (if method exists)
         if (typeof (services.mcpConfigSyncService as any).initialize === 'function') {
             await (services.mcpConfigSyncService as any).initialize();
@@ -689,18 +743,7 @@ async function initializeMcpServices(services: ServiceContainer, config: Extensi
         }
 
     } catch (error) {
-        console.error('⚠️ MCP service initialization failed:', error);
-
-        if (config.enableNotifications) {
-            vscode.window.showWarningMessage(
-                'MCP services failed to initialize. Some features may be limited.',
-                'View Details'
-            ).then(action => {
-                if (action === 'View Details') {
-                    vscode.commands.executeCommand('specforged.troubleshootSetup');
-                }
-            });
-        }
+        console.error('⚠️ MCP config sync service initialization failed:', error);
     }
 }
 
@@ -757,6 +800,7 @@ async function updateUIAndContexts(services: ServiceContainer): Promise<void> {
     services.specProvider.refresh();
     services.statusBarManager.update();
     await services.enhancedStatusBarManager.update();
+    services.mcpStatusBarManager.refresh();
     await updateContexts(services);
 
     // Refresh operation queue

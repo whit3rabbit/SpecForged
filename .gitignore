@@ -167,3 +167,7 @@ specifications/
 Thumbs.db
 
 uv.lock
+
+# SpecForged generated files
+mcp-operations.json*
+specforge-sync.json*

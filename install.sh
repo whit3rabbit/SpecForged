@@ -100,11 +100,11 @@ log_verbose() {
 execute() {
     local cmd="$1"
     local description="$2"
-    
+
     if [ -n "$description" ]; then
         log_verbose "$description"
     fi
-    
+
     if [ "$DRY_RUN" = true ]; then
         echo -e "${YELLOW}[DRY RUN] Would execute: $cmd${NC}"
     else
@@ -123,18 +123,18 @@ command_exists() {
 # Check Python version
 check_python_version() {
     local python_cmd="$1"
-    
+
     if ! command_exists "$python_cmd"; then
         return 1
     fi
-    
+
     local version
     version=$($python_cmd -c "import sys; print('.'.join(map(str, sys.version_info[:2])))" 2>/dev/null)
-    
+
     if [ $? -ne 0 ]; then
         return 1
     fi
-    
+
     # Compare versions
     if [ "$(printf '%s\n' "$MIN_PYTHON_VERSION" "$version" | sort -V | head -n1)" = "$MIN_PYTHON_VERSION" ]; then
         echo "$version"
@@ -147,7 +147,7 @@ check_python_version() {
 # Detect Python installation
 detect_python() {
     log_verbose "Detecting Python installation..."
-    
+
     # Try different Python commands
     for python_cmd in python3 python python3.12 python3.11 python3.10; do
         if version=$(check_python_version "$python_cmd"); then
@@ -156,14 +156,14 @@ detect_python() {
             return 0
         fi
     done
-    
+
     return 1
 }
 
 # Install Python on different systems
 install_python() {
     print_info "Python $MIN_PYTHON_VERSION or higher is required but not found."
-    
+
     case "$(uname -s)" in
         Linux)
             if command_exists apt-get; then
@@ -216,7 +216,7 @@ install_python() {
 # Detect best installation method
 detect_install_method() {
     log_verbose "Detecting best installation method..."
-    
+
     # Priority order: pipx > uv > pip
     if command_exists pipx; then
         print_success "Found pipx - recommended for isolated installation"
@@ -236,13 +236,13 @@ detect_install_method() {
 install_package_manager() {
     local method="$1"
     local python_cmd="$2"
-    
+
     case "$method" in
         pipx)
             print_info "Installing pipx for isolated package installation..."
             execute "$python_cmd -m pip install --user pipx" "Installing pipx"
             execute "$python_cmd -m pipx ensurepath" "Adding pipx to PATH"
-            
+
             # Check if pipx is in PATH after installation
             if ! command_exists pipx; then
                 print_warning "pipx installed but not in PATH. Adding to current session..."
@@ -258,7 +258,7 @@ install_package_manager() {
             else
                 execute "$python_cmd -m pip install --user uv" "Installing uv via pip"
             fi
-            
+
             # Source the environment to get uv in PATH
             if [ -f "$HOME/.local/bin/uv" ]; then
                 export PATH="$HOME/.local/bin:$PATH"
@@ -276,9 +276,9 @@ install_package_manager() {
 install_specforged() {
     local method="$1"
     local python_cmd="$2"
-    
+
     print_info "Installing SpecForged using $method..."
-    
+
     case "$method" in
         pipx)
             if [ "$FORCE_INSTALL" = true ]; then
@@ -299,13 +299,13 @@ install_specforged() {
 # Verify installation
 verify_installation() {
     print_info "Verifying SpecForged installation..."
-    
+
     # Check if command is available
     if command_exists specforged; then
         local version
         version=$(specforged --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
         print_success "SpecForged installed successfully (version: $version)"
-        
+
         # Test basic functionality
         if [ "$DRY_RUN" = false ]; then
             log_verbose "Testing SpecForged configuration loading..."
@@ -315,7 +315,7 @@ verify_installation() {
                 print_warning "SpecForged installed but may have configuration issues"
             fi
         fi
-        
+
         return 0
     else
         print_error "SpecForged command not found after installation"
@@ -328,7 +328,7 @@ check_existing_installation() {
     if command_exists specforged; then
         local version
         version=$(specforged --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
-        
+
         if [ "$FORCE_INSTALL" = true ]; then
             print_warning "SpecForged $version already installed, but --force specified. Reinstalling..."
             return 1  # Proceed with installation
@@ -339,7 +339,7 @@ check_existing_installation() {
             return 0  # Skip installation
         fi
     fi
-    
+
     return 1  # Not installed, proceed
 }
 
@@ -347,13 +347,13 @@ check_existing_installation() {
 create_initial_config() {
     if [ "$DRY_RUN" = false ]; then
         print_info "Setting up initial configuration..."
-        
+
         # Create user config directory if it doesn't exist
         local config_dir="$HOME/.specforged"
         if [ ! -d "$config_dir" ]; then
             execute "mkdir -p '$config_dir'" "Creating user configuration directory"
         fi
-        
+
         # Ask if user wants to create initial config
         echo ""
         read -p "Would you like to create a default user configuration? (y/n): " -r
@@ -388,12 +388,12 @@ show_next_steps() {
 # Main installation process
 main() {
     print_banner
-    
+
     # Check if already installed (unless forced)
     if check_existing_installation; then
         exit 0
     fi
-    
+
     # Detect or install Python
     python_cmd=""
     if python_cmd=$(detect_python); then
@@ -401,7 +401,7 @@ main() {
     else
         print_warning "Python $MIN_PYTHON_VERSION or higher not found"
         install_python
-        
+
         # Re-detect after installation
         if python_cmd=$(detect_python); then
             log_verbose "Using Python command after installation: $python_cmd"
@@ -410,7 +410,7 @@ main() {
             exit 1
         fi
     fi
-    
+
     # Determine installation method
     if [ -z "$INSTALL_METHOD" ]; then
         if INSTALL_METHOD=$(detect_install_method); then
@@ -422,21 +422,21 @@ main() {
     else
         log_verbose "Using specified installation method: $INSTALL_METHOD"
     fi
-    
+
     # Install package manager if needed
     if ! command_exists "$INSTALL_METHOD"; then
         install_package_manager "$INSTALL_METHOD" "$python_cmd"
-        
+
         # Verify package manager is now available
         if ! command_exists "$INSTALL_METHOD"; then
             print_error "Failed to install $INSTALL_METHOD"
             exit 1
         fi
     fi
-    
+
     # Install SpecForged
     install_specforged "$INSTALL_METHOD" "$python_cmd"
-    
+
     # Verify installation
     if verify_installation; then
         create_initial_config

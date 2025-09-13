@@ -33,6 +33,13 @@ suite('End-to-End Integration Tests', function() {
     let mockServer: MockMcpServer;
     let tempDir: string;
 
+    // Set cleaner logging for tests unless debug is explicitly requested
+    suiteSetup(function() {
+        if (!process.env.TEST_LOG_LEVEL) {
+            process.env.TEST_LOG_LEVEL = 'warn';
+        }
+    });
+
     suiteSetup(async function() {
         // Create temporary workspace
         tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'specforged-e2e-'));

@@ -436,11 +436,25 @@ suite('AtomicFileOperations Test Suite', () => {
                 'test/../../../sensitive.json'
             ];
 
-            for (const dangerousPath of dangerousPaths) {
+            // Test that dangerous absolute paths throw errors
+            const absolutePaths = ['/etc/passwd', 'C:\\Windows\\System32\\config\\SAM'];
+            for (const dangerousPath of absolutePaths) {
+                assert.throws(
+                    () => AtomicFileUtils.sanitizePath(dangerousPath),
+                    AtomicFileOperationError,
+                    `Should reject absolute path: ${dangerousPath}`
+                );
+            }
+
+            // Test that relative dangerous paths are sanitized
+            const relativePaths = [
+                '../../../etc/passwd',
+                '..\\..\\..\\windows\\system32\\config\\sam',
+                'test/../../../sensitive.json'
+            ];
+            for (const dangerousPath of relativePaths) {
                 const sanitized = AtomicFileUtils.sanitizePath(dangerousPath);
                 assert.ok(!sanitized.includes('..'), `Should sanitize path traversal: ${dangerousPath}`);
-                assert.ok(!sanitized.startsWith('/etc'), `Should not allow absolute system paths: ${dangerousPath}`);
-                assert.ok(!sanitized.match(/^[A-Z]:\\/), `Should not allow Windows system paths: ${dangerousPath}`);
             }
         });
 

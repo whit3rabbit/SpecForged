@@ -5,18 +5,16 @@ Provides schema-based validation, type checking, and sanitization utilities
 to prevent injection attacks and ensure data integrity.
 """
 
-import re
 import html
-import logging
 import json
-from typing import Any, Dict, List, Optional, Union, Pattern, Type, TypeVar
-from datetime import datetime
-from pathlib import Path
+import logging
+import re
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Pattern, Type, TypeVar, Union
 
-from pydantic import BaseModel, ValidationError as PydanticValidationError
-
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -93,7 +91,8 @@ class SchemaValidator:
             r"(\.\.[\\/]|[\\/]\.\.[\\/]|[\\/]\.\.|^\.\.[\\/])",
         ),
         "command_injection": re.compile(
-            r"[;&|`$\(\){}]|(\b(eval|exec|system|shell_exec|passthru)\b)", re.IGNORECASE
+            r"[;&|`$\(\){}]|(\b(eval|exec|system|shell_exec|passthru)\b)",
+            re.IGNORECASE,
         ),
     }
 
@@ -102,7 +101,8 @@ class SchemaValidator:
     TASK_NUMBER_PATTERN = re.compile(r"^\d+(\.\d+)*$")
     SEMVER_PATTERN = re.compile(
         r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
-        + r"(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+        r"(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
+        r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
     )
 
     # Size limits (in bytes)
@@ -145,7 +145,9 @@ class SchemaValidator:
         name = params.get("name")
         if not name or not isinstance(name, str):
             raise ValidationError(
-                "Specification name is required and must be a string", "name", name
+                "Specification name is required and must be a string",
+                "name",
+                name,
             )
 
         name = name.strip()
@@ -167,7 +169,9 @@ class SchemaValidator:
         if description is not None:
             if not isinstance(description, str):
                 raise ValidationError(
-                    "Description must be a string", "description", type(description)
+                    "Description must be a string",
+                    "description",
+                    type(description),
                 )
 
             if len(description.encode("utf-8")) > self.MAX_DESCRIPTION_SIZE:
@@ -198,7 +202,9 @@ class SchemaValidator:
 
             if len(spec_id) > 50:
                 raise ValidationError(
-                    "Spec ID cannot exceed 50 characters", "spec_id", len(spec_id)
+                    "Spec ID cannot exceed 50 characters",
+                    "spec_id",
+                    len(spec_id),
                 )
 
             validated["spec_id"] = spec_id
@@ -287,7 +293,7 @@ class SchemaValidator:
             for i, req in enumerate(ears_requirements):
                 if not isinstance(req, dict):
                     raise ValidationError(
-                        f"Requirement {i+1} must be a dictionary",
+                        f"Requirement {i + 1} must be a dictionary",
                         f"ears_requirements[{i}]",
                         type(req),
                     )
@@ -301,7 +307,7 @@ class SchemaValidator:
                 ]:
                     if not field_value or not isinstance(field_value, str):
                         raise ValidationError(
-                            f"Requirement {i+1} {field_name} is required and must be a string",
+                            f"Requirement {i + 1} {field_name} is required and must be a string",
                             f"ears_requirements[{i}].{field_name}",
                             field_value,
                         )
@@ -309,7 +315,7 @@ class SchemaValidator:
                     field_value = field_value.strip()
                     if not field_value:
                         raise ValidationError(
-                            f"Requirement {i+1} {field_name} cannot be empty",
+                            f"Requirement {i + 1} {field_name} cannot be empty",
                             f"ears_requirements[{i}].{field_name}",
                             field_value,
                         )
@@ -424,7 +430,9 @@ class SchemaValidator:
                     f"Potential {pattern_name} detected in field '{field_name}': {value[:100]}..."
                 )
                 raise ValidationError(
-                    f"Input contains potentially dangerous content", field_name, value
+                    "Input contains potentially dangerous content",
+                    field_name,
+                    value,
                 )
 
     def _validate_requirements_content(self, content: str) -> None:

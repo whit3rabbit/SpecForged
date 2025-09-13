@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   specforged:
-    build: .
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: production
     container_name: specforged-server
     restart: unless-stopped
     ports:
@@ -13,28 +16,28 @@ services:
       - SPECFORGED_HOST=0.0.0.0
       - SPECFORGED_PORT=8080
       - SPECFORGED_LOG_LEVEL=${SPECFORGED_LOG_LEVEL:-INFO}
-      
+
       # Project configuration
       - SPECFORGE_PROJECT_ROOT=/workspace
       - SPECFORGE_BASE_DIR=/workspace/.specifications
-      
+
       # Security settings
       - SPECFORGED_SECURITY_AUDIT=${SPECFORGED_SECURITY_AUDIT:-true}
       - SPECFORGED_RATE_LIMITING=${SPECFORGED_RATE_LIMITING:-true}
       - SPECFORGED_MAX_REQUESTS=${SPECFORGED_MAX_REQUESTS:-100}
-      
+
       # HTTP settings
       - SPECFORGED_CORS_ENABLED=${SPECFORGED_CORS_ENABLED:-true}
-      
+
       # Development settings
       - SPECFORGED_DEBUG=${SPECFORGED_DEBUG:-false}
     volumes:
       # Mount project directory for persistence
-      - "${WORKSPACE_PATH:-./workspace}:/workspace"
-      
+      - "${WORKSPACE_PATH:-../workspace}:/workspace"
+
       # Optional: Mount user configuration
       - "${HOME}/.specforged:/root/.specforged:ro"
-    
+
     # Health check
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
@@ -42,7 +45,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    
+
     # Resource limits (optional)
     deploy:
       resources:
@@ -63,7 +66,7 @@ services:
       - "${NGINX_SSL_PORT:-443}:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - "${SSL_CERTS_PATH:-./certs}:/etc/ssl/certs:ro"
+      - "${SSL_CERTS_PATH:-../certs}:/etc/ssl/certs:ro"
     depends_on:
       specforged:
         condition: service_healthy

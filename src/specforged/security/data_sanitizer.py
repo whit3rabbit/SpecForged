@@ -5,14 +5,13 @@ This module provides comprehensive data sanitization, sensitive data detection,
 and privacy protection features to ensure user data is handled securely.
 """
 
-import re
-import logging
 import hashlib
-import uuid
-from typing import Any, Dict, List, Optional, Pattern, Set, Tuple, Union
+import json
+import logging
+import re
 from dataclasses import dataclass
 from enum import Enum
-import json
+from typing import Any, Dict, List, Pattern, Set
 
 
 class DataPrivacyError(Exception):
@@ -343,7 +342,11 @@ class PrivacyProtector:
         return self._sanitize_recursive(data, max_depth, 0, for_logging=False)
 
     def _sanitize_recursive(
-        self, data: Any, max_depth: int, current_depth: int, for_logging: bool = True
+        self,
+        data: Any,
+        max_depth: int,
+        current_depth: int,
+        for_logging: bool = True,
     ) -> Any:
         """Recursively sanitize data structure."""
 
@@ -604,7 +607,8 @@ class PrivacyProtector:
         # Normalize risk score to 0-100 scale
         max_possible_risk = len(detections) * 10
         normalized_risk = min(
-            100, (total_risk / max_possible_risk * 100) if max_possible_risk > 0 else 0
+            100,
+            ((total_risk / max_possible_risk * 100) if max_possible_risk > 0 else 0),
         )
 
         # Determine risk level

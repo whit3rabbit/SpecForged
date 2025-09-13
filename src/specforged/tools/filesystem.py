@@ -43,7 +43,10 @@ def setup_filesystem_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> 
         except PermissionError as e:
             return {"status": "error", "message": str(e)}
         except Exception as e:  # noqa: BLE001
-            return {"status": "error", "message": f"Error reading file {path}: {e}"}
+            return {
+                "status": "error",
+                "message": f"Error reading file {path}: {e}",
+            }
 
     @mcp.tool()
     async def create_directory(
@@ -109,7 +112,10 @@ def setup_filesystem_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> 
         except PermissionError as e:
             return {"status": "error", "message": str(e)}
         except Exception as e:  # noqa: BLE001
-            return {"status": "error", "message": f"Error writing to file {path}: {e}"}
+            return {
+                "status": "error",
+                "message": f"Error writing to file {path}: {e}",
+            }
 
     @mcp.tool()
     async def edit_block(
@@ -163,7 +169,10 @@ def setup_filesystem_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> 
                 "path": str(validated_path),
             }
         except FileNotFoundError:
-            return {"status": "error", "message": f"File not found: {file_path}"}
+            return {
+                "status": "error",
+                "message": f"File not found: {file_path}",
+            }
         except PermissionError as e:
             return {"status": "error", "message": str(e)}
         except Exception as e:  # noqa: BLE001

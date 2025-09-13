@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .config import ConfigurationLoader, get_config_paths, load_configuration
 from .server import create_server, run_server
+from .server_config import ConfigurationLoader, get_config_paths, load_configuration
 
 
 def specforge_mcp() -> None:
@@ -66,7 +66,7 @@ def specforge_http() -> None:
     mcp_server = create_server("SpecForge-HTTP")
 
     # Create HTTP routes
-    async def health_check(request) -> JSONResponse:  # type: ignore[no-untyped-def]
+    async def health_check(request) -> JSONResponse:
         return JSONResponse({"status": "healthy", "service": "SpecForge"})
 
     # Create Starlette app
@@ -133,7 +133,9 @@ def specforge_new(args: Any) -> None:
             print("\nNext steps:")
             print("  1. Review generated files")
             print("  2. Start implementing tasks")
-            print(f"  3. Use 'specforged mcp --base-dir {base_dir}' to access via MCP")
+            print(
+                f"  3. Use 'specforged mcp --base-dir {base_dir}' " f"to access via MCP"
+            )
         else:
             print("❌ Project creation cancelled or failed.")
             sys.exit(1)
@@ -147,28 +149,30 @@ def specforge_new(args: Any) -> None:
 
 def specforge_init(args: Any) -> None:
     """Initialize SpecForged in the current directory"""
-    from rich.console import Console
-    from rich.prompt import Prompt, Confirm
     import yaml
-    
+    from rich.console import Console
+    from rich.prompt import Confirm, Prompt
+
     console = Console()
-    
+
     console.print("🚀 [bold blue]SpecForged Initialization[/bold blue]")
     console.print("Setting up SpecForged for standalone usage...")
-    
+
     # Check if already initialized
     config_paths = get_config_paths()
     project_config = config_paths["project"]
-    
+
     if project_config.exists() and not args.force:
-        console.print(f"❌ Project already has SpecForged configuration: {project_config}")
+        console.print(
+            f"❌ Project already has SpecForged configuration: {project_config}"
+        )
         console.print("Use --force to overwrite existing configuration")
         return
-    
+
     # Get project information
     project_name = Prompt.ask("Project name", default=Path.cwd().name)
     base_dir = Prompt.ask("Specifications directory", default=".specifications")
-    
+
     # Create project configuration
     project_config_data = {
         "# SpecForged Project Configuration": None,
@@ -179,22 +183,26 @@ def specforge_init(args: Any) -> None:
         "security_audit_enabled": True,
         "rate_limiting_enabled": True,
     }
-    
+
     # Clean up config (remove comments)
-    clean_config = {k: v for k, v in project_config_data.items() if v is not None and not k.startswith("#")}
-    
+    clean_config = {
+        k: v
+        for k, v in project_config_data.items()
+        if v is not None and not k.startswith("#")
+    }
+
     try:
         # Create config file
-        with open(project_config, 'w', encoding='utf-8') as f:
+        with open(project_config, "w", encoding="utf-8") as f:
             yaml.dump(clean_config, f, default_flow_style=False, sort_keys=True)
-        
+
         console.print(f"✅ Project configuration created: {project_config}")
-        
+
         # Create specifications directory
         specs_dir = Path(base_dir)
         specs_dir.mkdir(exist_ok=True)
         console.print(f"✅ Specifications directory created: {specs_dir}")
-        
+
         # Optionally create user configuration
         user_config_path = config_paths["user"]
         if not user_config_path.exists():
@@ -203,14 +211,16 @@ def specforge_init(args: Any) -> None:
                 if loader.create_default_user_config():
                     console.print(f"✅ User configuration created: {user_config_path}")
                 else:
-                    console.print(f"❌ Failed to create user configuration")
-        
-        console.print("\n🎉 [bold green]SpecForged initialization complete![/bold green]")
+                    console.print("❌ Failed to create user configuration")
+
+        console.print(
+            "\n🎉 [bold green]SpecForged initialization complete![/bold green]"
+        )
         console.print("\nNext steps:")
         console.print("  • Run 'specforged serve' to start the MCP server")
         console.print("  • Run 'specforged status' to check server health")
         console.print("  • Edit .specforged.yaml to customize settings")
-        
+
     except Exception as e:
         console.print(f"❌ Initialization failed: {e}")
         sys.exit(1)
@@ -218,42 +228,42 @@ def specforge_init(args: Any) -> None:
 
 def specforge_status(args: Any) -> None:
     """Check SpecForged server and project status"""
-    import asyncio
+
     from rich.console import Console
     from rich.table import Table
-    
+
     console = Console()
-    
+
     console.print("🔍 [bold blue]SpecForged Status[/bold blue]")
-    
+
     # Load configuration
     try:
         config = load_configuration()
-        console.print(f"✅ Configuration loaded from multiple sources")
+        console.print("✅ Configuration loaded from multiple sources")
     except Exception as e:
         console.print(f"❌ Configuration error: {e}")
         return
-    
+
     # Check project status
     config_paths = get_config_paths()
-    
+
     # Create status table
     table = Table(title="Project Status")
     table.add_column("Component", style="cyan")
     table.add_column("Status", style="bold")
     table.add_column("Location", style="dim")
-    
+
     # Check configuration files
     if config_paths["project"].exists():
         table.add_row("Project Config", "✅ Found", str(config_paths["project"]))
     else:
         table.add_row("Project Config", "❌ Missing", str(config_paths["project"]))
-        
+
     if config_paths["user"].exists():
         table.add_row("User Config", "✅ Found", str(config_paths["user"]))
     else:
         table.add_row("User Config", "⚠️ Not Found", str(config_paths["user"]))
-    
+
     # Check specifications directory
     specs_dir = Path(config.base_dir)
     if specs_dir.exists():
@@ -261,15 +271,15 @@ def specforge_status(args: Any) -> None:
         table.add_row("Specifications", f"✅ {spec_count} specs", str(specs_dir))
     else:
         table.add_row("Specifications", "❌ Directory missing", str(specs_dir))
-    
+
     # Check project root
     project_root = Path(config.project_root or ".")
     table.add_row("Project Root", "📁 Detected", str(project_root))
-    
+
     console.print(table)
-    
+
     # Try to get server health if running
-    if hasattr(args, 'check_server') and args.check_server:
+    if hasattr(args, "check_server") and args.check_server:
         console.print("\n🏥 [bold blue]Server Health Check[/bold blue]")
         try:
             # This would require running server health check
@@ -281,63 +291,78 @@ def specforge_status(args: Any) -> None:
 
 def specforge_config(args: Any) -> None:
     """Manage SpecForged configuration"""
+    import yaml
     from rich.console import Console
     from rich.table import Table
-    import yaml
-    
+
     console = Console()
-    
+
     if args.action == "show":
         # Show current configuration
         try:
             config = load_configuration()
             config_paths = get_config_paths()
-            
+
             console.print("📋 [bold blue]Current Configuration[/bold blue]")
-            
+
             # Show configuration sources
             table = Table(title="Configuration Sources")
             table.add_column("Source", style="cyan")
             table.add_column("File", style="dim")
             table.add_column("Exists", style="bold")
-            
-            table.add_row("User", str(config_paths["user"]), "✅" if config_paths["user"].exists() else "❌")
-            table.add_row("Project", str(config_paths["project"]), "✅" if config_paths["project"].exists() else "❌")
+
+            table.add_row(
+                "User",
+                str(config_paths["user"]),
+                "✅" if config_paths["user"].exists() else "❌",
+            )
+            table.add_row(
+                "Project",
+                str(config_paths["project"]),
+                "✅" if config_paths["project"].exists() else "❌",
+            )
             table.add_row("Environment", "ENV variables", "✅ Active")
-            
+
             console.print(table)
-            
+
             # Show active configuration
             console.print("\n🔧 [bold blue]Active Settings[/bold blue]")
             settings_table = Table()
             settings_table.add_column("Setting", style="cyan")
             settings_table.add_column("Value", style="bold")
-            
+
             settings_table.add_row("Name", config.name)
-            settings_table.add_row("Project Root", config.project_root or "Auto-detected")
+            settings_table.add_row(
+                "Project Root", config.project_root or "Auto-detected"
+            )
             settings_table.add_row("Base Directory", config.base_dir)
             settings_table.add_row("Debug Mode", "✅" if config.debug_mode else "❌")
-            settings_table.add_row("Security Audit", "✅" if config.security_audit_enabled else "❌")
-            settings_table.add_row("Rate Limiting", "✅" if config.rate_limiting_enabled else "❌")
-            
+            settings_table.add_row(
+                "Security Audit",
+                "✅" if config.security_audit_enabled else "❌",
+            )
+            settings_table.add_row(
+                "Rate Limiting", "✅" if config.rate_limiting_enabled else "❌"
+            )
+
             console.print(settings_table)
-            
+
         except Exception as e:
             console.print(f"❌ Failed to load configuration: {e}")
-            
+
     elif args.action == "edit":
         # Open configuration file for editing
         config_paths = get_config_paths()
-        
+
         if args.user:
             config_file = config_paths["user"]
             config_type = "user"
         else:
             config_file = config_paths["project"]
             config_type = "project"
-            
+
         console.print(f"📝 Opening {config_type} configuration: {config_file}")
-        
+
         # Create file if it doesn't exist
         if not config_file.exists():
             if config_type == "user":
@@ -348,33 +373,34 @@ def specforge_config(args: Any) -> None:
                 default_project_config = {
                     "name": "SpecForged",
                     "base_dir": ".specifications",
-                    "debug_mode": False
+                    "debug_mode": False,
                 }
-                with open(config_file, 'w') as f:
+                with open(config_file, "w") as f:
                     yaml.dump(default_project_config, f, default_flow_style=False)
-        
+
         # Try to open with editor
         import os
-        editor = os.environ.get('EDITOR', 'nano')
+
+        editor = os.environ.get("EDITOR", "nano")
         os.system(f'{editor} "{config_file}"')
 
 
 def specforge_serve() -> None:
     """Start SpecForged MCP server (alias for specforged command)"""
     print("🚀 Starting SpecForged MCP Server...")
-    
+
     try:
         # Load configuration
         config = load_configuration()
-        
+
         print(f"Configuration loaded - Project: {config.name}")
         print(f"Base directory: {config.base_dir}")
         print(f"Debug mode: {'enabled' if config.debug_mode else 'disabled'}")
-        
+
         # Create and run server with configuration
         server = create_server(config=config)
         server.run()
-        
+
     except KeyboardInterrupt:
         print("\n✋ SpecForged MCP Server stopped.")
         sys.exit(0)
@@ -395,23 +421,39 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Initialize project command
-    init_parser = subparsers.add_parser("init", help="Initialize SpecForged in current directory")
-    init_parser.add_argument("--force", action="store_true", help="Overwrite existing configuration")
+    init_parser = subparsers.add_parser(
+        "init", help="Initialize SpecForged in current directory"
+    )
+    init_parser.add_argument(
+        "--force", action="store_true", help="Overwrite existing configuration"
+    )
 
     # Serve command (alias for MCP server)
     subparsers.add_parser("serve", help="Start SpecForged MCP server")
 
     # Status command
-    status_parser = subparsers.add_parser("status", help="Check SpecForged project status")
-    status_parser.add_argument("--server", action="store_true", help="Check running server health")
+    status_parser = subparsers.add_parser(
+        "status", help="Check SpecForged project status"
+    )
+    status_parser.add_argument(
+        "--server", action="store_true", help="Check running server health"
+    )
 
     # Config management command
-    config_parser = subparsers.add_parser("config", help="Manage SpecForged configuration")
-    config_subparsers = config_parser.add_subparsers(dest="action", help="Config actions")
-    
-    config_show = config_subparsers.add_parser("show", help="Show current configuration")
+    config_parser = subparsers.add_parser(
+        "config", help="Manage SpecForged configuration"
+    )
+    config_subparsers = config_parser.add_subparsers(
+        dest="action", help="Config actions"
+    )
+
+    config_subparsers.add_parser("show", help="Show current configuration")
     config_edit = config_subparsers.add_parser("edit", help="Edit configuration file")
-    config_edit.add_argument("--user", action="store_true", help="Edit user config instead of project config")
+    config_edit.add_argument(
+        "--user",
+        action="store_true",
+        help="Edit user config instead of project config",
+    )
 
     # MCP server command
     subparsers.add_parser("mcp", help="Run MCP server (legacy)")
@@ -433,7 +475,13 @@ def main() -> None:
     new_parser.add_argument(
         "--template",
         type=str,
-        choices=["web-app", "rest-api", "cli-tool", "python-lib", "microservice"],
+        choices=[
+            "web-app",
+            "rest-api",
+            "cli-tool",
+            "python-lib",
+            "microservice",
+        ],
         help="Use a predefined project template",
     )
 

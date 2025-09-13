@@ -75,7 +75,8 @@ def update_changelog(version):
     # Add new Unreleased section
     updated = re.sub(
         rf"\[{version}\] - {date_str}",
-        f"[Unreleased]\n\n### Added\n### Changed\n### Fixed\n\n## [{version}] - {date_str}",
+        f"[Unreleased]\n\n### Added\n### Changed\n### Fixed\n\n"
+        f"## [{version}] - {date_str}",
         updated,
         count=1,
     )
@@ -119,16 +120,18 @@ def create_git_tag(version):
 
         # Commit changes
         subprocess.run(
-            ["git", "commit", "-m", f"chore: bump version to {version}"], check=True
+            ["git", "commit", "-m", f"chore: bump version to {version}"],
+            check=True,
         )
 
         # Create tag
         subprocess.run(
-            ["git", "tag", "-a", tag_name, "-m", f"Release {version}"], check=True
+            ["git", "tag", "-a", tag_name, "-m", f"Release {version}"],
+            check=True,
         )
 
         print(f"✓ Created tag {tag_name}")
-        print(f"📌 To push: git push origin main && git push origin {tag_name}")
+        print(f"📌 To push: git push origin main && " f"git push origin {tag_name}")
         return True
     except subprocess.CalledProcessError as e:
         print(f"✗ Git operations failed: {e}")
@@ -138,7 +141,9 @@ def create_git_tag(version):
 def main():
     parser = argparse.ArgumentParser(description="Manage SpecForge releases")
     parser.add_argument(
-        "bump_type", choices=["major", "minor", "patch"], help="Type of version bump"
+        "bump_type",
+        choices=["major", "minor", "patch"],
+        help="Type of version bump",
     )
     parser.add_argument("--skip-tests", action="store_true", help="Skip running tests")
     parser.add_argument(

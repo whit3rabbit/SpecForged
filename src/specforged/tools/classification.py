@@ -2,8 +2,9 @@
 Mode classification MCP tools.
 """
 
-from typing import Dict, Any
-from mcp.server.fastmcp import FastMCP, Context
+from typing import Any, Dict
+
+from mcp.server.fastmcp import Context, FastMCP
 
 from ..core.classifier import ModeClassifier
 

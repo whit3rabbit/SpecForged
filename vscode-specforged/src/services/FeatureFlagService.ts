@@ -49,10 +49,10 @@ export class FeatureFlagService {
         this.config = vscode.workspace.getConfiguration('specforged');
         this.userContext = this.initializeUserContext();
         this.registerDefaultStrategies();
-        
+
         // Listen for configuration changes
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('specforged.featureFlags') || 
+            if (e.affectsConfiguration('specforged.featureFlags') ||
                 e.affectsConfiguration('specforged.environment')) {
                 this.clearCache();
                 this.userContext = this.initializeUserContext();
@@ -65,7 +65,7 @@ export class FeatureFlagService {
      */
     isEnabled(flagName: string, overrideContext?: Partial<UserContext>): boolean {
         const cacheKey = `${flagName}:${JSON.stringify(overrideContext || {})}`;
-        
+
         // Check cache first
         if (this.isCacheValid() && this.flagCache.has(cacheKey)) {
             return this.flagCache.get(cacheKey)!;
@@ -131,8 +131,8 @@ export class FeatureFlagService {
      * Create a new feature flag.
      */
     async createFlag(
-        name: string, 
-        enabled: boolean = false, 
+        name: string,
+        enabled: boolean = false,
         options: Partial<FeatureFlag> = {}
     ): Promise<boolean> {
         try {
@@ -196,7 +196,7 @@ export class FeatureFlagService {
     async deleteFlag(flagName: string): Promise<boolean> {
         try {
             const flags = this.getAllFlags();
-            
+
             if (!(flagName in flags)) {
                 return false;
             }
@@ -253,7 +253,7 @@ export class FeatureFlagService {
         const flagEntries = Object.entries(flags);
 
         const enabledFlags = flagEntries.filter(([_, flag]) => flag.enabled).length;
-        const flagsWithRollout = flagEntries.filter(([_, flag]) => 
+        const flagsWithRollout = flagEntries.filter(([_, flag]) =>
             flag.rolloutPercentage > 0 && flag.rolloutPercentage < 100
         ).length;
 
@@ -295,7 +295,7 @@ export class FeatureFlagService {
     async importConfig(config: FeatureFlagConfig): Promise<boolean> {
         try {
             await this.config.update('featureFlags.customFlags', config.flags, vscode.ConfigurationTarget.Global);
-            
+
             if (config.userContext) {
                 this.setUserContext(config.userContext);
             }
@@ -351,17 +351,17 @@ export class FeatureFlagService {
         // Use VS Code machine ID for consistent user identification
         const machineId = vscode.env.machineId;
         const workspaceId = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || 'no-workspace';
-        
+
         // Simple hash function for user ID
         let hash = 0;
         const input = `${machineId}:${workspaceId}`;
-        
+
         for (let i = 0; i < input.length; i++) {
             const char = input.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash; // Convert to 32-bit integer
         }
-        
+
         return Math.abs(hash).toString(36);
     }
 
@@ -401,14 +401,14 @@ export class FeatureFlagService {
         // Use consistent hashing based on flag name and user ID
         const userId = context.userId || 'anonymous';
         const input = `${flag.name}:${userId}`;
-        
+
         let hash = 0;
         for (let i = 0; i < input.length; i++) {
             const char = input.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash;
         }
-        
+
         const percentage = (Math.abs(hash) % 100) + 1;
         return percentage <= flag.rolloutPercentage;
     }
@@ -422,7 +422,7 @@ export class FeatureFlagService {
         }
 
         // Check if any user group matches target groups
-        return flag.targetGroups.some(targetGroup => 
+        return flag.targetGroups.some(targetGroup =>
             context.groups.includes(targetGroup) || targetGroup === 'all'
         );
     }
@@ -451,23 +451,23 @@ export class FeatureFlagService {
         switch (name) {
             case 'environment':
                 return context.environment === value;
-            
+
             case 'minVersion':
                 return this.compareVersions(context.version, value) >= 0;
-            
+
             case 'maxVersion':
                 return this.compareVersions(context.version, value) <= 0;
-            
+
             case 'platform':
                 return context.metadata.platform === value;
-            
+
             case 'hasWorkspace':
                 return vscode.workspace.workspaceFolders !== undefined;
-            
+
             case 'customStrategy':
                 const strategy = this.rolloutStrategies.get(value);
                 return strategy ? strategy.evaluate({ ...flag, conditions: {} }, context) : false;
-            
+
             default:
                 // Unknown condition - fail safe
                 return false;
@@ -480,17 +480,17 @@ export class FeatureFlagService {
     private compareVersions(version1: string, version2: string): number {
         const v1Parts = version1.split('.').map(Number);
         const v2Parts = version2.split('.').map(Number);
-        
+
         const maxLength = Math.max(v1Parts.length, v2Parts.length);
-        
+
         for (let i = 0; i < maxLength; i++) {
             const v1Part = v1Parts[i] || 0;
             const v2Part = v2Parts[i] || 0;
-            
+
             if (v1Part < v2Part) {return -1;}
             if (v1Part > v2Part) {return 1;}
         }
-        
+
         return 0;
     }
 
@@ -525,7 +525,7 @@ export class FeatureFlagService {
                 const now = new Date();
                 const startTime = flag.conditions.startTime ? new Date(flag.conditions.startTime) : new Date(0);
                 const endTime = flag.conditions.endTime ? new Date(flag.conditions.endTime) : new Date('2099-12-31');
-                
+
                 return now >= startTime && now <= endTime;
             }
         });
@@ -536,7 +536,7 @@ export class FeatureFlagService {
      */
     private getBuiltInFlags(): Record<string, FeatureFlag> {
         const now = new Date().toISOString();
-        
+
         return {
             'enhanced_notifications': {
                 name: 'enhanced_notifications',
@@ -552,7 +552,7 @@ export class FeatureFlagService {
                 },
                 createdAt: now
             },
-            
+
             'advanced_queue_management': {
                 name: 'advanced_queue_management',
                 enabled: this.config.get<boolean>('featureFlags.enableBetaFeatures', false),
@@ -567,7 +567,7 @@ export class FeatureFlagService {
                 },
                 createdAt: now
             },
-            
+
             'multi_workspace_sync': {
                 name: 'multi_workspace_sync',
                 enabled: false,
@@ -583,7 +583,7 @@ export class FeatureFlagService {
                 },
                 createdAt: now
             },
-            
+
             'performance_dashboard': {
                 name: 'performance_dashboard',
                 enabled: this.config.get<boolean>('featureFlags.enableBetaFeatures', false),
@@ -598,7 +598,7 @@ export class FeatureFlagService {
                 },
                 createdAt: now
             },
-            
+
             'ai_suggestions': {
                 name: 'ai_suggestions',
                 enabled: false,

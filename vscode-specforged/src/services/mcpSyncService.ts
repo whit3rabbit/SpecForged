@@ -15,7 +15,7 @@ import {
 } from '../models/mcpOperation';
 import { FileOperationService } from './fileOperationService';
 import { McpManager } from '../mcp/mcpManager';
-import { AtomicFileOperations, AtomicFileOperationError, AtomicFileError } from '../utils/atomicFileOperations';
+import { AtomicFileOperations, AtomicFileOperationError, AtomicFileError, defaultAtomicConfig, AtomicFileConfig } from '../utils/atomicFileOperations';
 import { ConflictResolver, Conflict as ResolverConflict } from '../utils/conflictResolver';
 import { NotificationManager } from './notificationManager';
 
@@ -25,6 +25,13 @@ export class McpSyncService {
     private atomicFileOps: AtomicFileOperations;
     private conflictResolver: ConflictResolver;
     private notificationManager: NotificationManager | undefined;
+
+    // Service state flags
+    private isActive = false;
+    private isDisposed = false;
+
+    // Disposables for VS Code resources
+    private disposables: vscode.Disposable[] = [];
 
     // File watchers for real-time monitoring
     private operationQueueWatcher: vscode.FileSystemWatcher | undefined;
@@ -36,24 +43,29 @@ export class McpSyncService {
     private heartbeatTimer: NodeJS.Timeout | undefined;
     private cleanupTimer: NodeJS.Timeout | undefined;
     private performanceOptimizationTimer: NodeJS.Timeout | undefined;
-    
+
     // Performance optimization components
     private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
     private operationCache: Map<string, {data: any, timestamp: number, hits: number}> = new Map();
     private operationBatches: Map<string, McpOperation[]> = new Map();
     private processingQueue: McpOperation[] = [];
-    
+
+    // Duplicate operation prevention
+    private pendingSignatures: Set<string> = new Set();
+    private recentSignatures: Map<string, {timestamp: number, operationId: string}> = new Map();
+
     // Memory management
     private readonly MAX_CACHE_SIZE = 500;
     private readonly CACHE_TTL_MS = 300000; // 5 minutes
     private readonly DEBOUNCE_DELAY_MS = 250;
     private readonly MAX_BATCH_SIZE = 50;
     private readonly BATCH_TIMEOUT_MS = 1000;
+    private readonly SIGNATURE_TTL_MS = 10000; // 10 seconds for recent signatures
 
-    // File paths (workspace-relative)
-    private readonly OPERATION_QUEUE_FILE = 'mcp-operations.json';
-    private readonly SYNC_STATE_FILE = 'specforge-sync.json';
-    private readonly OPERATION_RESULTS_FILE = 'mcp-results.json';
+    // File paths (workspace-relative, under .vscode)
+    private readonly OPERATION_QUEUE_FILE = '.vscode/mcp-operations.json';
+    private readonly SYNC_STATE_FILE = '.vscode/specforge-sync.json';
+    private readonly OPERATION_RESULTS_FILE = '.vscode/mcp-results.json';
 
     // Current state
     private currentQueue: McpOperationQueue = McpOperationUtils.createEmptyQueue();
@@ -73,7 +85,7 @@ export class McpSyncService {
         priorityProcessingEnabled: true,  // Enable priority-based processing
         conflictDetectionEnabled: true,   // Enable conflict detection
         retryFailedOperations: true,     // Enable automatic retry of failed operations
-        
+
         // Performance optimization settings
         enableBatchProcessing: true,     // Enable operation batching
         enableFileWatcherDebouncing: true, // Enable file watcher debouncing
@@ -87,7 +99,16 @@ export class McpSyncService {
 
     constructor(fileOperationService: FileOperationService) {
         this.fileOperationService = fileOperationService;
-        this.atomicFileOps = new AtomicFileOperations();
+        // Read backup settings from VS Code configuration
+        const cfg = vscode.workspace.getConfiguration('specforged');
+        const backupEnabled = cfg.get<boolean>('fileOps.backupEnabled', defaultAtomicConfig.backupEnabled);
+        const maxBackups = cfg.get<number>('fileOps.maxBackups', defaultAtomicConfig.maxBackups);
+        const atomicConfig: AtomicFileConfig = {
+            ...defaultAtomicConfig,
+            backupEnabled,
+            maxBackups
+        };
+        this.atomicFileOps = new AtomicFileOperations(atomicConfig);
         this.conflictResolver = new ConflictResolver();
     }
 
@@ -99,6 +120,10 @@ export class McpSyncService {
         this.notificationManager = notificationManager;
     }
 
+    isServiceInitialized(): boolean {
+        return this.isInitialized;
+    }
+
     async initialize(): Promise<void> {
         if (this.isInitialized) {
             console.warn('MCP Sync Service already initialized');
@@ -106,9 +131,20 @@ export class McpSyncService {
         }
 
         try {
-            // Validate workspace
-            const workspacePath = this.getWorkspacePath();
-            await this.atomicFileOps.validateWorkspace(workspacePath);
+            // Validate workspace - gracefully handle missing workspace
+            try {
+                const workspacePath = this.getWorkspacePath();
+                await this.atomicFileOps.validateWorkspace(workspacePath);
+                this.isActive = true;
+            } catch (error) {
+                if (error instanceof AtomicFileOperationError && error.errorType === AtomicFileError.WORKSPACE_INVALID) {
+                    console.warn(`SpecForged Sync Service disabled: ${error.message}`);
+                    this.isInitialized = true; // Mark as initialized but inactive
+                    this.isActive = false;
+                    return;
+                }
+                throw error; // Re-throw unexpected errors
+            }
 
             // Load existing state using atomic operations
             await this.loadOperationQueue();
@@ -121,7 +157,7 @@ export class McpSyncService {
             this.startProcessingTimer();
             this.startHeartbeat();
             this.startCleanupTimer();
-            
+
             // Start performance optimization if enabled
             if (this.config.enableMemoryOptimization) {
                 this.startPerformanceOptimization();
@@ -153,11 +189,33 @@ export class McpSyncService {
     }
 
     async queueOperation(operation: McpOperation): Promise<void> {
-        if (!this.isInitialized) {
-            throw new Error('MCP Sync Service not initialized');
+        if (!this.isInitialized || !this.isActive || this.isDisposed) {
+            throw new Error('MCP Sync Service not available');
         }
 
+        const signature = this.getOperationSignature(operation);
+
         try {
+            // Check for duplicate operations
+            if (this.pendingSignatures.has(signature)) {
+                console.warn(`Duplicate operation detected and throttled: ${operation.type} for ${this.getResourcePath(operation)}`);
+                return;
+            }
+
+            // Check recent signatures to avoid rapid duplicates
+            const recent = this.recentSignatures.get(signature);
+            if (recent && (Date.now() - recent.timestamp) < this.SIGNATURE_TTL_MS) {
+                console.warn(`Recent duplicate operation blocked: ${operation.type} (was ${recent.operationId})`);
+                return;
+            }
+
+            // Mark signature as pending
+            this.pendingSignatures.add(signature);
+            this.recentSignatures.set(signature, {
+                timestamp: Date.now(),
+                operationId: operation.id
+            });
+
             // Validate operation
             const validation = McpOperationValidator.validateOperation(operation);
             if (!validation.valid) {
@@ -262,11 +320,94 @@ export class McpSyncService {
             }
 
             throw error;
+        } finally {
+            // Always remove from pending signatures when done (success or failure)
+            this.pendingSignatures.delete(signature);
+
+            // Cleanup old signatures periodically
+            this.cleanupOldSignatures();
+        }
+    }
+
+    /**
+     * Generate a signature for an operation to detect duplicates.
+     */
+    private getOperationSignature(operation: McpOperation): string {
+        // Create signature based on operation type, resource path, and key parameters
+        const resourcePath = this.getResourcePath(operation);
+        const keyParams = this.getKeyParameters(operation);
+
+        return `${operation.type}:${resourcePath}:${JSON.stringify(keyParams)}`;
+    }
+
+    /**
+     * Get the resource path for an operation.
+     */
+    private getResourcePath(operation: McpOperation): string {
+        // Extract resource path from operation parameters
+        const params = operation.params as any;
+        if (params?.specId) {
+            return `spec:${params.specId}`;
+        }
+        if (params?.filePath) {
+            return `file:${params.filePath}`;
+        }
+        if (params?.resourceId) {
+            return `resource:${params.resourceId}`;
+        }
+        return `operation:${operation.type}`;
+    }
+
+    /**
+     * Get key parameters for signature generation, excluding timestamps and IDs.
+     */
+    private getKeyParameters(operation: McpOperation): any {
+        const params = { ...operation.params } as any;
+
+        // Remove non-content parameters that shouldn't affect uniqueness
+        delete params.timestamp;
+        delete params.operationId;
+        delete params.requestId;
+        delete params.clientId;
+
+        // For content-based operations, hash large content to avoid huge signatures
+        if (params.content && typeof params.content === 'string' && params.content.length > 1000) {
+            // Simple hash of content for signature
+            let hash = 0;
+            for (let i = 0; i < params.content.length; i++) {
+                const char = params.content.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            params.contentHash = hash.toString(36);
+            delete params.content;
+        }
+
+        return params;
+    }
+
+    /**
+     * Clean up old signatures to prevent memory leaks.
+     */
+    private cleanupOldSignatures(): void {
+        const now = Date.now();
+        const cutoffTime = now - this.SIGNATURE_TTL_MS;
+
+        // Clean up recent signatures that are too old
+        for (const [signature, data] of this.recentSignatures.entries()) {
+            if (data.timestamp < cutoffTime) {
+                this.recentSignatures.delete(signature);
+            }
+        }
+
+        // Periodically clean pending signatures (safety net - should be cleaned by finally blocks)
+        if (this.pendingSignatures.size > 100) {
+            console.warn(`High number of pending signatures detected: ${this.pendingSignatures.size}. This may indicate cleanup issues.`);
         }
     }
 
     async processOperations(): Promise<void> {
-        if (this.isProcessing || !this.isInitialized) {
+        if (this.isProcessing || !this.isInitialized || !this.isActive || this.isDisposed) {
             return;
         }
 
@@ -325,11 +466,11 @@ export class McpSyncService {
 
     private async processOperation(operation: McpOperation): Promise<void> {
         console.log(`Processing operation: ${operation.type} (${operation.id})`);
-        
+
         // Check cache first if caching is enabled
         const cacheKey = this.getOperationCacheKey(operation);
         const cachedResult = this.getCachedOperation(cacheKey);
-        
+
         if (cachedResult) {
             console.log(`Using cached result for operation: ${operation.id}`);
             operation.status = McpOperationStatus.COMPLETED;
@@ -373,7 +514,7 @@ export class McpSyncService {
             operation.result = result;
             operation.completedAt = new Date().toISOString();
             operation.actualDurationMs = Date.now() - startTime;
-            
+
             // Cache successful results
             if (success && this.config.enableOperationCaching) {
                 this.cacheOperationResult(cacheKey, result);
@@ -562,9 +703,10 @@ export class McpSyncService {
             // Watch for operation queue changes (MCP server adding operations)
             const queuePattern = new vscode.RelativePattern(workspaceFolder, this.OPERATION_QUEUE_FILE);
             this.operationQueueWatcher = vscode.workspace.createFileSystemWatcher(queuePattern);
+            this.disposables.push(this.operationQueueWatcher);
 
             // Enhanced file watcher with debouncing
-            this.operationQueueWatcher.onDidChange(() => {
+            this.disposables.push(this.operationQueueWatcher.onDidChange(() => {
                 this.debouncedHandler('queue-change', async () => {
                     try {
                         console.log('Operation queue file changed, reloading...');
@@ -576,26 +718,27 @@ export class McpSyncService {
                         this.recordSyncError('Failed to process queue changes', error);
                     }
                 });
-            });
+            }));
 
-            this.operationQueueWatcher.onDidCreate(() => {
+            this.disposables.push(this.operationQueueWatcher.onDidCreate(() => {
                 this.debouncedHandler('queue-create', async () => {
                     console.log('Operation queue file created');
                     await this.loadOperationQueue();
                 });
-            });
+            }));
 
-            this.operationQueueWatcher.onDidDelete(() => {
+            this.disposables.push(this.operationQueueWatcher.onDidDelete(() => {
                 // No debouncing needed for delete - immediate response required
                 console.log('Operation queue file deleted, reinitializing...');
                 this.currentQueue = McpOperationUtils.createEmptyQueue();
-            });
+            }));
 
             // Watch for sync state changes with debouncing
             const syncPattern = new vscode.RelativePattern(workspaceFolder, this.SYNC_STATE_FILE);
             this.syncStateWatcher = vscode.workspace.createFileSystemWatcher(syncPattern);
+            this.disposables.push(this.syncStateWatcher);
 
-            this.syncStateWatcher.onDidChange(() => {
+            this.disposables.push(this.syncStateWatcher.onDidChange(() => {
                 this.debouncedHandler('sync-state-change', async () => {
                     try {
                         await this.loadSyncState();
@@ -604,13 +747,14 @@ export class McpSyncService {
                         this.recordSyncError('Failed to load sync state', error);
                     }
                 });
-            });
+            }));
 
             // Watch for operation results changes with debouncing
             const resultsPattern = new vscode.RelativePattern(workspaceFolder, this.OPERATION_RESULTS_FILE);
             this.resultsWatcher = vscode.workspace.createFileSystemWatcher(resultsPattern);
+            this.disposables.push(this.resultsWatcher);
 
-            this.resultsWatcher.onDidChange(() => {
+            this.disposables.push(this.resultsWatcher.onDidChange(() => {
                 this.debouncedHandler('results-change', async () => {
                     try {
                         console.log('Operation results file changed, processing results...');
@@ -620,7 +764,7 @@ export class McpSyncService {
                         this.recordSyncError('Failed to process operation results', error);
                     }
                 });
-            });
+            }));
 
             console.log('File watchers set up successfully');
         } catch (error) {
@@ -675,7 +819,7 @@ export class McpSyncService {
 
         console.log(`Cleanup timer started (interval: ${this.config.cleanupIntervalMs}ms)`);
     }
-    
+
     private startPerformanceOptimization(): void {
         if (this.performanceOptimizationTimer) {
             clearInterval(this.performanceOptimizationTimer);
@@ -691,7 +835,7 @@ export class McpSyncService {
 
         console.log(`Performance optimization timer started (interval: ${this.config.performanceOptimizationIntervalMs}ms)`);
     }
-    
+
     /**
      * Debounced handler to prevent excessive file watcher events
      */
@@ -701,22 +845,22 @@ export class McpSyncService {
             handler().catch(error => console.error(`Handler error for ${key}:`, error));
             return;
         }
-        
+
         // Clear existing timer for this key
         const existingTimer = this.debounceTimers.get(key);
         if (existingTimer) {
             clearTimeout(existingTimer);
         }
-        
+
         // Set new timer
         const timer = setTimeout(() => {
             this.debounceTimers.delete(key);
             handler().catch(error => console.error(`Debounced handler error for ${key}:`, error));
         }, this.DEBOUNCE_DELAY_MS);
-        
+
         this.debounceTimers.set(key, timer);
     }
-    
+
     /**
      * Schedule operation processing with intelligent batching
      */
@@ -726,20 +870,20 @@ export class McpSyncService {
             setTimeout(() => this.processOperations(), 100);
             return;
         }
-        
+
         // Use debounced processing for better batching
         this.debouncedHandler('operation-processing', async () => {
             await this.processOperations();
         });
     }
-    
+
     /**
      * Enhanced memory optimization with caching and cleanup
      */
     private async performMemoryOptimization(): Promise<void> {
         const memoryBefore = process.memoryUsage();
         let optimizationsPerformed = 0;
-        
+
         try {
             // Clean up expired cache entries
             const expiredCacheCount = this.cleanupOperationCache();
@@ -747,16 +891,16 @@ export class McpSyncService {
                 optimizationsPerformed++;
                 console.log(`Cleaned up ${expiredCacheCount} expired cache entries`);
             }
-            
+
             // Clean up completed debounce timers
             const activeTimers = this.debounceTimers.size;
-            
+
             // Compress operation queue if it's large
             if (this.currentQueue.operations.length > this.config.enableCompressionThreshold) {
                 await this.compressOperationQueue();
                 optimizationsPerformed++;
             }
-            
+
             // Force garbage collection if memory usage is high
             const heapUsedMB = memoryBefore.heapUsed / 1024 / 1024;
             if (heapUsedMB > this.config.maxMemoryUsageMB) {
@@ -766,70 +910,70 @@ export class McpSyncService {
                     console.log(`Forced garbage collection due to high memory usage: ${heapUsedMB.toFixed(1)}MB`);
                 }
             }
-            
+
             if (optimizationsPerformed > 0) {
                 const memoryAfter = process.memoryUsage();
                 const memoryFreedMB = (memoryBefore.heapUsed - memoryAfter.heapUsed) / 1024 / 1024;
                 console.log(`Memory optimization completed: ${optimizationsPerformed} operations, ${memoryFreedMB.toFixed(1)}MB freed`);
             }
-            
+
         } catch (error) {
             console.error('Memory optimization failed:', error);
         }
     }
-    
+
     /**
      * Clean up expired operation cache entries
      */
     private cleanupOperationCache(): number {
         const now = Date.now();
         let expiredCount = 0;
-        
+
         for (const [key, entry] of this.operationCache.entries()) {
             if (now - entry.timestamp > this.CACHE_TTL_MS) {
                 this.operationCache.delete(key);
                 expiredCount++;
             }
         }
-        
+
         // Also enforce max cache size by removing least recently used entries
         if (this.operationCache.size > this.MAX_CACHE_SIZE) {
             const sortedEntries = Array.from(this.operationCache.entries())
                 .sort(([, a], [, b]) => a.hits - b.hits); // Sort by hits (LRU approximation)
-            
+
             const entriesToRemove = this.operationCache.size - this.MAX_CACHE_SIZE;
             for (let i = 0; i < entriesToRemove; i++) {
                 this.operationCache.delete(sortedEntries[i][0]);
                 expiredCount++;
             }
         }
-        
+
         return expiredCount;
     }
-    
+
     /**
      * Compress operation queue by removing completed operations
      */
     private async compressOperationQueue(): Promise<void> {
         const initialSize = this.currentQueue.operations.length;
-        
+
         // Keep only recent completed operations and all non-completed operations
         const cutoffTime = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2 hours ago
-        
+
         this.currentQueue.operations = this.currentQueue.operations.filter(op => {
             if (op.status === McpOperationStatus.COMPLETED) {
                 return op.completedAt && op.completedAt > cutoffTime;
             }
             return true; // Keep all non-completed operations
         });
-        
+
         const compressionRatio = (initialSize - this.currentQueue.operations.length) / initialSize;
         if (compressionRatio > 0.1) { // Only save if we compressed by more than 10%
             await this.saveOperationQueue();
             console.log(`Compressed operation queue: ${initialSize} → ${this.currentQueue.operations.length} operations (${(compressionRatio * 100).toFixed(1)}% reduction)`);
         }
     }
-    
+
     /**
      * Get cached operation result
      */
@@ -837,16 +981,16 @@ export class McpSyncService {
         if (!this.config.enableOperationCaching) {
             return null;
         }
-        
+
         const cached = this.operationCache.get(operationKey);
         if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
             cached.hits++;
             return cached.data;
         }
-        
+
         return null;
     }
-    
+
     /**
      * Cache operation result
      */
@@ -854,7 +998,7 @@ export class McpSyncService {
         if (!this.config.enableOperationCaching) {
             return;
         }
-        
+
         // Ensure we don't exceed cache size
         if (this.operationCache.size >= this.MAX_CACHE_SIZE) {
             // Remove oldest entry
@@ -863,14 +1007,14 @@ export class McpSyncService {
                 this.operationCache.delete(oldestKey);
             }
         }
-        
+
         this.operationCache.set(operationKey, {
             data,
             timestamp: Date.now(),
             hits: 0
         });
     }
-    
+
     /**
      * Generate cache key for operation
      */
@@ -882,6 +1026,8 @@ export class McpSyncService {
 
 
     private async loadOperationQueue(): Promise<void> {
+        if (!this.isActive) {return;}
+
         try {
             const workspacePath = this.getWorkspacePath();
             this.currentQueue = await this.atomicFileOps.readOperationQueue(workspacePath);
@@ -902,6 +1048,8 @@ export class McpSyncService {
     }
 
     private async saveOperationQueue(): Promise<void> {
+        if (!this.isActive || this.isDisposed) {return;}
+
         try {
             const workspacePath = this.getWorkspacePath();
             await this.atomicFileOps.writeOperationQueue(workspacePath, this.currentQueue);
@@ -919,6 +1067,8 @@ export class McpSyncService {
     }
 
     private async loadSyncState(): Promise<void> {
+        if (!this.isActive) {return;}
+
         try {
             const workspacePath = this.getWorkspacePath();
             const loadedState = await this.atomicFileOps.readSyncState(workspacePath);
@@ -944,17 +1094,20 @@ export class McpSyncService {
     }
 
     private async saveSyncState(): Promise<void> {
+        if (!this.isInitialized || this.isDisposed) {return;}
+
         try {
             const workspacePath = this.getWorkspacePath();
             await this.atomicFileOps.writeSyncState(workspacePath, this.syncState);
         } catch (error) {
-            console.error('Failed to save sync state:', error);
-            // Don't record sync error here to avoid infinite recursion
-
-            if (error instanceof AtomicFileOperationError) {
-                vscode.window.showErrorMessage(
-                    `Failed to save sync state: ${error.getUserMessage()}`
-                );
+            // Avoid logging if workspace is invalid or service is disposed, as it's expected
+            if (!(error instanceof AtomicFileOperationError && error.errorType === AtomicFileError.WORKSPACE_INVALID) && !this.isDisposed) {
+                console.error('Failed to save sync state:', error);
+                if (error instanceof AtomicFileOperationError) {
+                    vscode.window.showErrorMessage(
+                        `Failed to save sync state: ${error.getUserMessage()}`
+                    );
+                }
             }
         }
     }
@@ -1065,7 +1218,13 @@ export class McpSyncService {
     private getWorkspacePath(): string {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
-            throw new Error('No workspace folder found');
+            throw new AtomicFileOperationError(
+                AtomicFileError.WORKSPACE_INVALID,
+                'No workspace folder is open. Please open a folder or workspace to use SpecForged sync features.',
+                '',
+                undefined,
+                false
+            );
         }
         return workspaceFolder.uri.fsPath;
     }
@@ -1311,27 +1470,6 @@ export class McpSyncService {
         }
     }
 
-    private getResourcePath(operation: McpOperation): string {
-        // Extract resource path based on operation type
-        const params = operation.params as any;
-
-        switch (operation.type) {
-            case McpOperationType.CREATE_SPEC:
-                return `specs/${params.specId || params.name}`;
-            case McpOperationType.UPDATE_REQUIREMENTS:
-                return `specs/${params.specId}/requirements.md`;
-            case McpOperationType.UPDATE_DESIGN:
-                return `specs/${params.specId}/design.md`;
-            case McpOperationType.UPDATE_TASKS:
-                return `specs/${params.specId}/tasks.md`;
-            case McpOperationType.ADD_USER_STORY:
-            case McpOperationType.UPDATE_TASK_STATUS:
-            case McpOperationType.DELETE_SPEC:
-                return `specs/${params.specId}`;
-            default:
-                return `operation/${operation.type}`;
-        }
-    }
 
     getSyncState(): McpSyncState {
         return { ...this.syncState };
@@ -1365,25 +1503,14 @@ export class McpSyncService {
     }
 
     dispose(): void {
+        if (this.isDisposed) {
+            return;
+        }
+
         console.log('Disposing MCP Sync Service...');
+        this.isDisposed = true;
 
-        // Dispose file watchers
-        if (this.operationQueueWatcher) {
-            this.operationQueueWatcher.dispose();
-            this.operationQueueWatcher = undefined;
-        }
-
-        if (this.syncStateWatcher) {
-            this.syncStateWatcher.dispose();
-            this.syncStateWatcher = undefined;
-        }
-
-        if (this.resultsWatcher) {
-            this.resultsWatcher.dispose();
-            this.resultsWatcher = undefined;
-        }
-
-        // Clear timers
+        // Clear all timers first to prevent new operations
         if (this.processingTimer) {
             clearInterval(this.processingTimer);
             this.processingTimer = undefined;
@@ -1404,27 +1531,43 @@ export class McpSyncService {
             this.performanceOptimizationTimer = undefined;
         }
 
-        // Clear debounce timers
+        // Clear all debounce timers
         for (const timer of this.debounceTimers.values()) {
             clearTimeout(timer);
         }
         this.debounceTimers.clear();
+
+        // Dispose all VS Code resources
+        this.disposables.forEach(d => {
+            try {
+                d.dispose();
+            } catch (error) {
+                console.error('Error disposing resource:', error);
+            }
+        });
+        this.disposables = [];
+
+        // Clear watcher references
+        this.operationQueueWatcher = undefined;
+        this.syncStateWatcher = undefined;
+        this.resultsWatcher = undefined;
 
         // Clear caches
         this.operationCache.clear();
         this.operationBatches.clear();
         this.processingQueue.length = 0;
 
-        // Mark extension as offline and save final state
-        this.syncState.extensionOnline = false;
-        this.syncState.lastSync = new Date().toISOString();
+        // Mark extension as offline and save final state if active
+        if (this.isActive) {
+            this.syncState.extensionOnline = false;
+            this.syncState.lastSync = new Date().toISOString();
+            // Use fire-and-forget save here as we are disposing
+            this.saveSyncState().catch(err => console.error("Error saving final sync state on dispose:", err));
+        }
 
-        this.saveSyncState().catch(error => {
-            console.error('Failed to save final sync state:', error);
-        });
-
-        // Reset initialization flag
+        // Reset flags
         this.isInitialized = false;
+        this.isActive = false;
 
         console.log('MCP Sync Service disposed');
     }

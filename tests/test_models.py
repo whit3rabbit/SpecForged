@@ -5,14 +5,14 @@ Tests for data models.
 from datetime import datetime
 
 from src.specforged.models import (
-    UserMode,
-    WorkflowPhase,
-    SpecStatus,
-    ModeClassification,
     EARSRequirement,
-    UserStory,
-    Task,
+    ModeClassification,
     Specification,
+    SpecStatus,
+    Task,
+    UserMode,
+    UserStory,
+    WorkflowPhase,
 )
 
 

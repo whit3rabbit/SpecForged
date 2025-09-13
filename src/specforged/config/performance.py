@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class PerformanceProfile(str):
@@ -154,7 +154,8 @@ class PerformanceConfigModel(BaseModel):
     enable_detailed_metrics: bool = True
     metrics_collection_interval_seconds: int = 30
 
-    @validator("profile")
+    @field_validator("profile")
+    @classmethod
     def validate_profile(cls, v):
         valid_profiles = [
             PerformanceProfile.MINIMAL,
@@ -167,7 +168,8 @@ class PerformanceConfigModel(BaseModel):
             raise ValueError(f"Invalid profile: {v}. Must be one of {valid_profiles}")
         return v
 
-    @validator("memory")
+    @field_validator("memory")
+    @classmethod
     def validate_memory_config(cls, v):
         if v.max_memory_usage_mb <= 0:
             raise ValueError("max_memory_usage_mb must be positive")
@@ -177,7 +179,8 @@ class PerformanceConfigModel(BaseModel):
             )
         return v
 
-    @validator("batching")
+    @field_validator("batching")
+    @classmethod
     def validate_batching_config(cls, v):
         if v.max_batch_size <= 0:
             raise ValueError("max_batch_size must be positive")
@@ -341,7 +344,10 @@ class PerformanceConfigManager:
                     "enable_smart_batching": False,
                     "enable_operation_deduplication": False,
                 },
-                "streaming": {"enable_streaming": False, "enable_compression": False},
+                "streaming": {
+                    "enable_streaming": False,
+                    "enable_compression": False,
+                },
                 "memory": {
                     "max_memory_usage_mb": 30,
                     "enable_memory_monitoring": True,
@@ -618,7 +624,9 @@ def get_performance_config(
     return _config_manager.load_config(profile)
 
 
-def update_performance_config(updates: Dict[str, Any]) -> PerformanceConfigModel:
+def update_performance_config(
+    updates: Dict[str, Any],
+) -> PerformanceConfigModel:
     """Update global performance configuration."""
     global _config_manager
 

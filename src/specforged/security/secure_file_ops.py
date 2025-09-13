@@ -5,20 +5,19 @@ This module provides secure file operations that prevent race conditions,
 ensure data integrity, and maintain proper file permissions.
 """
 
-import os
-import stat
-import tempfile
-import logging
-import hashlib
-import shutil
 import fcntl
-from pathlib import Path
-from typing import Union, Optional, BinaryIO, TextIO, Any, Dict
+import hashlib
+import json
+import logging
+import os
+import shutil
+import tempfile
 from contextlib import contextmanager
 from datetime import datetime
-import json
+from pathlib import Path
+from typing import Any, BinaryIO, Dict, Optional, TextIO, Union
 
-from .path_security import SecurePathHandler, PathSecurityError
+from .path_security import SecurePathHandler
 
 
 class SecureFileError(Exception):
@@ -203,7 +202,10 @@ class SecureFileOperations:
             raise SecureFileError(f"Failed to read file {validated_path}: {e}")
 
     def write_file_safely(
-        self, file_path: Union[str, Path], content: str, create_backup: bool = True
+        self,
+        file_path: Union[str, Path],
+        content: str,
+        create_backup: bool = True,
     ) -> None:
         """
         Safely write content to a file with atomic operations.
@@ -319,7 +321,7 @@ class SecureFileOperations:
             if temp_dest.exists():
                 try:
                     temp_dest.unlink()
-                except:
+                except (OSError, PermissionError):
                     pass
 
             raise SecureFileError(
@@ -390,7 +392,10 @@ class SecureFileOperations:
             raise SecureFileError(f"Failed to calculate hash for {validated_path}: {e}")
 
     def verify_file_integrity(
-        self, file_path: Union[str, Path], expected_hash: str, algorithm: str = "sha256"
+        self,
+        file_path: Union[str, Path],
+        expected_hash: str,
+        algorithm: str = "sha256",
     ) -> bool:
         """
         Verify file integrity using cryptographic hash.
@@ -478,7 +483,14 @@ class SecureFileOperations:
     def _should_secure_delete(self, file_path: Path) -> bool:
         """Check if a file should be securely deleted (overwritten)."""
         # Secure delete for sensitive file types or if explicitly requested
-        sensitive_extensions = {".key", ".pem", ".p12", ".json", ".yml", ".yaml"}
+        sensitive_extensions = {
+            ".key",
+            ".pem",
+            ".p12",
+            ".json",
+            ".yml",
+            ".yaml",
+        }
 
         return (
             file_path.suffix.lower() in sensitive_extensions

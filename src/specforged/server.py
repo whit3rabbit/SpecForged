@@ -2,24 +2,23 @@
 Main SpecForge MCP Server implementation.
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from .config import ServerConfig, load_configuration
 from .core import ModeClassifier, ProjectDetector, QueueProcessor, SpecificationManager
+from .prompts import setup_prompts
+from .resources import setup_resources
 from .security import (
-    SecurityAuditLogger,
-    SecurePathHandler,
     ClientRateLimiter,
     InputValidator,
     RateLimitConfig,
+    SecurePathHandler,
+    SecurityAuditLogger,
 )
-from .prompts import setup_prompts
-from .resources import setup_resources
+from .server_config import ServerConfig, load_configuration
 from .tools import (
     setup_classification_tools,
     setup_filesystem_tools,
@@ -29,13 +28,17 @@ from .tools import (
 )
 
 
-def create_server(name: Optional[str] = None, base_dir: Optional[Path] = None, config: Optional[ServerConfig] = None) -> FastMCP:
+def create_server(
+    name: Optional[str] = None,
+    base_dir: Optional[Path] = None,
+    config: Optional[ServerConfig] = None,
+) -> FastMCP:
     """Create and configure the SpecForge MCP server"""
 
     # Load configuration if not provided
     if config is None:
         config = load_configuration()
-        
+
     # Use config name if not explicitly provided
     if name is None:
         name = config.name
@@ -83,16 +86,16 @@ def create_server(name: Optional[str] = None, base_dir: Optional[Path] = None, c
         security_audit_logger = SecurityAuditLogger(audit_log_path)
     else:
         security_audit_logger = None
-        
+
     secure_path_handler = SecurePathHandler(project_detector.project_root, specs_base)
-    
+
     if config.rate_limiting_enabled:
         rate_config = RateLimitConfig()
-        rate_config.max_requests_per_minute = config.max_requests_per_minute
+        rate_config.requests_per_minute = config.max_requests_per_minute
         rate_limiter = ClientRateLimiter(rate_config)
     else:
         rate_limiter = None
-        
+
     input_validator = InputValidator()
 
     # Initialize queue processor for operation handling
@@ -123,7 +126,9 @@ def create_server(name: Optional[str] = None, base_dir: Optional[Path] = None, c
 
 
 def setup_server_tools(
-    mcp: FastMCP, queue_processor: QueueProcessor, spec_manager: SpecificationManager
+    mcp: FastMCP,
+    queue_processor: QueueProcessor,
+    spec_manager: SpecificationManager,
 ) -> None:
     """Setup server status and health check tools"""
 
@@ -175,10 +180,12 @@ def setup_server_tools(
                 if hasattr(mcp, "security_audit_logger") and mcp.security_audit_logger:
                     audit_stats = mcp.security_audit_logger.get_security_stats()
                     security_stats["audit_events"] = audit_stats.get("total_events", 0)
-                    security_stats["security_alerts"] = audit_stats.get("alerts_sent", 0)
+                    security_stats["security_alerts"] = audit_stats.get(
+                        "alerts_sent", 0
+                    )
                 else:
                     security_stats["audit_events"] = "disabled"
-                    
+
                 if hasattr(mcp, "rate_limiter") and mcp.rate_limiter:
                     rate_stats = mcp.rate_limiter.get_system_status()
                     security_stats["rate_limiting"] = {
@@ -187,7 +194,7 @@ def setup_server_tools(
                     }
                 else:
                     security_stats["rate_limiting"] = "disabled"
-                    
+
             except Exception as e:
                 security_stats = {"error": f"Failed to get security stats: {e}"}
 
@@ -252,7 +259,10 @@ def setup_server_tools(
                 health_status = "degraded"
 
         except Exception as e:
-            checks["queue_processor"] = {"status": "unhealthy", "error": str(e)}
+            checks["queue_processor"] = {
+                "status": "unhealthy",
+                "error": str(e),
+            }
             health_status = "unhealthy"
 
         try:
@@ -269,7 +279,10 @@ def setup_server_tools(
                 health_status = "degraded"
 
         except Exception as e:
-            checks["specification_manager"] = {"status": "unhealthy", "error": str(e)}
+            checks["specification_manager"] = {
+                "status": "unhealthy",
+                "error": str(e),
+            }
             health_status = "unhealthy"
 
         try:

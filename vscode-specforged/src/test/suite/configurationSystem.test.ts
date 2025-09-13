@@ -65,12 +65,16 @@ suite('Configuration System Test Suite', () => {
         let featureFlagService: FeatureFlagService;
 
         setup(() => {
+            // Setup default configuration values for FeatureFlagService
+            (mockConfig.get as sinon.SinonStub).withArgs('featureFlags.rolloutGroup', 'stable').returns('stable');
+            (mockConfig.get as sinon.SinonStub).withArgs('environment', 'production').returns('test');
+
             featureFlagService = new FeatureFlagService(context);
         });
 
         test('should initialize with default user context', () => {
             const userContext = featureFlagService.getUserContext();
-            
+
             assert.ok(userContext.userId);
             assert.ok(userContext.groups);
             assert.ok(userContext.environment);
@@ -80,9 +84,9 @@ suite('Configuration System Test Suite', () => {
         test('should evaluate feature flag correctly', () => {
             // Mock configuration to return enabled experimental features
             (mockConfig.get as sinon.SinonStub).withArgs('featureFlags.enableExperimentalFeatures', false).returns(true);
-            
+
             const enabled = featureFlagService.isEnabled('enhanced_notifications');
-            
+
             // Result depends on rollout percentage and user context
             assert.strictEqual(typeof enabled, 'boolean');
         });
@@ -186,10 +190,11 @@ suite('Configuration System Test Suite', () => {
 
         test('should export and import configuration', async () => {
             (mockConfig.get as sinon.SinonStub).withArgs('featureFlags.customFlags', {}).returns({});
+            (mockConfig.get as sinon.SinonStub).withArgs('environment', 'production').returns('test');
             (mockConfig.update as sinon.SinonStub).resolves();
 
             const exportedConfig = featureFlagService.exportConfig();
-            
+
             assert.ok(exportedConfig.flags);
             assert.ok(exportedConfig.userContext);
             assert.ok(exportedConfig.environment);
@@ -207,6 +212,11 @@ suite('Configuration System Test Suite', () => {
         setup(() => {
             featureFlagService = new FeatureFlagService(context);
             validationService = new ConfigurationValidationService(context, featureFlagService);
+
+            // Mock configuration for validation service with sensitive data
+            (mockConfig.get as sinon.SinonStub).withArgs('smitheryApiKey').returns('secret-key-value');
+            (mockConfig.get as sinon.SinonStub).withArgs('autoDetect').returns(true);
+            (mockConfig.get as sinon.SinonStub).withArgs('specFolder').returns('.specifications');
         });
 
         test('should validate configuration successfully', async () => {
@@ -266,7 +276,7 @@ suite('Configuration System Test Suite', () => {
             const result = await validationService.validateConfiguration();
 
             assert.strictEqual(result.isValid, false);
-            const connectionErrors = result.errors.filter(e => 
+            const connectionErrors = result.errors.filter(e =>
                 e.field.includes('mcpServer') || e.field.includes('connection') || e.field.includes('retry')
             );
             assert.ok(connectionErrors.length > 0);
@@ -281,7 +291,7 @@ suite('Configuration System Test Suite', () => {
             const result = await validationService.validateConfiguration();
 
             const productionIssues = result.warnings.concat(result.errors).filter(e =>
-                e.message.toLowerCase().includes('production') || 
+                e.message.toLowerCase().includes('production') ||
                 e.message.toLowerCase().includes('debug')
             );
             assert.ok(productionIssues.length > 0);
@@ -457,7 +467,7 @@ suite('Configuration System Test Suite', () => {
             );
 
             const messageHandler = (mockWebview.onDidReceiveMessage as sinon.SinonStub).getCall(0).args[0];
-            
+
             // Test creating feature flag
             await messageHandler({
                 command: 'createFeatureFlag',
@@ -509,7 +519,7 @@ suite('Configuration System Test Suite', () => {
 
             // Validation should handle both old and new configuration styles
             const result = await validationService.validateConfiguration();
-            
+
             // Should not fail due to migration issues
             assert.ok(result !== null);
         });
@@ -534,22 +544,22 @@ suite('Configuration System Test Suite', () => {
 
             // Rapid flag evaluations should be cached and fast
             const startTime = Date.now();
-            
+
             for (let i = 0; i < 100; i++) {
                 featureFlagService.isEnabled('enhanced_notifications');
                 featureFlagService.isEnabled('advanced_queue_management');
                 featureFlagService.isEnabled('performance_dashboard');
             }
-            
+
             const duration = Date.now() - startTime;
-            
+
             // Should complete in reasonable time (< 100ms)
             assert.ok(duration < 100, `Performance test failed: took ${duration}ms for 300 evaluations`);
         });
 
         test('should handle configuration errors gracefully', async () => {
             const validationService = new ConfigurationValidationService(
-                context, 
+                context,
                 new FeatureFlagService(context)
             );
 
@@ -558,7 +568,7 @@ suite('Configuration System Test Suite', () => {
 
             // Should not throw, should return error result
             const result = await validationService.validateConfiguration();
-            
+
             assert.ok(result !== null);
             // May have errors due to the exception, but should not crash
         });
@@ -584,7 +594,7 @@ suite('Configuration System Test Suite', () => {
                 }
 
                 const result = await validationService.validateConfiguration();
-                
+
                 // Should detect validation issues
                 const hasErrors = result.errors.length > 0 || result.warnings.length > 0;
                 assert.ok(hasErrors, `Failed to detect issues with config: ${JSON.stringify(invalidConfig)}`);

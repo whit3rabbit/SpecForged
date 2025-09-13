@@ -881,47 +881,7 @@ export class OperationQueueView {
                 vscode.window.showInformationMessage(`Cleared completed operations older than ${selected.toLowerCase()}`);
             }),
 
-            // Enhanced conflict resolution with options
-            vscode.commands.registerCommand('specforged.resolveConflict', async (conflictId: string) => {
-                const conflict = this.conflictResolver.getConflictById(conflictId);
-                if (!conflict) {
-                    vscode.window.showErrorMessage('Conflict not found');
-                    return;
-                }
-
-                // Show resolution options if conflict requires user input
-                if (!conflict.autoResolvable) {
-                    const resolutionOptions = conflict.recommendations.map(rec => ({
-                        label: this.getResolutionLabel(rec),
-                        description: this.getResolutionDescription(rec),
-                        resolution: rec
-                    }));
-
-                    const selected = await vscode.window.showQuickPick(resolutionOptions, {
-                        placeHolder: `Resolve conflict: ${conflict.description}`,
-                        matchOnDescription: true
-                    });
-
-                    if (!selected) {return;}
-
-                    const resolved = await this.conflictResolver.resolveConflict(conflictId, selected.resolution);
-                    if (resolved) {
-                        vscode.window.showInformationMessage(`Conflict resolved: ${conflict.description}`);
-                        this.provider.refresh();
-                    } else {
-                        vscode.window.showErrorMessage('Failed to resolve conflict');
-                    }
-                } else {
-                    // Auto-resolve
-                    const resolved = await this.conflictResolver.resolveConflict(conflictId);
-                    if (resolved) {
-                        vscode.window.showInformationMessage(`Conflict auto-resolved: ${conflict.description}`);
-                        this.provider.refresh();
-                    } else {
-                        vscode.window.showErrorMessage('Failed to resolve conflict');
-                    }
-                }
-            }),
+            // Note: resolveConflict command is registered in notificationCommands.ts to avoid duplicates
 
             // Enhanced retry with selective retry options
             vscode.commands.registerCommand('specforged.retryFailedOperations', async () => {
@@ -1019,16 +979,7 @@ export class OperationQueueView {
                 vscode.window.showInformationMessage('Operation sync completed');
             }),
 
-            // New commands for enhanced functionality
-            vscode.commands.registerCommand('specforged.cancelOperation', async (operation: McpOperation) => {
-                if (operation.status === McpOperationStatus.IN_PROGRESS || operation.status === McpOperationStatus.PENDING) {
-                    operation.status = McpOperationStatus.CANCELLED;
-                    this.provider.refresh();
-                    vscode.window.showInformationMessage(`Operation cancelled: ${operation.type}`);
-                } else {
-                    vscode.window.showWarningMessage('Operation cannot be cancelled in its current state');
-                }
-            }),
+            // Note: cancelOperation command is registered in notificationCommands.ts to avoid duplicates
 
 
             vscode.commands.registerCommand('specforged.showConflictDashboard', async () => {
@@ -1297,7 +1248,7 @@ export class OperationQueueView {
         }
 
         // Watch for operation queue changes
-        const queuePattern = new vscode.RelativePattern(workspaceFolder, 'mcp-operations.json');
+        const queuePattern = new vscode.RelativePattern(workspaceFolder, '.vscode/mcp-operations.json');
         const queueWatcher = vscode.workspace.createFileSystemWatcher(queuePattern);
 
         queueWatcher.onDidChange(() => {
@@ -1316,7 +1267,7 @@ export class OperationQueueView {
         });
 
         // Watch for sync state changes
-        const syncPattern = new vscode.RelativePattern(workspaceFolder, 'specforge-sync.json');
+        const syncPattern = new vscode.RelativePattern(workspaceFolder, '.vscode/specforge-sync.json');
         const syncWatcher = vscode.workspace.createFileSystemWatcher(syncPattern);
 
         syncWatcher.onDidChange(() => {
@@ -1325,7 +1276,7 @@ export class OperationQueueView {
         });
 
         // Watch for operation results changes
-        const resultsPattern = new vscode.RelativePattern(workspaceFolder, 'mcp-results.json');
+        const resultsPattern = new vscode.RelativePattern(workspaceFolder, '.vscode/mcp-results.json');
         const resultsWatcher = vscode.workspace.createFileSystemWatcher(resultsPattern);
 
         resultsWatcher.onDidChange(() => {

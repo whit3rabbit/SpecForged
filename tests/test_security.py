@@ -5,47 +5,45 @@ Tests all security components including input validation, path security,
 rate limiting, file operations, data sanitization, and audit logging.
 """
 
-import pytest
-import asyncio
 import tempfile
-import json
 import time
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timedelta
+
+import pytest
+
+from src.specforged.security.audit_logger import (
+    SecurityAuditLogger,
+    SecurityEventSeverity,
+    SecurityEventType,
+)
+from src.specforged.security.data_sanitizer import (
+    PrivacyProtector,
+    SensitiveDataDetector,
+    SensitiveDataType,
+)
 
 # Import security modules
 from src.specforged.security.input_validator import (
+    DataSanitizer,
     InputValidator,
     ValidationError,
-    SchemaValidator,
-    DataSanitizer,
 )
 from src.specforged.security.path_security import (
+    PathSecurityError,
     PathValidator,
     SecurePathHandler,
-    PathSecurityError,
 )
 from src.specforged.security.rate_limiter import (
-    RateLimiter,
-    RateLimitConfig,
     ClientRateLimiter,
+    RateLimitConfig,
+    RateLimiter,
     RateLimitExceeded,
 )
 from src.specforged.security.secure_file_ops import (
-    SecureFileOperations,
     AtomicFileWriter,
     SecureFileError,
-)
-from src.specforged.security.data_sanitizer import (
-    SensitiveDataDetector,
-    PrivacyProtector,
-    SensitiveDataType,
-)
-from src.specforged.security.audit_logger import (
-    SecurityAuditLogger,
-    SecurityEventType,
-    SecurityEventSeverity,
+    SecureFileOperations,
 )
 
 
@@ -99,7 +97,8 @@ class TestInputValidation:
 
         with pytest.raises(ValidationError):
             self.validator.validate_operation_params(
-                "update_requirements", {"spec_id": "test", "content": oversized_content}
+                "update_requirements",
+                {"spec_id": "test", "content": oversized_content},
             )
 
     def test_malformed_data_handling(self):
@@ -143,7 +142,11 @@ class TestInputValidation:
             # Should not raise exception
             self.validator.validate_operation_params(
                 "update_task_status",
-                {"spec_id": "test", "task_number": task_number, "status": "completed"},
+                {
+                    "spec_id": "test",
+                    "task_number": task_number,
+                    "status": "completed",
+                },
             )
 
         for task_number in invalid_task_numbers:
@@ -163,7 +166,10 @@ class TestInputValidation:
             "api_key": "sk-1234567890abcdef",
             "password": "supersecret123",
             "user_email": "user@example.com",
-            "nested": {"token": "bearer_token_123456789", "safe_data": "this is safe"},
+            "nested": {
+                "token": "bearer_token_123456789",
+                "safe_data": "this is safe",
+            },
         }
 
         sanitized = self.sanitizer.sanitize_for_logging(sensitive_data)
@@ -259,7 +265,9 @@ class TestRateLimiting:
 
     def setup_method(self):
         self.config = RateLimitConfig(
-            requests_per_minute=10, burst_limit=5, operation_limits={"create_spec": 2}
+            requests_per_minute=10,
+            burst_limit=5,
+            operation_limits={"create_spec": 2},
         )
         self.rate_limiter = RateLimiter(self.config)
         self.client_limiter = ClientRateLimiter(self.config)
@@ -360,7 +368,9 @@ class TestSecureFileOperations:
     def test_file_size_limits(self):
         """Test file size limit enforcement."""
         test_file = self.temp_dir / "large.txt"
+        # Create large content and write it to test file size limits
         large_content = "A" * (20 * 1024 * 1024)  # 20MB content
+        test_file.write_text(large_content)
 
         with pytest.raises(SecureFileError):
             self.file_ops.read_file_safely(test_file, max_size=1024)  # 1KB limit
@@ -435,7 +445,11 @@ class TestDataSanitization:
             "ssn": "My SSN is 123-45-6789",
             "api_key": "api_key=sk-1234567890abcdef1234567890abcdef",
             "password": "password=supersecret123",
-            "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
+            "private_key": (
+                "-----BEGIN RSA PRIVATE KEY-----\n"
+                "MIIEpAIBAAKCAQEA...\n"
+                "-----END RSA PRIVATE KEY-----"
+            ),
         }
 
         for field, content in test_data.items():
@@ -449,7 +463,10 @@ class TestDataSanitization:
         high_risk_data = {
             "credit_card": "4111-1111-1111-1111",
             "ssn": "123-45-6789",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...",
+            "private_key": (
+                "-----BEGIN PRIVATE KEY-----\n"
+                "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC..."
+            ),
         }
 
         assessment = self.protector.assess_privacy_risk(high_risk_data)
@@ -804,7 +821,10 @@ class TestAttackScenarios:
             with pytest.raises(ValidationError, match="injection"):
                 self.validator.validate_operation_params(
                     "update_requirements",
-                    {"spec_id": "test", "content": f"Innocent content {payload}"},
+                    {
+                        "spec_id": "test",
+                        "content": f"Innocent content {payload}",
+                    },
                 )
 
     def test_dos_attack_scenarios(self):
@@ -827,7 +847,8 @@ class TestAttackScenarios:
 
         with pytest.raises(ValidationError, match="exceeds maximum size"):
             self.validator.validate_operation_params(
-                "update_requirements", {"spec_id": "test", "content": huge_payload}
+                "update_requirements",
+                {"spec_id": "test", "content": huge_payload},
             )
 
     def test_privilege_escalation_attempts(self):

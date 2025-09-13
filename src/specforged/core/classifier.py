@@ -13,10 +13,19 @@ class ModeClassifier:
     def __init__(self) -> None:
         # Spec mode trigger patterns with weights
         self.spec_patterns = [
-            (r"\b(create|generate|write|draft)\s+(?:a\s+)?spec(?:ification)?", 0.9),
+            (
+                r"\b(create|generate|write|draft)\s+(?:a\s+)?spec(?:ification)?",
+                0.9,
+            ),
             (r"\bspec(?:ification)?\s+for\b", 0.85),
-            (r"\b(?:execute|run)\s+task\s+[\d\.]+\s+from\s+[\w-]+\s+spec", 0.95),
-            (r"\b(?:update|modify)\s+(?:the\s+)?(?:requirements|design|tasks)", 0.8),
+            (
+                r"\b(?:execute|run)\s+task\s+[\d\.]+\s+from\s+[\w-]+\s+spec",
+                0.95,
+            ),
+            (
+                r"\b(?:update|modify)\s+(?:the\s+)?(?:requirements|design|tasks)",
+                0.8,
+            ),
             (r"\bEARS\s+(?:format|notation|requirements)", 0.9),
             (r"\b(?:user\s+stor(?:y|ies)|acceptance\s+criteria)", 0.75),
             (r"\b(?:technical\s+)?(?:architecture|design\s+document)", 0.6),
@@ -27,15 +36,24 @@ class ModeClassifier:
             (r"\b(?:check\s+off|mark\s+complete)\s+task\s+\d+", 0.95),
             (r"\bcheck\s+task\s+\d+(?:\.\d+)*", 0.95),
             (r"\b(?:complete|finish)\s+task\s+\d+(?:\.\d+)*", 0.9),
-            (r"\b(?:update|refresh)\s+(?:the\s+)?(?:implementation\s+)?plan", 0.85),
+            (
+                r"\b(?:update|refresh)\s+(?:the\s+)?(?:implementation\s+)?plan",
+                0.85,
+            ),
             (r"\bget\s+(?:next|available)\s+tasks", 0.8),
             (r"\btask\s+(?:status|progress|summary)", 0.8),
             (r"\bhow\s+many\s+tasks?\s+(?:are\s+)?(?:complete|done)", 0.8),
             (r"\b(?:bulk|multiple)\s+(?:check|complete)\s+tasks?", 0.9),
             (r"\bcheckbox\s+(?:format|style)", 0.75),
             # Requirements-specific patterns
-            (r"\b(?:add|create|update|modify|remove|delete)\s+requirements?", 0.9),
-            (r"\b(?:add|create|write|define|update)\s+user\s+stor(?:y|ies)", 0.85),
+            (
+                r"\b(?:add|create|update|modify|remove|delete)\s+requirements?",
+                0.9,
+            ),
+            (
+                r"\b(?:add|create|write|define|update)\s+user\s+stor(?:y|ies)",
+                0.85,
+            ),
             (r"\brequirements\.md\b", 0.95),
             (r"\b(?:EARS|ears)\s+(?:criteria|requirements?)", 0.9),
             # Design-specific patterns
@@ -51,7 +69,10 @@ class ModeClassifier:
             (r"\bspecforge\b", 0.95),
             (r"\bspecforged\b", 0.95),
             # Wizard mode specific patterns
-            (r"\b(?:start|launch|run)\s+(?:specforge|specforged)\s+wizard", 0.98),
+            (
+                r"\b(?:start|launch|run)\s+(?:specforge|specforged)\s+wizard",
+                0.98,
+            ),
             (r"\b(?:use\s+)?(?:specforge|specforged)\s+to\s+create", 0.95),
             (
                 r"\b(?:new\s+project|create\s+project)\s+(?:with\s+)?"
@@ -64,12 +85,21 @@ class ModeClassifier:
 
         # Do mode patterns (code modifications, commands)
         self.do_patterns = [
-            (r"\b(?:modify|change|update|edit)\s+(?:the\s+)?(?:code|file)", 0.8),
+            (
+                r"\b(?:modify|change|update|edit)\s+(?:the\s+)?(?:code|file)",
+                0.8,
+            ),
             (r"\b(?:run|execute|start|launch)\s+(?!task)", 0.75),
             (r"\b(?:fix|debug|resolve|patch)", 0.7),
             (r"\b(?:implement|build|compile|deploy)", 0.75),
-            (r"\b(?:test|validate|check)\s+(?:the\s+)?(?:code|implementation)", 0.7),
-            (r"\b(?:add|remove|delete)\s+(?:a\s+)?(?:function|method|class)", 0.8),
+            (
+                r"\b(?:test|validate|check)\s+(?:the\s+)?(?:code|implementation)",
+                0.7,
+            ),
+            (
+                r"\b(?:add|remove|delete)\s+(?:a\s+)?(?:function|method|class)",
+                0.8,
+            ),
             (r"\b(?:refactor|optimize|improve)\s+(?:the\s+)?code", 0.75),
             (r"\bgit\s+(?:commit|push|pull|merge)", 0.85),
         ]

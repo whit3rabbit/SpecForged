@@ -8,12 +8,10 @@ integration without requiring a full server setup.
 
 import asyncio
 import json
-import os
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 class MockMcpServer:
@@ -34,7 +32,7 @@ class MockMcpServer:
         # Ensure directories exist
         self.specs_dir.mkdir(exist_ok=True)
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the mock server."""
         self.is_running = True
         print(f"Mock MCP server started in {self.workspace_dir}")
@@ -55,7 +53,7 @@ class MockMcpServer:
 
         print("Mock MCP server stopped")
 
-    async def process_operations(self):
+    async def process_operations(self) -> None:
         """Process operations from the queue file."""
         if not self.queue_file.exists():
             return
@@ -83,7 +81,7 @@ class MockMcpServer:
 
     async def process_single_operation(
         self, operation: Dict[str, Any], queue_data: Dict[str, Any]
-    ):
+    ) -> None:
         """Process a single operation."""
         op_id = operation["id"]
         op_type = operation["type"]
@@ -163,7 +161,10 @@ class MockMcpServer:
                     "message": f"Unknown operation type: {op_type}",
                 }
         except Exception as e:
-            return {"success": False, "message": f"Error handling {op_type}: {str(e)}"}
+            return {
+                "success": False,
+                "message": f"Error handling {op_type}: {str(e)}",
+            }
 
     async def handle_create_spec(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle create_spec operation."""
@@ -220,11 +221,17 @@ class MockMcpServer:
         content = params.get("content", "")
 
         if not spec_id:
-            return {"success": False, "message": "Missing required parameter: specId"}
+            return {
+                "success": False,
+                "message": "Missing required parameter: specId",
+            }
 
         spec_dir = self.specs_dir / spec_id
         if not spec_dir.exists():
-            return {"success": False, "message": f"Specification {spec_id} not found"}
+            return {
+                "success": False,
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Update requirements.md
         requirements_file = spec_dir / "requirements.md"
@@ -243,11 +250,17 @@ class MockMcpServer:
         content = params.get("content", "")
 
         if not spec_id:
-            return {"success": False, "message": "Missing required parameter: specId"}
+            return {
+                "success": False,
+                "message": "Missing required parameter: specId",
+            }
 
         spec_dir = self.specs_dir / spec_id
         if not spec_dir.exists():
-            return {"success": False, "message": f"Specification {spec_id} not found"}
+            return {
+                "success": False,
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Update design.md
         design_file = spec_dir / "design.md"
@@ -266,11 +279,17 @@ class MockMcpServer:
         content = params.get("content", "")
 
         if not spec_id:
-            return {"success": False, "message": "Missing required parameter: specId"}
+            return {
+                "success": False,
+                "message": "Missing required parameter: specId",
+            }
 
         spec_dir = self.specs_dir / spec_id
         if not spec_dir.exists():
-            return {"success": False, "message": f"Specification {spec_id} not found"}
+            return {
+                "success": False,
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Update tasks.md
         tasks_file = spec_dir / "tasks.md"
@@ -296,7 +315,10 @@ class MockMcpServer:
 
         spec_dir = self.specs_dir / spec_id
         if not spec_dir.exists():
-            return {"success": False, "message": f"Specification {spec_id} not found"}
+            return {
+                "success": False,
+                "message": f"Specification {spec_id} not found",
+            }
 
         # Append user story to requirements.md
         requirements_file = spec_dir / "requirements.md"
@@ -332,7 +354,7 @@ class MockMcpServer:
             },
         }
 
-    async def create_default_spec_files(self, spec_dir: Path, name: str):
+    async def create_default_spec_files(self, spec_dir: Path, name: str) -> None:
         """Create default specification files."""
         # requirements.md
         requirements_content = f"""# Requirements for {name}
@@ -381,12 +403,12 @@ This document describes the technical design for {name}.
         with open(spec_dir / "tasks.md", "w") as f:
             f.write(tasks_content)
 
-    async def save_queue(self, queue_data: Dict[str, Any]):
+    async def save_queue(self, queue_data: Dict[str, Any]) -> None:
         """Save operation queue to file."""
         with open(self.queue_file, "w") as f:
             json.dump(queue_data, f, indent=2)
 
-    async def save_operation_result(self, result: Dict[str, Any]):
+    async def save_operation_result(self, result: Dict[str, Any]) -> None:
         """Save operation result to results file."""
         results = []
 
@@ -412,7 +434,7 @@ This document describes the technical design for {name}.
         with open(self.results_file, "w") as f:
             json.dump(results_data, f, indent=2)
 
-    async def update_sync_state(self, server_online: bool = True):
+    async def update_sync_state(self, server_online: bool = True) -> None:
         """Update sync state file."""
         sync_state = {
             "extensionOnline": True,
@@ -451,12 +473,12 @@ This document describes the technical design for {name}.
         with open(self.sync_file, "w") as f:
             json.dump(sync_state, f, indent=2)
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the mock server."""
         self.is_running = False
 
 
-async def main():
+async def main() -> None:
     """Main entry point."""
     if len(sys.argv) < 2:
         print("Usage: python mock-mcp-server.py <workspace_dir>")

@@ -1,6 +1,6 @@
 /**
  * Input validation utilities for the VS Code extension.
- * 
+ *
  * Provides client-side validation before sending operations to MCP server.
  * Acts as the first line of defense against malicious input.
  */
@@ -127,7 +127,7 @@ export class InputValidator {
                 const injectionCheck = this.checkForInjectionPatterns(trimmedName, 'name');
                 errors.push(...injectionCheck.errors);
                 warnings.push(...injectionCheck.warnings);
-                
+
                 if (injectionCheck.errors.length === 0) {
                     sanitizedData.name = this.sanitizeString(trimmedName);
                 }
@@ -154,7 +154,7 @@ export class InputValidator {
                 const injectionCheck = this.checkForInjectionPatterns(params.description, 'description');
                 errors.push(...injectionCheck.errors);
                 warnings.push(...injectionCheck.warnings);
-                
+
                 if (injectionCheck.errors.length === 0) {
                     sanitizedData.description = this.sanitizeString(params.description.trim());
                 }
@@ -166,7 +166,7 @@ export class InputValidator {
             const specIdValidation = this.validateSpecId(params.spec_id);
             errors.push(...specIdValidation.errors);
             warnings.push(...specIdValidation.warnings);
-            
+
             if (specIdValidation.valid && specIdValidation.sanitizedData) {
                 sanitizedData.spec_id = specIdValidation.sanitizedData.spec_id;
             }
@@ -184,7 +184,7 @@ export class InputValidator {
         const specIdValidation = this.validateSpecId(params.spec_id, true);
         errors.push(...specIdValidation.errors);
         warnings.push(...specIdValidation.warnings);
-        
+
         if (specIdValidation.sanitizedData) {
             sanitizedData.spec_id = specIdValidation.sanitizedData.spec_id;
         }
@@ -209,10 +209,10 @@ export class InputValidator {
             const injectionCheck = this.checkForInjectionPatterns(params.content, 'content');
             errors.push(...injectionCheck.errors);
             warnings.push(...injectionCheck.warnings);
-            
+
             if (injectionCheck.errors.length === 0) {
                 sanitizedData.content = params.content.trim();
-                
+
                 // Warn about large content
                 if (this.getByteLength(params.content) > 50 * 1024) {
                     warnings.push({
@@ -237,7 +237,7 @@ export class InputValidator {
         const specIdValidation = this.validateSpecId(params.spec_id, true);
         errors.push(...specIdValidation.errors);
         warnings.push(...specIdValidation.warnings);
-        
+
         if (specIdValidation.sanitizedData) {
             sanitizedData.spec_id = specIdValidation.sanitizedData.spec_id;
         }
@@ -273,7 +273,7 @@ export class InputValidator {
                     const injectionCheck = this.checkForInjectionPatterns(trimmedValue, field);
                     errors.push(...injectionCheck.errors);
                     warnings.push(...injectionCheck.warnings);
-                    
+
                     if (injectionCheck.errors.length === 0) {
                         sanitizedData[field] = this.sanitizeString(trimmedValue);
                     }
@@ -324,12 +324,12 @@ export class InputValidator {
                                 });
                             } else {
                                 const injectionCheck = this.checkForInjectionPatterns(
-                                    trimmedReqValue, 
+                                    trimmedReqValue,
                                     `ears_requirements[${index}].${reqField}`
                                 );
                                 errors.push(...injectionCheck.errors);
                                 warnings.push(...injectionCheck.warnings);
-                                
+
                                 if (injectionCheck.errors.length === 0) {
                                     sanitizedReq[reqField] = this.sanitizeString(trimmedReqValue);
                                 }
@@ -360,7 +360,7 @@ export class InputValidator {
         const specIdValidation = this.validateSpecId(params.spec_id, true);
         errors.push(...specIdValidation.errors);
         warnings.push(...specIdValidation.warnings);
-        
+
         if (specIdValidation.sanitizedData) {
             sanitizedData.spec_id = specIdValidation.sanitizedData.spec_id;
         }
@@ -558,7 +558,7 @@ export class InputValidator {
 
         try {
             const parsed = JSON.parse(content);
-            
+
             // Check for deeply nested objects (DoS prevention)
             const maxDepth = 50;
             if (this.getObjectDepth(parsed) > maxDepth) {
@@ -591,14 +591,14 @@ export class InputValidator {
         }
 
         if (Array.isArray(obj)) {
-            return obj.reduce((maxDepth, item) => 
-                Math.max(maxDepth, this.getObjectDepth(item, currentDepth + 1)), 
+            return obj.reduce((maxDepth, item) =>
+                Math.max(maxDepth, this.getObjectDepth(item, currentDepth + 1)),
                 currentDepth
             );
         }
 
-        return Object.values(obj).reduce((maxDepth: number, value) => 
-            Math.max(maxDepth, this.getObjectDepth(value, currentDepth + 1)), 
+        return Object.values(obj).reduce((maxDepth: number, value) =>
+            Math.max(maxDepth, this.getObjectDepth(value, currentDepth + 1)),
             currentDepth
         );
     }

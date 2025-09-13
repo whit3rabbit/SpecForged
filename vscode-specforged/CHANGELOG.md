@@ -2,6 +2,20 @@
 
 All notable changes to the "vscode-specforged" extension will be documented in this file.
 
+## [0.2.2] - 2024-09-11
+
+### Fixed
+- **Command Registration Conflicts**: Resolved duplicate command registration issues that prevented extension activation
+- **JSON Parsing Errors**: Enhanced error handling for empty or malformed JSON files in mock MCP server
+- **MCP Sync Service Initialization**: Improved workspace validation and graceful degradation when no workspace is open
+- **File System Cleanup**: Enhanced lock release mechanism to prevent file system errors during cleanup
+- **Extension Activation**: Extension now activates successfully even when some services fail to initialize
+
+### Enhanced
+- **Error Messages**: More user-friendly error messages with actionable recovery suggestions
+- **Service Initialization**: Each service now initializes independently with better error isolation
+- **Workspace Detection**: Better handling of scenarios where VS Code has no workspace open
+
 ## [0.2.1] - 2025-01-XX
 
 ### Added

@@ -83,6 +83,9 @@ suite('McpCommands Test Suite', () => {
     });
 
     setup(async () => {
+        // Set test environment flag
+        process.env.NODE_ENV = 'test';
+
         // Create fresh instances for each test
         fileOperationService = new FileOperationService();
         mcpSyncService = new McpSyncService(fileOperationService);
@@ -138,7 +141,7 @@ suite('McpCommands Test Suite', () => {
                 'specforged.mcp.deleteFile',
                 'specforged.mcp.createDirectory',
                 'specforged.mcp.getSyncStatus',
-                'specforged.mcp.forcSync',
+                'specforged.mcp.forceSync',
                 'specforged.mcp.listSpecifications',
                 'specforged.mcp.getConflicts',
                 'specforged.mcp.resolveConflict',
@@ -192,18 +195,14 @@ suite('McpCommands Test Suite', () => {
             const createSpecCommand = registeredCommands.get('specforged.mcp.createSpec')!;
 
             // Test missing parameters
-            await assert.rejects(
-                () => createSpecCommand({}),
-                /required/i,
-                'Should reject missing parameters'
-            );
+            const result1 = await createSpecCommand({});
+            assert.strictEqual(result1.success, false, 'Should reject missing parameters');
+            assert.ok(result1.message.toLowerCase().includes('required'), 'Should indicate missing parameters');
 
             // Test invalid parameters
-            await assert.rejects(
-                () => createSpecCommand({ specId: '', name: 'Test' }),
-                /invalid/i,
-                'Should reject invalid parameters'
-            );
+            const result2 = await createSpecCommand({ specId: '', name: 'Test' });
+            assert.strictEqual(result2.success, false, 'Should reject invalid parameters');
+            assert.ok(result2.message.toLowerCase().includes('invalid') || result2.message.toLowerCase().includes('required'), 'Should indicate validation error');
         });
 
         test('should handle updateRequirements command', async () => {
@@ -352,17 +351,15 @@ suite('McpCommands Test Suite', () => {
             const addUserStoryCommand = registeredCommands.get('specforged.mcp.addUserStory')!;
 
             // Missing required fields
-            await assert.rejects(
-                () => addUserStoryCommand({
-                    specId: 'test-spec',
-                    userStory: {
-                        title: 'Incomplete Story'
-                        // Missing asA, iWant, soThat
-                    }
-                }),
-                /required.*field/i,
-                'Should reject incomplete user story'
-            );
+            const result = await addUserStoryCommand({
+                specId: 'test-spec',
+                userStory: {
+                    title: 'Incomplete Story'
+                    // Missing asA, iWant, soThat
+                }
+            });
+            assert.strictEqual(result.success, false, 'Should reject incomplete user story');
+            assert.ok(result.message.toLowerCase().includes('required') || result.message.toLowerCase().includes('invalid'), 'Should indicate missing fields');
         });
     });
 
@@ -472,7 +469,7 @@ suite('McpCommands Test Suite', () => {
         });
 
         test('should handle forceSync command', async () => {
-            const forceSyncCommand = registeredCommands.get('specforged.mcp.forcSync')!;
+            const forceSyncCommand = registeredCommands.get('specforged.mcp.forceSync')!;
 
             const result = await forceSyncCommand();
 

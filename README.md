@@ -74,7 +74,7 @@ specifications/
 
 SpecForged works **completely independently** of any IDE or extension. You can use it as:
 - 🖥️ **Standalone CLI tool** for project management
-- 🌐 **HTTP MCP server** for web clients  
+- 🌐 **HTTP MCP server** for web clients
 - 🐳 **Docker container** for cloud deployment
 - 🔌 **Local MCP server** for Claude Desktop, Cursor, etc.
 
@@ -98,7 +98,7 @@ Choose your preferred method:
 # Recommended: Isolated installation
 pipx install specforged
 
-# Standard pip installation  
+# Standard pip installation
 pip install --user specforged
 
 # Modern Python package manager
@@ -117,7 +117,7 @@ cd /path/to/your/project
 # 2. Initialize SpecForged
 specforged init
 
-# 3. Check project status  
+# 3. Check project status
 specforged status
 
 # 4. Start the server
@@ -156,19 +156,19 @@ SpecForged is designed to work independently without requiring any IDE or extens
 # Complete standalone workflow
 specforged init                    # Initialize project configuration
 specforged config show            # View current settings
-specforged status                  # Check project health  
+specforged status                  # Check project health
 specforged serve                   # Start MCP server
 specforged config edit            # Modify settings
 
 # Available deployment modes:
 specforged serve                   # Local MCP server (stdio)
 specforged http --port 8080       # HTTP server for web clients
-docker-compose up -d               # Docker deployment with persistence
+docker compose -f infra/docker-compose.yml up -d    # Docker deployment with persistence
 ```
 
 **Configuration Sources (in order of precedence):**
 1. Environment variables (`SPECFORGED_*`)
-2. Project configuration (`.specforged.yaml`) 
+2. Project configuration (`.specforged.yaml`)
 3. User configuration (`~/.specforged/config.yaml`)
 4. Sensible defaults
 
@@ -191,14 +191,29 @@ curl http://localhost:8080/health
 
 **Production deployment:**
 ```bash
-# Use docker-compose for production
+# Use Compose for production
 cp .env.example .env  # Configure settings
-docker-compose --profile production up -d
+docker compose -f infra/docker-compose.yml --profile production up -d
 
 # Includes: reverse proxy, monitoring, auto-updates
 ```
 
-### 🔧 MCP Client Configuration  
+**Makefile shortcuts:**
+```bash
+make up         # Start services
+make prod-up    # Start with production profile
+make logs       # Tail logs
+make down       # Stop and remove
+```
+
+### CI
+
+- GitHub Actions uses the Makefile to validate container builds and startup:
+  - `make build` builds images via `infra/docker-compose.yml`.
+  - `make prod-up` boots the stack with the production profile and performs a health check.
+- See the workflow at `.github/workflows/test.yml` (job: "Docker Compose Smoke").
+
+### 🔧 MCP Client Configuration
 
 **Claude Desktop (`~/.claude/claude_desktop_config.json`):**
 ```json
@@ -279,7 +294,7 @@ SpecForged can be deployed to [Smithery.ai](https://smithery.ai) for cloud-hoste
 The repository includes the required Smithery configuration:
 
 - **`smithery.yaml`**: Container runtime configuration
-- **`Dockerfile`**: Multi-stage build with Python + uv
+- **`infra/Dockerfile`**: Multi-stage build with Python + uv
 - **HTTP Server**: Streamable HTTP MCP server via `main_http.py`
 
 ### Deployment Process
@@ -464,7 +479,7 @@ pipx install specforged
 
 Config file paths:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`  
+- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`
 - Linux: `~/.config/Claude/claude_desktop_config.json`
 
 </details>
@@ -1033,15 +1048,17 @@ classifier.spec_patterns = [
 specforged/
 ├── src/
 │   ├── models/          # Data models and enums
-│   ├── core/           # Core business logic
-│   ├── tools/          # MCP tool implementations
-│   ├── resources.py    # MCP resource handlers
-│   ├── prompts.py      # MCP prompt definitions
-│   └── server.py       # Main server factory
-├── tests/              # Comprehensive test suite
-├── scripts/            # Development helper scripts
-├── main.py             # Local CLI entry point
-└── requirements.txt    # Dependencies
+│   ├── core/            # Core business logic
+│   ├── tools/           # MCP tool implementations
+│   ├── resources.py     # MCP resource handlers
+│   ├── prompts.py       # MCP prompt definitions
+│   └── server.py        # Main server factory
+├── tests/               # Comprehensive test suite
+├── scripts/             # Development and release scripts
+├── docs/                # Documentation and guides
+├── config/              # Configuration files (e.g., performance)
+├── main.py              # Local CLI entry point
+└── requirements.txt     # Dependencies
 ```
 
 ### Development Commands

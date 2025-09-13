@@ -7,7 +7,7 @@ import { EnhancedMcpCommandsHandler } from '../commands/enhancedMcpCommands';
 
 export class McpDashboardProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'specforged.mcpDashboard';
-    
+
     private _view?: vscode.WebviewView;
     private _refreshInterval?: NodeJS.Timer;
 
@@ -77,7 +77,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
 
         try {
             const discoveryResult = await this.discoveryService.discoverMcpEcosystem(true);
-            
+
             this._view.webview.postMessage({
                 command: 'updateData',
                 data: this._transformDiscoveryData(discoveryResult)
@@ -133,7 +133,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
 
     private _getClientActions(client: any) {
         const actions = [];
-        
+
         if (client.isInstalled) {
             actions.push({
                 id: 'configure',
@@ -244,7 +244,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
         try {
             this._showNotification('info', 'Starting quick MCP setup...');
             await vscode.commands.executeCommand('specforged.quickMcpSetup');
-            
+
             // Refresh data after setup
             setTimeout(() => this._refreshData(), 2000);
         } catch (error) {
@@ -256,7 +256,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
         try {
             this._showNotification('info', `Configuring ${clientId}...`);
             await vscode.commands.executeCommand('specforged.setupMcpForClient', clientId);
-            
+
             // Refresh data after configuration
             setTimeout(() => this._refreshData(), 1000);
         } catch (error) {
@@ -278,7 +278,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
             const client = await this.discoveryService.getClientById(clientId);
             if (client) {
                 const instructions = this._getInstallationInstructions(client);
-                
+
                 const action = await vscode.window.showInformationMessage(
                     `Install ${client.displayName}`,
                     {
@@ -295,7 +295,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
                         windsurf: 'https://codeium.com/windsurf',
                         zed: 'https://zed.dev'
                     };
-                    
+
                     const url = urls[client.id];
                     if (url) {
                         vscode.env.openExternal(vscode.Uri.parse(url));
@@ -357,7 +357,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
     private async _executeRecommendation(actionId: string, params: any) {
         try {
             this._showNotification('info', 'Executing recommendation...');
-            
+
             // Map action IDs to actual commands
             const commandMap: Record<string, string> = {
                 'install_client': 'specforged.selectMcpClient',
@@ -371,7 +371,7 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
             const command = commandMap[actionId];
             if (command) {
                 await vscode.commands.executeCommand(command, params);
-                
+
                 // Refresh data after action
                 setTimeout(() => this._refreshData(), 2000);
             } else {
@@ -404,13 +404,13 @@ export class McpDashboardProvider implements vscode.WebviewViewProvider {
     private _getHtmlForWebview(webview: vscode.Webview) {
         // Get the local path to the dashboard HTML file
         const dashboardPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'webview', 'dashboard.html');
-        
+
         try {
             let htmlContent = fs.readFileSync(dashboardPath.fsPath, 'utf8');
-            
+
             // Replace any resource URIs if needed
             // For now, we're using inline CSS and JS, so no replacements needed
-            
+
             return htmlContent;
         } catch (error) {
             console.error('Failed to load dashboard HTML:', error);

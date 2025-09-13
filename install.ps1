@@ -94,11 +94,11 @@ function Invoke-Execute {
         [string]$Command,
         [string]$Description = ""
     )
-    
+
     if ($Description) {
         Write-Verbose-Log $Description
     }
-    
+
     if ($DryRun) {
         Write-Host "$($Colors.Yellow)[DRY RUN] Would execute: $Command$($Colors.Reset)"
         return $true
@@ -106,7 +106,7 @@ function Invoke-Execute {
         if ($Verbose) {
             Write-Host "$($Colors.Blue)Executing: $Command$($Colors.Reset)"
         }
-        
+
         try {
             Invoke-Expression $Command
             return $LASTEXITCODE -eq 0
@@ -119,7 +119,7 @@ function Invoke-Execute {
 
 function Test-CommandExists {
     param([string]$Command)
-    
+
     try {
         $null = Get-Command $Command -ErrorAction Stop
         return $true
@@ -130,7 +130,7 @@ function Test-CommandExists {
 
 function Get-PythonVersion {
     param([string]$PythonCommand)
-    
+
     try {
         $versionOutput = & $PythonCommand -c "import sys; print('.'.join(map(str, sys.version_info[:3])))" 2>$null
         if ($LASTEXITCODE -eq 0 -and $versionOutput) {
@@ -139,16 +139,16 @@ function Get-PythonVersion {
     } catch {
         # Command failed
     }
-    
+
     return $null
 }
 
 function Find-Python {
     Write-Verbose-Log "Searching for Python installation..."
-    
+
     # Try different Python commands
     $pythonCommands = @("python", "python3", "py")
-    
+
     foreach ($pythonCmd in $pythonCommands) {
         if (Test-CommandExists $pythonCmd) {
             $version = Get-PythonVersion $pythonCmd
@@ -160,22 +160,22 @@ function Find-Python {
             }
         }
     }
-    
+
     return $null
 }
 
 function Install-Python {
     Write-Info "Python $MinPythonVersion or higher is required but not found."
     Write-Info "Installing Python using winget (Windows Package Manager)..."
-    
+
     # Check if winget is available
     if (Test-CommandExists "winget") {
         if (Invoke-Execute "winget install Python.Python.3.12 --accept-source-agreements --accept-package-agreements" "Installing Python 3.12 via winget") {
             Write-Success "Python installation completed"
-            
+
             # Refresh environment variables
             $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-            
+
             return $true
         } else {
             Write-Error "Failed to install Python via winget"
@@ -192,7 +192,7 @@ function Install-Python {
 
 function Find-InstallMethod {
     Write-Verbose-Log "Detecting best installation method..."
-    
+
     # Priority order: pipx > uv > pip
     if (Test-CommandExists "pipx") {
         Write-Success "Found pipx - recommended for isolated installation"
@@ -213,7 +213,7 @@ function Install-PackageManager {
         [string]$Method,
         [string]$PythonCommand
     )
-    
+
     switch ($Method) {
         "pipx" {
             Write-Info "Installing pipx for isolated package installation..."
@@ -223,16 +223,16 @@ function Install-PackageManager {
                     $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
                     $machinePath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
                     $env:PATH = "$userPath;$machinePath"
-                    
+
                     return Test-CommandExists "pipx"
                 }
             }
             return $false
         }
-        
+
         "uv" {
             Write-Info "Installing uv package manager..."
-            
+
             # Try installing uv via PowerShell (recommended method)
             if (Test-CommandExists "powershell") {
                 $uvInstallScript = "powershell -c `"irm https://astral.sh/uv/install.ps1 | iex`""
@@ -242,17 +242,17 @@ function Install-PackageManager {
                     return Test-CommandExists "uv"
                 }
             }
-            
+
             # Fallback to pip installation
             Write-Warning "Direct uv installation failed, trying via pip..."
             return Invoke-Execute "$PythonCommand -m pip install --user uv" "Installing uv via pip"
         }
-        
+
         "pip" {
             Write-Info "Ensuring pip is up to date..."
             return Invoke-Execute "$PythonCommand -m pip install --upgrade pip" "Upgrading pip"
         }
-        
+
         default {
             Write-Error "Unknown installation method: $Method"
             return $false
@@ -265,9 +265,9 @@ function Install-SpecForged {
         [string]$Method,
         [string]$PythonCommand
     )
-    
+
     Write-Info "Installing SpecForged using $Method..."
-    
+
     switch ($Method) {
         "pipx" {
             if ($Force) {
@@ -276,15 +276,15 @@ function Install-SpecForged {
                 return Invoke-Execute "pipx install $PackageName" "Installing SpecForged with pipx"
             }
         }
-        
+
         "uv" {
             return Invoke-Execute "uv tool install $PackageName" "Installing SpecForged with uv"
         }
-        
+
         "pip" {
             return Invoke-Execute "$PythonCommand -m pip install --user $PackageName" "Installing SpecForged with pip"
         }
-        
+
         default {
             Write-Error "Unknown installation method: $Method"
             return $false
@@ -294,15 +294,15 @@ function Install-SpecForged {
 
 function Test-Installation {
     Write-Info "Verifying SpecForged installation..."
-    
+
     # Check if command is available
     if (Test-CommandExists "specforged") {
         try {
             $version = & specforged --version 2>$null | Select-String -Pattern '\d+\.\d+\.\d+' | ForEach-Object { $_.Matches[0].Value }
             if (-not $version) { $version = "unknown" }
-            
+
             Write-Success "SpecForged installed successfully (version: $version)"
-            
+
             # Test basic functionality
             if (-not $DryRun) {
                 Write-Verbose-Log "Testing SpecForged configuration loading..."
@@ -313,7 +313,7 @@ function Test-Installation {
                     Write-Warning "SpecForged installed but may have configuration issues"
                 }
             }
-            
+
             return $true
         } catch {
             Write-Error "Error verifying SpecForged installation: $($_.Exception.Message)"
@@ -330,7 +330,7 @@ function Test-ExistingInstallation {
         try {
             $version = & specforged --version 2>$null | Select-String -Pattern '\d+\.\d+\.\d+' | ForEach-Object { $_.Matches[0].Value }
             if (-not $version) { $version = "unknown" }
-            
+
             if ($Force) {
                 Write-Warning "SpecForged $version already installed, but -Force specified. Reinstalling..."
                 return $false  # Proceed with installation
@@ -346,14 +346,14 @@ function Test-ExistingInstallation {
             return $false
         }
     }
-    
+
     return $false  # Not installed, proceed
 }
 
 function New-InitialConfig {
     if (-not $DryRun) {
         Write-Info "Setting up initial configuration..."
-        
+
         # Create user config directory if it doesn't exist
         $configDir = "$env:USERPROFILE\.specforged"
         if (-not (Test-Path $configDir)) {
@@ -361,7 +361,7 @@ function New-InitialConfig {
                 Write-Success "Created configuration directory: $configDir"
             }
         }
-        
+
         # Ask if user wants to create initial config
         Write-Host ""
         $createConfig = Read-Host "Would you like to create a default user configuration? (y/n)"
@@ -403,14 +403,14 @@ function Main {
         Show-Help
         exit 0
     }
-    
+
     Write-Banner
-    
+
     # Check if already installed (unless forced)
     if (Test-ExistingInstallation) {
         exit 0
     }
-    
+
     # Find or install Python
     $pythonCmd = Find-Python
     if (-not $pythonCmd) {
@@ -425,9 +425,9 @@ function Main {
             exit 1
         }
     }
-    
+
     Write-Verbose-Log "Using Python command: $pythonCmd"
-    
+
     # Determine installation method
     if (-not $InstallMethod) {
         $InstallMethod = Find-InstallMethod
@@ -439,27 +439,27 @@ function Main {
     } else {
         Write-Verbose-Log "Using specified installation method: $InstallMethod"
     }
-    
+
     # Install package manager if needed
     if (-not (Test-CommandExists $InstallMethod)) {
         if (-not (Install-PackageManager $InstallMethod $pythonCmd)) {
             Write-Error "Failed to install $InstallMethod"
             exit 1
         }
-        
+
         # Verify package manager is now available
         if (-not (Test-CommandExists $InstallMethod)) {
             Write-Error "$InstallMethod is still not available after installation"
             exit 1
         }
     }
-    
+
     # Install SpecForged
     if (-not (Install-SpecForged $InstallMethod $pythonCmd)) {
         Write-Error "SpecForged installation failed"
         exit 1
     }
-    
+
     # Verify installation
     if (Test-Installation) {
         New-InitialConfig

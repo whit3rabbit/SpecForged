@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      # Skip VS Code test runner to avoid downloads/headless issues
+      SKIP_VSCODE_TESTS: '1'
+      # Also honored by our Makefile/test harness
+      SKIP_TESTS: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run compile --silent && ./node_modules/.bin/tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (production)
+        run: npm run bundle
+
+      - name: Package VSIX (skip tests)
+        run: npm run package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: |
+            *.vsix
+          if-no-files-found: error

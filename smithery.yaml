@@ -22,5 +22,5 @@ startCommand:
         default: true
     required: []
 build:
-  dockerfile: "Dockerfile"
+  dockerfile: "infra/Dockerfile"
   dockerBuildPath: "."

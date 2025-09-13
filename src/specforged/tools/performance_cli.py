@@ -6,7 +6,6 @@ A command-line interface for monitoring, benchmarking, and optimizing
 the performance of the SpecForge MCP ecosystem.
 """
 
-import argparse
 import asyncio
 import json
 import sys
@@ -16,10 +15,9 @@ from typing import Any, Dict, Optional
 
 import click
 from rich.console import Console
+from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from rich.panel import Panel
-from rich.text import Text
 
 from specforged.config.performance import (
     PerformanceConfigManager,
@@ -84,11 +82,16 @@ def config(profile: Optional[str], config_path: Optional[str]):
         table.add_row("LRU Cache Size", str(perf_config.cache.lru_cache_size))
         table.add_row(
             "Result Caching",
-            "✅ Enabled" if perf_config.cache.enable_result_caching else "❌ Disabled",
+            (
+                "✅ Enabled"
+                if perf_config.cache.enable_result_caching
+                else "❌ Disabled"
+            ),
         )
         table.add_row("Result Cache Size", str(perf_config.cache.result_cache_max_size))
         table.add_row(
-            "Cache TTL (seconds)", str(perf_config.cache.result_cache_ttl_seconds)
+            "Cache TTL (seconds)",
+            str(perf_config.cache.result_cache_ttl_seconds),
         )
         console.print(table)
 
@@ -99,7 +102,7 @@ def config(profile: Optional[str], config_path: Optional[str]):
 
         table.add_row(
             "Batching Enabled",
-            "✅ Enabled" if perf_config.batching.enable_batching else "❌ Disabled",
+            ("✅ Enabled" if perf_config.batching.enable_batching else "❌ Disabled"),
         )
         table.add_row("Max Batch Size", str(perf_config.batching.max_batch_size))
         table.add_row(
@@ -137,7 +140,11 @@ def config(profile: Optional[str], config_path: Optional[str]):
         table.add_row("Max Queue Size", str(perf_config.memory.max_queue_size))
         table.add_row(
             "Auto Compaction",
-            "✅ Enabled" if perf_config.memory.auto_queue_compaction else "❌ Disabled",
+            (
+                "✅ Enabled"
+                if perf_config.memory.auto_queue_compaction
+                else "❌ Disabled"
+            ),
         )
         console.print(table)
 
@@ -300,7 +307,7 @@ def display_benchmark_results(results: Dict[str, Any]):
     )
     console.print(
         Panel(
-            f"[bold {status_color}]{passed_count}/{total_count} benchmarks passed[/bold {status_color}]",
+            f"[bold {status_color}]{passed_count}/{total_count} benchmarks passed[/bold {status_color}]",  # noqa: E501
             title="Benchmark Results",
             border_style=status_color,
         )
@@ -385,7 +392,9 @@ def display_benchmark_results(results: Dict[str, Any]):
 
 @cli.command()
 @click.option(
-    "--project-root", type=click.Path(exists=True), help="Project root directory"
+    "--project-root",
+    type=click.Path(exists=True),
+    help="Project root directory",
 )
 @click.option("--watch", is_flag=True, help="Monitor performance continuously")
 @click.option("--interval", default=30, help="Monitoring interval in seconds")
@@ -484,7 +493,7 @@ def optimize(project_root: str, dry_run: bool):
                     optimizations.append(
                         f"Queue has {completed} completed operations - Consider compaction"
                     )
-        except:
+        except (OSError, json.JSONDecodeError, KeyError):
             optimizations.append("Cannot parse operation queue - May be corrupted")
 
     # Check for temporary files
@@ -492,7 +501,7 @@ def optimize(project_root: str, dry_run: bool):
     if temp_files:
         total_size = sum(f.stat().st_size for f in temp_files)
         optimizations.append(
-            f"Found {len(temp_files)} temporary files ({total_size/1024:.1f}KB)"
+            f"Found {len(temp_files)} temporary files ({total_size / 1024:.1f}KB)"
         )
 
     # Check for old backup files

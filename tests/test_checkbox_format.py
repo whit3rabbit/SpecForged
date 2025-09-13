@@ -33,7 +33,10 @@ def sample_spec_with_tasks(spec_manager):
 
     # Add user story
     story = spec_manager.add_user_story(
-        spec.id, "developer", "to have a structured project", "development is efficient"
+        spec.id,
+        "developer",
+        "to have a structured project",
+        "development is efficient",
     )
 
     # Add EARS requirement
@@ -50,7 +53,10 @@ def sample_spec_with_tasks(spec_manager):
         "components": [
             {"name": "Core Module", "description": "Main business logic"},
             {"name": "API Layer", "description": "REST API endpoints"},
-            {"name": "Data Layer", "description": "Data persistence and storage"},
+            {
+                "name": "Data Layer",
+                "description": "Data persistence and storage",
+            },
         ],
         "data_models": "interface User { id: string; name: string; }",
         "sequence_diagrams": [],

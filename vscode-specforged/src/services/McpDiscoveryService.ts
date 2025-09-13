@@ -116,13 +116,13 @@ export class McpDiscoveryService {
 
     async discoverMcpEcosystem(forceRefresh = false): Promise<McpDiscoveryResult> {
         const now = Date.now();
-        
+
         if (!forceRefresh && this.discoveryCache && now < this.cacheExpiry) {
             return this.discoveryCache;
         }
 
         console.log('🔍 Starting MCP ecosystem discovery...');
-        
+
         const clients: McpClient[] = [];
         const servers = new Map<string, McpServer>();
         const healthIssues: string[] = [];
@@ -132,7 +132,7 @@ export class McpDiscoveryService {
             try {
                 const client = await this.detectClient(definition);
                 clients.push(client);
-                
+
                 // If client has config, parse servers
                 if (client.configExists) {
                     try {
@@ -175,7 +175,7 @@ export class McpDiscoveryService {
         this.cacheExpiry = now + this.CACHE_DURATION;
 
         console.log(`✅ Discovery complete: ${result.configuredClients}/${result.totalClients} clients configured`);
-        
+
         return result;
     }
 
@@ -218,21 +218,21 @@ export class McpDiscoveryService {
     private async alternativeInstallCheck(clientId: string): Promise<boolean> {
         switch (clientId) {
             case 'claude':
-                return fs.existsSync('/Applications/Claude.app') || 
+                return fs.existsSync('/Applications/Claude.app') ||
                        fs.existsSync(path.join(process.env.HOME || '', 'Applications/Claude.app'));
-            
+
             case 'cursor':
                 return fs.existsSync('/Applications/Cursor.app') ||
                        fs.existsSync(path.join(process.env.HOME || '', 'Applications/Cursor.app')) ||
                        process.platform === 'win32' && fs.existsSync(path.join(process.env.LOCALAPPDATA || '', 'Programs/cursor'));
-            
+
             case 'windsurf':
                 return fs.existsSync(path.join(process.env.HOME || '', '.codeium/windsurf'));
-            
+
             case 'zed':
                 return fs.existsSync('/Applications/Zed.app') ||
                        fs.existsSync(path.join(process.env.HOME || '', 'Applications/Zed.app'));
-            
+
             default:
                 return false;
         }
@@ -274,7 +274,7 @@ export class McpDiscoveryService {
     private async parseClientConfig(client: McpClient): Promise<Map<string, McpServer>> {
         const servers = new Map<string, McpServer>();
         const configPath = this.expandPath(client.configPath);
-        
+
         if (!fs.existsSync(configPath)) {
             return servers;
         }
@@ -291,7 +291,7 @@ export class McpDiscoveryService {
             }
 
             const mcpServers = config.mcpServers || {};
-            
+
             for (const [name, serverConfig] of Object.entries(mcpServers)) {
                 const server = serverConfig as any;
                 servers.set(name, {
@@ -323,13 +323,13 @@ export class McpDiscoveryService {
             'sequential-thinking': 'Sequential Thinking - Structured problem solving',
             'repomix': 'Repomix - Repository analysis and mixing',
         };
-        
+
         return descriptions[serverName] || `${serverName} - MCP Server`;
     }
 
     private generateRecommendations(
-        clients: McpClient[], 
-        servers: Map<string, McpServer>, 
+        clients: McpClient[],
+        servers: Map<string, McpServer>,
         healthIssues: string[]
     ): McpRecommendation[] {
         const recommendations: McpRecommendation[] = [];
@@ -348,7 +348,7 @@ export class McpDiscoveryService {
         }
 
         // Recommend configuring SpecForged for installed clients
-        const installedButUnconfigured = clients.filter(c => 
+        const installedButUnconfigured = clients.filter(c =>
             c.isInstalled && !servers.has('specforged')
         );
         for (const client of installedButUnconfigured) {

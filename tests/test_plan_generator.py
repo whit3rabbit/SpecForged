@@ -2,14 +2,16 @@
 Tests for the PlanGenerator module.
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
+
 from src.specforged.core.plan_generator import PlanGenerator
 from src.specforged.models import (
-    Specification,
-    UserStory,
     EARSRequirement,
+    Specification,
     SpecStatus,
+    UserStory,
     WorkflowPhase,
 )
 
@@ -293,7 +295,8 @@ def test_update_plan_from_spec_changes(plan_generator, sample_spec):
     # Find tasks with same titles as the originally completed ones
     for original_task in flat_tasks[:2]:
         matching_task = next(
-            (task for task in updated_flat if task.title == original_task.title), None
+            (task for task in updated_flat if task.title == original_task.title),
+            None,
         )
         if matching_task:
             if original_task.status == "completed":

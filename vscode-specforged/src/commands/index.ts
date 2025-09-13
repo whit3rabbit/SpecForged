@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
 import { SpecProvider } from '../providers/specProvider';
 import { SpecTreeView } from '../views/specTreeView';
+import { SpecWebview } from '../views/specWebview';
 import { McpManager } from '../mcp/mcpManager';
 import { McpSetupWizard } from '../mcp/mcpSetup';
 import { SpecificationManager } from '../utils/specificationManager';
 import { StatusBarManager } from '../utils/statusBarManager';
 import { TaskHelper } from '../models/task';
+import { LiveUpdateService } from '../services/LiveUpdateService';
+import { McpSyncService } from '../services/mcpSyncService';
 
 export interface ExtensionComponents {
     specProvider: SpecProvider;
@@ -14,6 +17,8 @@ export interface ExtensionComponents {
     specificationManager: SpecificationManager;
     statusBarManager: StatusBarManager;
     treeDataProvider: vscode.TreeView<any>;
+    liveUpdateService?: LiveUpdateService;
+    mcpSyncService?: McpSyncService;
 }
 
 export function setupCommands(
@@ -140,29 +145,23 @@ export function setupCommands(
         const current = specificationManager.getCurrentSpecification();
 
         if (current) {
-            const progress = TaskHelper.calculateProgress(current.spec.tasks);
-            const message = `Current: ${current.spec.name} (${progress.completed}/${progress.total} tasks)`;
+            // Create enhanced webview with live updates
+            const specWebview = new SpecWebview(
+                context,
+                components.liveUpdateService,
+                components.mcpSyncService
+            );
 
-            vscode.window.showInformationMessage(message, 'Open Requirements', 'Open Tasks')
-                .then(selection => {
-                    if (selection === 'Open Requirements') {
-                        vscode.commands.executeCommand('specforged.openRequirements', current.spec.id);
-                    } else if (selection === 'Open Tasks') {
-                        vscode.commands.executeCommand('specforged.openTasks', current.spec.id);
-                    }
-                });
+            await specWebview.showSpecification(current, 'requirements');
         } else {
-            const specs = specificationManager.getSpecifications();
-            if (specs.length > 0) {
-                vscode.window.showInformationMessage('No current specification set. Select one from the tree view.');
-            } else {
-                vscode.window.showInformationMessage('No specifications found. Create your first specification!', 'Create Spec')
-                    .then(action => {
-                        if (action === 'Create Spec') {
-                            vscode.commands.executeCommand('specforged.createSpec');
-                        }
-                    });
-            }
+            vscode.window.showInformationMessage(
+                'No current specification set. Please select one from the tree view.',
+                'View Specifications'
+            ).then(selection => {
+                if (selection === 'View Specifications') {
+                    vscode.commands.executeCommand('specforged.focus');
+                }
+            });
         }
     });
 

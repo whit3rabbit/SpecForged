@@ -4,9 +4,9 @@ requirements and design.
 """
 
 import re
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
-from ..models import Specification, Task, UserStory, EARSRequirement
+from ..models import EARSRequirement, Specification, Task, UserStory
 
 
 class PlanGenerator:

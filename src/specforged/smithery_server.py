@@ -17,7 +17,8 @@ class ConfigSchema(BaseModel):
     """Configuration schema for Smithery-deployed SpecForged server"""
 
     project_path: str = Field(
-        default=".", description="Project root path relative to deployment environment"
+        default=".",
+        description="Project root path relative to deployment environment",
     )
     spec_folder: str = Field(
         default=".specifications",
@@ -96,7 +97,10 @@ def create_smithery_server() -> FastMCP:
                 "workflow_planning",
                 "task_management",
             ],
-            "limitations": ["no_local_file_writes", "read_only_filesystem_access"],
+            "limitations": [
+                "no_local_file_writes",
+                "read_only_filesystem_access",
+            ],
             "recommended_usage": (
                 "Use with VS Code extension for full file operation support"
             ),

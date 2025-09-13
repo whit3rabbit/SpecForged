@@ -9,9 +9,8 @@ import asyncio
 import json
 import logging
 import threading
-import time
 from collections import deque
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -150,35 +149,40 @@ class PerformanceAlertManager:
         memory_mb = metrics.get("memory_usage_mb", 0)
         if memory_mb > self.thresholds.max_memory_mb:
             alerts.append(
-                f"High memory usage: {memory_mb:.1f}MB (threshold: {self.thresholds.max_memory_mb}MB)"
+                f"High memory usage: {memory_mb:.1f}MB "
+                f"(threshold: {self.thresholds.max_memory_mb}MB)"
             )
 
         # Throughput alert
         throughput = metrics.get("queue_throughput", 0)
         if throughput > 0 and throughput < self.thresholds.min_throughput_ops_sec:
             alerts.append(
-                f"Low throughput: {throughput:.1f} ops/sec (threshold: {self.thresholds.min_throughput_ops_sec})"
+                f"Low throughput: {throughput:.1f} ops/sec "
+                f"(threshold: {self.thresholds.min_throughput_ops_sec})"
             )
 
         # Processing time alert
         processing_time = metrics.get("avg_processing_time_ms", 0)
         if processing_time > self.thresholds.max_processing_time_ms:
             alerts.append(
-                f"High processing time: {processing_time:.1f}ms (threshold: {self.thresholds.max_processing_time_ms}ms)"
+                f"High processing time: {processing_time:.1f}ms "
+                f"(threshold: {self.thresholds.max_processing_time_ms}ms)"
             )
 
         # Cache hit rate alert
         cache_hit_rate = metrics.get("cache_hit_rate", 1.0)
         if cache_hit_rate < self.thresholds.min_cache_hit_rate:
             alerts.append(
-                f"Low cache hit rate: {cache_hit_rate:.1%} (threshold: {self.thresholds.min_cache_hit_rate:.1%})"
+                f"Low cache hit rate: {cache_hit_rate:.1%} "
+                f"(threshold: {self.thresholds.min_cache_hit_rate:.1%})"
             )
 
         # Queue size alert
         queue_size = metrics.get("queue_size", 0)
         if queue_size > self.thresholds.max_queue_size:
             alerts.append(
-                f"Large queue size: {queue_size} operations (threshold: {self.thresholds.max_queue_size})"
+                f"Large queue size: {queue_size} operations "
+                f"(threshold: {self.thresholds.max_queue_size})"
             )
 
         return self._filter_cooldown_alerts(alerts)
@@ -264,7 +268,9 @@ class PerformanceDashboard:
             "total_operations_1h": total_operations,
             "avg_memory_usage_mb": avg_memory,
             "active_components": len(set(s.component for s in all_recent)),
-            "last_update": all_recent[-1].timestamp.isoformat() if all_recent else None,
+            "last_update": (
+                all_recent[-1].timestamp.isoformat() if all_recent else None
+            ),
         }
 
     def _get_active_alerts(self) -> List[Dict[str, Any]]:
@@ -304,7 +310,11 @@ class PerformanceDashboard:
 
         if recent_30min and recent_1h:
             # Compare key metrics
-            metrics_to_trend = ["memory_usage_mb", "queue_throughput", "cache_hit_rate"]
+            metrics_to_trend = [
+                "memory_usage_mb",
+                "queue_throughput",
+                "cache_hit_rate",
+            ]
 
             for metric in metrics_to_trend:
                 if metric in recent_30min and metric in recent_1h:
@@ -429,15 +439,15 @@ class PerformanceDashboard:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpecForge Performance Dashboard</title>
     <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}  /* noqa: E501 */
         .container {{ max-width: 1200px; margin: 0 auto; }}
-        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }}  /* noqa: E501 */
         .header h1 {{ margin: 0; font-size: 2.5em; }}
         .header p {{ margin: 5px 0 0 0; opacity: 0.9; }}
-        .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }}
-        .card {{ background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-        .card h2 {{ margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }}
-        .metric {{ display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }}  /* noqa: E501 */
+        .card {{ background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}  /* noqa: E501 */
+        .card h2 {{ margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }}  /* noqa: E501 */
+        .metric {{ display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; }}  /* noqa: E501 */
         .metric-name {{ font-weight: 600; color: #555; }}
         .metric-value {{ font-weight: 700; color: #007bff; }}
         .health-score {{ font-size: 3em; font-weight: bold; text-align: center; padding: 20px; }}
@@ -465,7 +475,7 @@ class PerformanceDashboard:
             <!-- Health Score Card -->
             <div class="card">
                 <h2>System Health</h2>
-                <div class="health-score health-{dashboard_data['summary'].get('status', 'unknown')}">
+                <div class="health-score health-{dashboard_data['summary'].get('status', 'unknown')}">  # noqa: E501
                     {dashboard_data['summary'].get('health_score', {}).get('score', 'N/A')}
                 </div>
                 <div style="text-align: center; font-size: 1.2em; text-transform: capitalize;">
@@ -652,7 +662,7 @@ class PerformanceMonitor:
                 health_score = dashboard_data.get("summary", {}).get("health_score", {})
                 if health_score:
                     self.logger.info(
-                        f"System health: {health_score.get('score', 'N/A')} ({health_score.get('status', 'unknown')})"
+                        f"System health: {health_score.get('score', 'N/A')} ({health_score.get('status', 'unknown')})"  # noqa: E501
                     )
 
                 await asyncio.sleep(update_interval)
@@ -699,8 +709,7 @@ def create_performance_monitor(
 
 
 if __name__ == "__main__":
-    # Example usage
-    import asyncio
+    # Example usage (asyncio already imported at top)
 
     async def demo_monitoring():
         """Demonstrate performance monitoring."""

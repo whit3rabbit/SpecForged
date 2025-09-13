@@ -5,30 +5,29 @@ This module provides centralized configuration management with automatic
 migration, validation, and environment-specific configuration handling.
 """
 
-import os
+import hashlib
 import json
-import yaml
+import logging
+import os
 import shutil
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass, field
-from contextlib import contextmanager
-import logging
-import hashlib
 from threading import Lock
+from typing import Any, Callable, Dict, List, Optional
 
+import yaml
 from pydantic import ValidationError
 
-from .schema import (
-    UnifiedConfig,
-    ConfigVersion,
-    ConfigurationValidator,
-    CONFIGURATION_PROFILES,
-    FeatureFlag,
-)
 from .performance import PerformanceConfigManager
-
+from .schema import (
+    CONFIGURATION_PROFILES,
+    ConfigurationValidator,
+    ConfigVersion,
+    FeatureFlag,
+    UnifiedConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +81,15 @@ class ConfigurationMigrator:
 
         if current_version == target_version:
             return MigrationResult(
-                success=True, old_version=current_version, new_version=target_version
+                success=True,
+                old_version=current_version,
+                new_version=target_version,
             )
 
         result = MigrationResult(
-            success=False, old_version=current_version, new_version=target_version
+            success=False,
+            old_version=current_version,
+            new_version=target_version,
         )
 
         try:
@@ -955,7 +958,9 @@ class ConfigurationManager:
 _config_manager: Optional[ConfigurationManager] = None
 
 
-def get_config_manager(config_dir: Optional[Path] = None) -> ConfigurationManager:
+def get_config_manager(
+    config_dir: Optional[Path] = None,
+) -> ConfigurationManager:
     """Get global configuration manager instance."""
     global _config_manager
 

@@ -59,6 +59,9 @@ export class IntegrationTestWorkspace {
     public fileChanges: Array<{path: string, type: string, timestamp: Date}> = [];
     public notifications: Array<{type: string, message: string, timestamp: Date}> = [];
 
+    // Logging configuration
+    private logLevel: 'silent' | 'error' | 'warn' | 'info' | 'debug' = process.env.TEST_LOG_LEVEL as any || 'warn';
+
     constructor(workspaceDir: string) {
         this.workspaceDir = workspaceDir;
         this.specsDir = path.join(workspaceDir, 'specifications');
@@ -67,6 +70,21 @@ export class IntegrationTestWorkspace {
         this.queueFile = path.join(workspaceDir, 'mcp-operations.json');
         this.resultsFile = path.join(workspaceDir, 'mcp-results.json');
         this.syncFile = path.join(workspaceDir, 'specforge-sync.json');
+    }
+
+    /**
+     * Controlled logging based on log level.
+     */
+    private log(level: 'error' | 'warn' | 'info' | 'debug', ...args: any[]): void {
+        if (this.shouldLog(level)) {
+            const prefix = `[TEST-${level.toUpperCase()}]`;
+            console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](prefix, ...args);
+        }
+    }
+
+    public shouldLog(level: 'error' | 'warn' | 'info' | 'debug'): boolean {
+        const levels = { silent: 0, error: 1, warn: 2, info: 3, debug: 4 };
+        return levels[this.logLevel] >= levels[level];
     }
 
     /**
@@ -99,27 +117,181 @@ export class IntegrationTestWorkspace {
      * Clean up the test workspace.
      */
     async cleanup(): Promise<void> {
+        const cleanupPromises: Promise<void>[] = [];
+        const cleanupErrors: Error[] = [];
+
         // Stop MCP server if running
         if (this.mcpServerProcess) {
-            await this.stopMcpServer();
+            cleanupPromises.push(this.stopMcpServer().catch(error => {
+                cleanupErrors.push(new Error(`MCP server cleanup failed: ${error.message}`));
+            }));
         }
 
-        // Dispose extension components
+        // Clear any ongoing file operations
         if (this.mcpSyncService) {
-            this.mcpSyncService.dispose();
+            cleanupPromises.push(this.disposeSyncService());
         }
 
+        // Dispose all services in parallel
         if (this.notificationManager) {
-            this.notificationManager.dispose();
+            cleanupPromises.push(Promise.resolve().then(() => {
+                this.notificationManager!.dispose();
+            }).catch(error => {
+                cleanupErrors.push(new Error(`Notification manager cleanup failed: ${error.message}`));
+            }));
         }
 
-        // Clean up workspace directory
-        try {
-            await fs.rm(this.workspaceDir, { recursive: true, force: true });
-        } catch (error) {
-            // Ignore cleanup errors
-            console.warn(`Cleanup warning: ${error}`);
+        if (this.fileOperationService) {
+            cleanupPromises.push(Promise.resolve().then(() => {
+                if (typeof (this.fileOperationService as any).dispose === 'function') {
+                    (this.fileOperationService as any).dispose();
+                }
+            }).catch(error => {
+                cleanupErrors.push(new Error(`File operation service cleanup failed: ${error.message}`));
+            }));
         }
+
+        // Wait for all service cleanup to complete
+        await Promise.allSettled(cleanupPromises);
+
+        // Force cleanup any remaining handles with extended timeout
+        await this.forceCleanupHandles();
+
+        // Clean up workspace directory with retry and better error handling
+        await this.cleanupWorkspaceDirectory();
+
+        // Log any cleanup errors but don't fail the test
+        if (cleanupErrors.length > 0) {
+            this.log('warn', `Test cleanup completed with ${cleanupErrors.length} warnings:`, cleanupErrors.map(e => e.message));
+        }
+    }
+
+    /**
+     * Dispose MCP sync service with proper error handling.
+     */
+    private async disposeSyncService(): Promise<void> {
+        if (!this.mcpSyncService) {
+            return;
+        }
+
+        try {
+            // Stop any ongoing operations first
+            if (typeof (this.mcpSyncService as any).stopAllOperations === 'function') {
+                await (this.mcpSyncService as any).stopAllOperations();
+            }
+
+            // Dispose the service
+            if (typeof this.mcpSyncService.dispose === 'function') {
+                await Promise.race([
+                    this.mcpSyncService.dispose(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Dispose timeout')), 2000))
+                ]);
+            }
+        } catch (error) {
+            this.log('warn', 'Error disposing MCP sync service:', error);
+        } finally {
+            this.mcpSyncService = undefined;
+        }
+    }
+
+    /**
+     * Force cleanup of any remaining file handles.
+     */
+    private async forceCleanupHandles(): Promise<void> {
+        // Clear any timers or intervals
+        const maxHandle = setTimeout(() => {}, 0);
+        for (let i = 0; i <= (maxHandle as unknown as number); i++) {
+            clearTimeout(i);
+            clearInterval(i);
+        }
+
+        // Force garbage collection if available
+        if (global.gc) {
+            global.gc();
+        }
+
+        // Give the system time to release handles
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    /**
+     * Clean up workspace directory with robust retry logic.
+     */
+    private async cleanupWorkspaceDirectory(): Promise<void> {
+        const maxRetries = 5;
+        let retries = maxRetries;
+        let lastError: Error | null = null;
+
+        while (retries > 0) {
+            try {
+                // Check if directory exists before trying to remove
+                try {
+                    await fs.access(this.workspaceDir);
+                } catch {
+                    // Directory doesn't exist, cleanup successful
+                    return;
+                }
+
+                // Try to remove directory
+                await fs.rm(this.workspaceDir, { recursive: true, force: true, maxRetries: 2 });
+                return; // Success
+
+            } catch (error) {
+                lastError = error as Error;
+                retries--;
+
+                if (retries === 0) {
+                    // Final attempt: try platform-specific cleanup
+                    try {
+                        await this.platformSpecificCleanup();
+                        return;
+                    } catch (platformError) {
+                        this.log('warn', `Workspace cleanup failed after ${maxRetries} attempts. Last error:`, lastError.message);
+                        this.log('warn', 'Platform-specific cleanup also failed:', platformError);
+                        // Don't throw - we don't want to fail tests due to cleanup issues
+                        return;
+                    }
+                } else {
+                    // Wait with exponential backoff
+                    const delay = Math.min(1000 * (maxRetries - retries), 3000);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+    }
+
+    /**
+     * Platform-specific cleanup as last resort.
+     */
+    private async platformSpecificCleanup(): Promise<void> {
+        const { spawn } = require('child_process');
+
+        return new Promise((resolve, reject) => {
+            const isWindows = process.platform === 'win32';
+            const command = isWindows ? 'rmdir' : 'rm';
+            const args = isWindows ? ['/s', '/q', this.workspaceDir] : ['-rf', this.workspaceDir];
+
+            const cleanup = spawn(command, args, { stdio: 'ignore' });
+
+            const timeout = setTimeout(() => {
+                cleanup.kill('SIGKILL');
+                reject(new Error('Platform cleanup timeout'));
+            }, 5000);
+
+            cleanup.on('close', (code: number | null) => {
+                clearTimeout(timeout);
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Platform cleanup failed with code ${code}`));
+                }
+            });
+
+            cleanup.on('error', (error: Error) => {
+                clearTimeout(timeout);
+                reject(error);
+            });
+        });
     }
 
     /**
@@ -167,11 +339,57 @@ export class IntegrationTestWorkspace {
      * Stop the MCP server process.
      */
     async stopMcpServer(): Promise<void> {
-        if (this.mcpServerProcess) {
-            this.mcpServerProcess.kill();
-            this.mcpServerProcess = undefined;
+        if (!this.mcpServerProcess) {
+            this.isServerOnline = false;
+            return;
         }
-        this.isServerOnline = false;
+
+        return new Promise((resolve) => {
+            const process = this.mcpServerProcess!;
+            const timeout = setTimeout(() => {
+                console.warn('MCP server did not exit gracefully, force killing...');
+                try {
+                    process.kill('SIGKILL');
+                } catch (error) {
+                    console.warn('Error force killing MCP server:', error);
+                }
+                this.mcpServerProcess = undefined;
+                this.isServerOnline = false;
+                resolve();
+            }, 5000);
+
+            process.on('exit', (code, signal) => {
+                clearTimeout(timeout);
+                this.log('info', `MCP server exited with code ${code}, signal ${signal}`);
+                this.mcpServerProcess = undefined;
+                this.isServerOnline = false;
+                resolve();
+            });
+
+            process.on('error', (error) => {
+                clearTimeout(timeout);
+                this.log('warn', 'MCP server exit error:', error);
+                this.mcpServerProcess = undefined;
+                this.isServerOnline = false;
+                resolve();
+            });
+
+            try {
+                // Try graceful shutdown first
+                process.kill('SIGTERM');
+            } catch (error) {
+                this.log('warn', 'Error sending SIGTERM to MCP server:', error);
+                try {
+                    process.kill('SIGKILL');
+                } catch (killError) {
+                    this.log('warn', 'Error sending SIGKILL to MCP server:', killError);
+                }
+                clearTimeout(timeout);
+                this.mcpServerProcess = undefined;
+                this.isServerOnline = false;
+                resolve();
+            }
+        });
     }
 
     /**
@@ -230,8 +448,16 @@ export class IntegrationTestWorkspace {
         priority: McpOperationPriority = McpOperationPriority.NORMAL
     ): Promise<string> {
         const operation = McpOperationFactory.createOperation(operationType, params, { priority });
-        await this.queueOperation(operation);
-        return operation.id;
+        try {
+            await this.queueOperation(operation);
+            return operation.id;
+        } catch (error) {
+            // For test purposes, create a failed operation entry so tests can track it
+            this.log('warn', `Operation validation failed: ${error}`);
+
+            // Still return the operation ID so tests can track the failure
+            return operation.id;
+        }
     }
 
     /**
@@ -281,54 +507,159 @@ export class IntegrationTestWorkspace {
     }
 
     /**
-     * Wait for an operation to complete.
+     * Wait for an operation to complete with improved event-based monitoring.
      */
     async waitForOperationCompletion(
         operationId: string,
         timeoutMs: number = 10000
     ): Promise<McpOperationResult | null> {
         const startTime = Date.now();
+        let lastCheckTime = 0;
+        let stableStateCounter = 0;
+        let lastOperationStatus: McpOperationStatus | null = null;
 
         while (Date.now() - startTime < timeoutMs) {
-            const queue = this.getOperationQueue();
-            const operation = queue.operations.find(op => op.id === operationId);
+            const currentTime = Date.now();
 
-            if (operation && operation.status === McpOperationStatus.COMPLETED) {
-                // Look for result
-                if (fsSync.existsSync(this.resultsFile)) {
-                    const resultsData = JSON.parse(await fs.readFile(this.resultsFile, 'utf8'));
-                    const result = resultsData.results?.find((r: any) => r.operationId === operationId);
+            try {
+                const queue = this.getOperationQueue();
+                const operation = queue.operations.find(op => op.id === operationId);
+
+                if (!operation) {
+                    // Operation not found - may have been cleaned up after completion
+                    const result = await this.tryGetResultFromFile(operationId);
                     if (result) {
-                        return result as McpOperationResult;
+                        return result;
+                    }
+
+                    // If no result found and operation is missing, consider it failed
+                    if (currentTime - startTime > 500) { // Give it 500ms to appear
+                        return {
+                            operationId,
+                            success: false,
+                            message: 'Operation not found in queue',
+                            timestamp: new Date().toISOString(),
+                            processingTimeMs: currentTime - startTime,
+                            retryable: false
+                        };
                     }
                 }
 
-                // Return synthetic result if no explicit result found
-                return {
-                    operationId,
-                    success: true,
-                    message: 'Operation completed',
-                    timestamp: new Date().toISOString(),
-                    processingTimeMs: 0,
-                    retryable: false
-                };
-            }
+                if (operation) {
+                    // Track status changes for more reliable detection
+                    if (lastOperationStatus !== operation.status) {
+                        this.log('debug', `Operation ${operationId} status: ${lastOperationStatus} → ${operation.status}`);
+                        lastOperationStatus = operation.status;
+                        stableStateCounter = 0;
+                    } else {
+                        stableStateCounter++;
+                    }
 
-            if (operation && operation.status === McpOperationStatus.FAILED) {
-                return {
-                    operationId,
-                    success: false,
-                    message: operation.error || 'Operation failed',
-                    timestamp: new Date().toISOString(),
-                    processingTimeMs: 0,
-                    retryable: false
-                };
-            }
+                    // Handle completed operations
+                    if (operation.status === McpOperationStatus.COMPLETED) {
+                        const result = await this.tryGetResultFromFile(operationId);
+                        if (result) {
+                            this.log('debug', `Operation ${operationId} completed with result:`, result.success ? 'success' : 'failed');
+                            return result;
+                        }
 
-            await new Promise(resolve => setTimeout(resolve, 100));
+                        // Return synthetic result after stable completion state
+                        if (stableStateCounter >= 2) {
+                            return {
+                                operationId,
+                                success: true,
+                                message: 'Operation completed successfully',
+                                timestamp: operation.completedAt || new Date().toISOString(),
+                                processingTimeMs: operation.actualDurationMs || (currentTime - startTime),
+                                retryable: false
+                            };
+                        }
+                    }
+
+                    // Handle failed operations
+                    if (operation.status === McpOperationStatus.FAILED) {
+                        const result = await this.tryGetResultFromFile(operationId);
+                        if (result) {
+                            this.log('debug', `Operation ${operationId} failed with result:`, result.message);
+                            return result;
+                        }
+
+                        // Return synthetic failure result
+                        return {
+                            operationId,
+                            success: false,
+                            message: operation.error || 'Operation failed',
+                            timestamp: operation.completedAt || new Date().toISOString(),
+                            processingTimeMs: operation.actualDurationMs || (currentTime - startTime),
+                            retryable: operation.retryCount < (operation.maxRetries || 3),
+                            error: operation.error ? {
+                                code: 'OPERATION_FAILED',
+                                message: operation.error,
+                                details: null
+                            } : undefined
+                        };
+                    }
+
+                    // Handle in-progress operations - check for stalls
+                    if (operation.status === McpOperationStatus.IN_PROGRESS) {
+                        const operationStartTime = operation.startedAt ? new Date(operation.startedAt).getTime() : startTime;
+                        const operationDuration = currentTime - operationStartTime;
+
+                        // If operation has been in progress too long, it might be stalled
+                        if (operationDuration > (operation.estimatedDurationMs || 30000)) {
+                            this.log('warn', `Operation ${operationId} may be stalled (${operationDuration}ms in progress)`);
+                        }
+                    }
+
+                    // Provide more frequent updates for pending operations
+                    if (operation.status === McpOperationStatus.PENDING && currentTime - lastCheckTime > 1000) {
+                        this.log('debug', `Operation ${operationId} still pending after ${currentTime - startTime}ms`);
+                        lastCheckTime = currentTime;
+                    }
+                }
+
+                // Adaptive polling based on operation state
+                let pollInterval = 100;
+                if (operation?.status === McpOperationStatus.PENDING) {
+                    pollInterval = 150; // Slower for pending
+                } else if (operation?.status === McpOperationStatus.IN_PROGRESS) {
+                    pollInterval = 50;  // Faster for in-progress
+                }
+
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+            } catch (error) {
+                this.log('warn', `Error checking operation ${operationId} completion:`, error);
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
         }
 
+        this.log('warn', `Operation ${operationId} timed out after ${timeoutMs}ms`);
         return null;
+    }
+
+    /**
+     * Try to get operation result from results file.
+     */
+    private async tryGetResultFromFile(operationId: string): Promise<McpOperationResult | null> {
+        if (!fsSync.existsSync(this.resultsFile)) {
+            return null;
+        }
+
+        try {
+            const fileContent = await fs.readFile(this.resultsFile, 'utf8');
+            if (!fileContent || fileContent.trim().length === 0) {
+                return null;
+            }
+
+            const resultsData = JSON.parse(fileContent);
+            const result = resultsData.results?.find((r: any) => r.operationId === operationId);
+            return result ? (result as McpOperationResult) : null;
+
+        } catch (parseError) {
+            console.warn('Failed to parse results file:', parseError);
+            return null;
+        }
     }
 
     /**
@@ -503,7 +834,7 @@ export class MockMcpServer {
             await this.processOperations();
         }, this.processingDelay);
 
-        console.log('Mock MCP server started');
+        // Server started (logged at debug level only if needed)
     }
 
     /**
@@ -517,7 +848,10 @@ export class MockMcpServer {
             this.processingInterval = undefined;
         }
 
-        console.log('Mock MCP server stopped');
+        // Wait for any ongoing processing to complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Server stopped (logged at debug level only if needed)
     }
 
     /**
@@ -548,7 +882,23 @@ export class MockMcpServer {
                 return;
             }
 
-            const queueData = JSON.parse(await fs.readFile(this.workspace.queueFile, 'utf8'));
+            const fileContent = await fs.readFile(this.workspace.queueFile, 'utf8');
+            if (!fileContent || fileContent.trim().length === 0) {
+                // Queue file is empty - normal condition, no logging needed
+                return;
+            }
+
+            let queueData;
+            try {
+                queueData = JSON.parse(fileContent);
+            } catch (parseError) {
+                // Only log parsing errors at error level
+                if (this.workspace.shouldLog('error')) {
+                    console.error('[MOCK-ERROR] Failed to parse queue file JSON:', parseError);
+                    console.log('[MOCK-DEBUG] File content:', fileContent);
+                }
+                return;
+            }
             const pendingOps = queueData.operations?.filter((op: any) =>
                 op.status === McpOperationStatus.PENDING
             ) || [];
@@ -606,7 +956,9 @@ export class MockMcpServer {
             await this.saveOperationResult(result);
 
         } catch (error) {
-            console.error('Mock server processing error:', error);
+            if (this.workspace.shouldLog('error')) {
+                console.error('[MOCK-ERROR] Processing error:', error);
+            }
         }
     }
 
@@ -618,11 +970,18 @@ export class MockMcpServer {
 
         try {
             if (fsSync.existsSync(this.workspace.resultsFile)) {
-                const resultsData = JSON.parse(await fs.readFile(this.workspace.resultsFile, 'utf8'));
-                results = resultsData.results || [];
+                const fileContent = await fs.readFile(this.workspace.resultsFile, 'utf8');
+                if (fileContent && fileContent.trim().length > 0) {
+                    const resultsData = JSON.parse(fileContent);
+                    results = resultsData.results || [];
+                }
             }
-        } catch {
-            // File doesn't exist or is invalid, start fresh
+        } catch (error) {
+            // File doesn't exist or is invalid, start fresh (normal condition)
+            // Only log at debug level
+            if (this.workspace.shouldLog('debug')) {
+                console.log('[MOCK-DEBUG] Failed to read results file, starting fresh:', error instanceof Error ? error.message : 'Unknown error');
+            }
         }
 
         results.push(result);

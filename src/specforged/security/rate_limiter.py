@@ -5,16 +5,15 @@ This module provides configurable rate limiting with different strategies,
 client-specific limits, and automatic backoff mechanisms.
 """
 
-import time
-import asyncio
-import logging
 import hashlib
-from datetime import datetime, timedelta
-from typing import Dict, Optional, List, Tuple, Any
-from dataclasses import dataclass, field
-from collections import defaultdict, deque
-from enum import Enum
+import logging
 import threading
+import time
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, Optional
 
 
 class RateLimitStrategy(Enum):

@@ -13,7 +13,7 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -29,7 +29,6 @@ from specforged.core.queue_processor import (
     QueueProcessor,
     StreamingJSONParser,
 )
-from specforged.core.spec_manager import SpecificationManager
 
 
 class PerformanceBenchmarks:
@@ -52,7 +51,10 @@ class PerformanceBenchmarks:
             ("Memory Usage Under Load", self.benchmark_memory_usage),
             ("Large Queue Handling", self.benchmark_large_queue),
             ("Concurrent Processing", self.benchmark_concurrent_processing),
-            ("Background Optimization", self.benchmark_background_optimization),
+            (
+                "Background Optimization",
+                self.benchmark_background_optimization,
+            ),
         ]
 
         for name, benchmark_func in benchmarks:
@@ -113,7 +115,7 @@ class PerformanceBenchmarks:
             "eviction_time_ms": eviction_time,
             "cache_size": cache.size(),
             "hits_per_ms": hit_count / hit_time if hit_time > 0 else 0,
-            "status": "✅ PASSED" if cache.get_hit_rate() > 0.4 else "❌ FAILED",
+            "status": ("✅ PASSED" if cache.get_hit_rate() > 0.4 else "❌ FAILED"),
         }
 
     async def benchmark_streaming_json(self) -> Dict[str, Any]:
@@ -285,7 +287,10 @@ class PerformanceBenchmarks:
                 status=OperationStatus.PENDING,
                 priority=5,
                 timestamp=datetime.now(timezone.utc),
-                params={"specId": f"spec_{i % 10}", "content": f"test content {i}"},
+                params={
+                    "specId": f"spec_{i % 10}",
+                    "content": f"test content {i}",
+                },
             )
             operations.append(operation)
 
@@ -361,7 +366,7 @@ class PerformanceBenchmarks:
             import gc
 
             gc.collect()
-        except:
+        except ImportError:
             pass
 
         final_memory = process.memory_info().rss / 1024 / 1024  # MB
@@ -395,7 +400,10 @@ class PerformanceBenchmarks:
                 status=OperationStatus.PENDING,
                 priority=i % 10 + 1,
                 timestamp=datetime.now(timezone.utc),
-                params={"specId": f"spec_{i % 100}", "content": f"content_{i}"},
+                params={
+                    "specId": f"spec_{i % 100}",
+                    "content": f"content_{i}",
+                },
             )
             large_operations.append(operation)
 
@@ -425,7 +433,7 @@ class PerformanceBenchmarks:
             "batch_count": len(batches),
             "serialization_time_ms": serialization_time,
             "serialized_size_mb": json_size / 1024 / 1024,
-            "avg_batch_size": len(large_operations) / len(batches) if batches else 0,
+            "avg_batch_size": (len(large_operations) / len(batches) if batches else 0),
             "operations_per_ms": len(large_operations)
             / (creation_time + batching_time + serialization_time),
             "status": (
@@ -468,9 +476,7 @@ class PerformanceBenchmarks:
                 return f"result_{op.id}"
 
         start_time = time.time()
-        concurrent_results = await asyncio.gather(
-            *[process_concurrent(op) for op in operations[:50]]
-        )
+        await asyncio.gather(*[process_concurrent(op) for op in operations[:50]])
         concurrent_time = (time.time() - start_time) * 1000
 
         speedup = sequential_time / concurrent_time if concurrent_time > 0 else 0
@@ -511,7 +517,7 @@ class PerformanceBenchmarks:
             )
             operations.append(operation)
 
-        queue = OperationQueue(operations=operations)
+        OperationQueue(operations=operations)
 
         # Benchmark optimization
         start_time = time.time()

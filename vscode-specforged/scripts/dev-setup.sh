@@ -43,7 +43,7 @@ print_status "Checking Node.js installation..."
 if command -v node >/dev/null 2>&1; then
     NODE_VERSION=$(node --version)
     print_success "Node.js found: $NODE_VERSION"
-    
+
     # Check if version is 18 or higher using Node.js itself for robust parsing
     MAJOR_VERSION=$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "0")
     if [[ $MAJOR_VERSION -lt 18 ]]; then
@@ -300,7 +300,7 @@ print_status "Setting up test MCP configurations..."
 
 # Create test directory structure
 mkdir -p test-configs/claude
-mkdir -p test-configs/cursor  
+mkdir -p test-configs/cursor
 mkdir -p test-configs/windsurf
 
 # Test Claude config

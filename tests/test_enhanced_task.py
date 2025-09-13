@@ -9,7 +9,10 @@ def test_task_checkbox_properties():
     """Test checkbox-related properties"""
     # Pending task
     pending_task = Task(
-        id="T001", title="Test Task", description="A test task", status="pending"
+        id="T001",
+        title="Test Task",
+        description="A test task",
+        status="pending",
     )
 
     assert not pending_task.is_completed
@@ -64,15 +67,24 @@ def test_task_number_assignment():
 def test_subtask_completion_logic():
     """Test that parent task status updates based on subtasks"""
     parent_task = Task(
-        id="T001", title="Parent Task", description="Parent task", status="pending"
+        id="T001",
+        title="Parent Task",
+        description="Parent task",
+        status="pending",
     )
 
     subtask1 = Task(
-        id="T002", title="Subtask 1", description="First subtask", status="pending"
+        id="T002",
+        title="Subtask 1",
+        description="First subtask",
+        status="pending",
     )
 
     subtask2 = Task(
-        id="T003", title="Subtask 2", description="Second subtask", status="pending"
+        id="T003",
+        title="Subtask 2",
+        description="Second subtask",
+        status="pending",
     )
 
     parent_task.subtasks = [subtask1, subtask2]

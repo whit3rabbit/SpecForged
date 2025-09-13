@@ -3,6 +3,11 @@ src/**/*
 test/**/*
 scripts/**/*
 
+# Build system files
+Makefile
+BUILD.md
+.editorconfig
+
 # Build and dev files
 .vscode/
 .vscode-test/

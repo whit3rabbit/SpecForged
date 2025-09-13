@@ -11,23 +11,18 @@ import os
 import subprocess
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 
-from src.specforged.core.queue_processor import (
-    OperationResult,
-    OperationStatus,
-    OperationType,
-)
+from src.specforged.core.queue_processor import OperationType
 
 from .fixtures import (
     IntegrationTestWorkspace,
     PerformanceMonitor,
     create_test_operation,
-    wait_for_condition,
 )
 
 
@@ -79,7 +74,7 @@ class ActualMcpServerWorkspace(IntegrationTestWorkspace):
                 self.server_process.kill()
                 self.server_process.wait()
 
-            print(f"MCP server stopped")
+            print("MCP server stopped")
             self.server_process = None
 
     async def get_server_logs(self) -> tuple[str, str]:
@@ -94,13 +89,13 @@ class ActualMcpServerWorkspace(IntegrationTestWorkspace):
         if self.server_process.stdout:
             try:
                 stdout_data = self.server_process.stdout.read()
-            except:
+            except (IOError, OSError, AttributeError):
                 pass
 
         if self.server_process.stderr:
             try:
                 stderr_data = self.server_process.stderr.read()
-            except:
+            except (IOError, OSError, AttributeError):
                 pass
 
         return stdout_data, stderr_data
@@ -125,7 +120,7 @@ class ActualMcpServerWorkspace(IntegrationTestWorkspace):
                         sync_data = json.load(f)
                     if sync_data.get("mcp_server_online"):
                         return True
-                except:
+                except (FileNotFoundError, json.JSONDecodeError, OSError):
                     pass
 
             await asyncio.sleep(0.5)
@@ -285,7 +280,7 @@ class TestEndToEndWithActualServer:
                 )
                 assert (
                     successful_operations >= 4
-                ), f"At least 4/5 operations should succeed with actual server: {successful_operations}"
+                ), f"At least 4/5 operations should succeed with actual server: {successful_operations}"  # noqa: E501
 
                 # Verify sync state
                 if workspace.sync_file.exists():
@@ -467,7 +462,7 @@ class TestEndToEndWithActualServer:
                 # Generate performance report
                 perf_report = performance_monitor.get_performance_report()
 
-                print(f"Actual server performance:")
+                print("Actual server performance:")
                 print(
                     f"  Operations: {completed_count}/{batch_size} ({success_rate:.1f}%)"
                 )
@@ -719,7 +714,10 @@ class TestActualServerErrorConditions:
                     # Non-existent specification
                     create_test_operation(
                         OperationType.UPDATE_REQUIREMENTS,
-                        {"specId": "does-not-exist", "content": "Some content"},
+                        {
+                            "specId": "does-not-exist",
+                            "content": "Some content",
+                        },
                         priority=6,
                     ),
                     # Invalid user story
@@ -727,7 +725,11 @@ class TestActualServerErrorConditions:
                         OperationType.ADD_USER_STORY,
                         {
                             "specId": "also-does-not-exist",
-                            "userStory": {"as_a": "", "i_want": "", "so_that": ""},
+                            "userStory": {
+                                "as_a": "",
+                                "i_want": "",
+                                "so_that": "",
+                            },
                         },
                         priority=7,
                     ),

@@ -67,7 +67,7 @@ export class ConfigurationValidationService {
      */
     async validateConfiguration(showNotifications = false): Promise<ValidationResult> {
         const cacheKey = 'current_config';
-        
+
         // Check cache first
         if (this.isCacheValid() && this.validationCache.has(cacheKey)) {
             return this.validationCache.get(cacheKey)!;
@@ -93,7 +93,7 @@ export class ConfigurationValidationService {
      */
     async getConfigurationHealth(): Promise<ConfigurationHealth> {
         const result = await this.validateConfiguration();
-        
+
         const criticalIssues = result.errors.filter(e => e.severity === 'error').length;
         const warnings = result.warnings.length + result.errors.filter(e => e.severity === 'warning').length;
         const suggestions = result.suggestions.length + result.errors.filter(e => e.severity === 'info').length;
@@ -129,7 +129,7 @@ export class ConfigurationValidationService {
     }> {
         const result = await this.validateConfiguration();
         const allIssues = [...result.errors, ...result.warnings];
-        
+
         let fixed = 0;
         let failed = 0;
         const details: Array<{ issue: string; success: boolean; error?: string }> = [];
@@ -141,7 +141,7 @@ export class ConfigurationValidationService {
             }
 
             // Find rule that can auto-fix this issue
-            const rule = this.validationRules.find(r => 
+            const rule = this.validationRules.find(r =>
                 r.name === issue.code && r.autoFix
             );
 
@@ -149,7 +149,7 @@ export class ConfigurationValidationService {
                 try {
                     const config = vscode.workspace.getConfiguration('specforged');
                     const success = await rule.autoFix(config);
-                    
+
                     if (success) {
                         fixed++;
                         details.push({ issue: issue.message, success: true });
@@ -159,9 +159,9 @@ export class ConfigurationValidationService {
                     }
                 } catch (error) {
                     failed++;
-                    details.push({ 
-                        issue: issue.message, 
-                        success: false, 
+                    details.push({
+                        issue: issue.message,
+                        success: false,
                         error: error instanceof Error ? error.message : String(error)
                     });
                 }
@@ -206,14 +206,19 @@ export class ConfigurationValidationService {
 
         // Sanitize configuration (remove sensitive data)
         const sanitizedConfig: Record<string, any> = {};
-        for (const [key, value] of Object.entries(config)) {
-            if (key.toLowerCase().includes('password') || 
-                key.toLowerCase().includes('token') || 
-                key.toLowerCase().includes('key') ||
-                key.toLowerCase().includes('secret')) {
-                sanitizedConfig[key] = '***REDACTED***';
-            } else {
-                sanitizedConfig[key] = value;
+        const configKeys = ['smitheryApiKey', 'githubToken', 'apiKey', 'password', 'secret', 'autoDetect', 'specFolder', 'enableDashboard'];
+
+        for (const key of configKeys) {
+            const value = config.get(key);
+            if (value !== undefined) {
+                if (key.toLowerCase().includes('password') ||
+                    key.toLowerCase().includes('token') ||
+                    key.toLowerCase().includes('key') ||
+                    key.toLowerCase().includes('secret')) {
+                    sanitizedConfig[key] = '***REDACTED***';
+                } else {
+                    sanitizedConfig[key] = value;
+                }
             }
         }
 
@@ -244,7 +249,7 @@ export class ConfigurationValidationService {
         for (const rule of this.validationRules) {
             try {
                 const ruleErrors = rule.validate(config);
-                
+
                 for (const error of ruleErrors) {
                     switch (error.severity) {
                         case 'error':
@@ -281,7 +286,7 @@ export class ConfigurationValidationService {
      */
     private showValidationNotifications(result: ValidationResult): void {
         const criticalErrors = result.errors.filter(e => e.severity === 'error');
-        
+
         if (criticalErrors.length > 0) {
             const message = `Configuration has ${criticalErrors.length} critical issue${criticalErrors.length > 1 ? 's' : ''}`;
             vscode.window.showErrorMessage(message, 'View Issues', 'Auto Fix').then(action => {
@@ -334,21 +339,21 @@ export class ConfigurationValidationService {
                         result: fixResult
                     });
                     break;
-                
+
                 case 'openSettings':
                     vscode.commands.executeCommand('workbench.action.openSettings', '@ext:specforged.vscode-specforged');
                     break;
-                
+
                 case 'exportDiagnostics':
                     const diagnostics = await this.exportDiagnostics();
                     const uri = await vscode.window.showSaveDialog({
                         defaultUri: vscode.Uri.file('specforged-diagnostics.json'),
                         filters: { 'JSON Files': ['json'] }
                     });
-                    
+
                     if (uri) {
                         await vscode.workspace.fs.writeFile(
-                            uri, 
+                            uri,
                             Buffer.from(JSON.stringify(diagnostics, null, 2), 'utf8')
                         );
                         vscode.window.showInformationMessage('Diagnostics exported successfully');
@@ -379,9 +384,9 @@ export class ConfigurationValidationService {
         .health-warning { background: var(--vscode-editorWarning-background); color: var(--vscode-editorWarning-foreground); }
         .health-critical { background: var(--vscode-editorError-background); color: var(--vscode-editorError-foreground); }
         .issue-section { margin-bottom: 30px; }
-        .issue-item { 
-            padding: 10px; 
-            margin: 10px 0; 
+        .issue-item {
+            padding: 10px;
+            margin: 10px 0;
             border-left: 4px solid;
             background: var(--vscode-editor-background);
         }
@@ -390,37 +395,37 @@ export class ConfigurationValidationService {
         .issue-info { border-left-color: var(--vscode-editorInfo-foreground); }
         .issue-field { font-weight: bold; color: var(--vscode-textLink-foreground); }
         .issue-message { margin: 5px 0; }
-        .issue-fix { 
-            margin-top: 10px; 
-            padding: 8px; 
-            background: var(--vscode-button-background); 
+        .issue-fix {
+            margin-top: 10px;
+            padding: 8px;
+            background: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
-            border: none; 
-            border-radius: 3px; 
-            cursor: pointer; 
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
         }
         .actions { margin-top: 20px; }
-        .btn { 
-            margin-right: 10px; 
-            padding: 8px 16px; 
-            background: var(--vscode-button-background); 
+        .btn {
+            margin-right: 10px;
+            padding: 8px 16px;
+            background: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
-            border: none; 
-            border-radius: 3px; 
-            cursor: pointer; 
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
         }
         .summary { display: flex; gap: 20px; margin-bottom: 20px; }
-        .summary-item { 
-            padding: 10px; 
-            border: 1px solid var(--vscode-panel-border); 
-            border-radius: 5px; 
-            text-align: center; 
+        .summary-item {
+            padding: 10px;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 5px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <h1>SpecForged Configuration Health</h1>
-    
+
     <div class="health-status health-${health.overall}">
         <h2>Overall Status: ${health.overall.toUpperCase()}</h2>
         <p>Last checked: ${new Date(health.lastCheck).toLocaleString()}</p>
@@ -531,11 +536,11 @@ export class ConfigurationValidationService {
      */
     private startPeriodicValidation(): void {
         const interval = 10 * 60 * 1000; // 10 minutes
-        
+
         setInterval(async () => {
             try {
                 const result = await this.validateConfiguration();
-                
+
                 // Only show notifications for critical issues during periodic checks
                 if (result.errors.some(e => e.severity === 'error')) {
                     this.showValidationNotifications(result);
@@ -557,7 +562,7 @@ export class ConfigurationValidationService {
             category: 'performance',
             validate: (config) => {
                 const errors: ValidationError[] = [];
-                
+
                 const memoryLimit = config.get<number>('performance.memoryLimitMb', 100);
                 const warningThreshold = config.get<number>('performance.memoryWarningThresholdMb', 80);
 
@@ -615,7 +620,7 @@ export class ConfigurationValidationService {
             category: 'performance',
             validate: (config) => {
                 const errors: ValidationError[] = [];
-                
+
                 const maxSize = config.get<number>('queue.maxSize', 10000);
                 const batchSize = config.get<number>('queue.maxBatchSize', 50);
                 const processingInterval = config.get<number>('queue.processingIntervalMs', 2000);
@@ -658,7 +663,7 @@ export class ConfigurationValidationService {
             category: 'connection',
             validate: (config) => {
                 const errors: ValidationError[] = [];
-                
+
                 const serverType = config.get<string>('mcpServerType', 'local');
                 const serverUrl = config.get<string>('mcpServerUrl', '');
                 const connectionTimeout = config.get<number>('connectionTimeout', 10000);
@@ -759,10 +764,10 @@ export class ConfigurationValidationService {
             },
             autoFix: async (config) => {
                 const environment = config.get<string>('environment', 'production');
-                
+
                 if (environment === 'production') {
                     await config.update('debugMode', false, vscode.ConfigurationTarget.Global);
-                    
+
                     const logLevel = config.get<string>('logLevel', 'info');
                     if (logLevel === 'debug' || logLevel === 'trace') {
                         await config.update('logLevel', 'info', vscode.ConfigurationTarget.Global);

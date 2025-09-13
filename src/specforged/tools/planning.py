@@ -117,7 +117,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         except Exception as e:
-            return {"status": "error", "message": f"Error generating plan: {str(e)}"}
+            return {
+                "status": "error",
+                "message": f"Error generating plan: {str(e)}",
+            }
 
     @mcp.tool()
     async def update_implementation_plan(
@@ -174,11 +177,16 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         except Exception as e:
-            return {"status": "error", "message": f"Error updating plan: {str(e)}"}
+            return {
+                "status": "error",
+                "message": f"Error updating plan: {str(e)}",
+            }
 
     @mcp.tool()
     async def check_task(
-        task_number: str, spec_id: Optional[str] = None, ctx: Optional[Context] = None
+        task_number: str,
+        spec_id: Optional[str] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Mark a task as completed (check the checkbox).
@@ -208,7 +216,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
         # Find the task
         task = spec_manager.get_task_by_number(effective_spec_id, task_number)
         if not task:
-            return {"status": "error", "message": f"Task {task_number} not found"}
+            return {
+                "status": "error",
+                "message": f"Task {task_number} not found",
+            }
 
         # Check if task is already completed
         if task.is_completed:
@@ -244,11 +255,16 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         except Exception as e:
-            return {"status": "error", "message": f"Error checking task: {str(e)}"}
+            return {
+                "status": "error",
+                "message": f"Error checking task: {str(e)}",
+            }
 
     @mcp.tool()
     async def uncheck_task(
-        task_number: str, spec_id: Optional[str] = None, ctx: Optional[Context] = None
+        task_number: str,
+        spec_id: Optional[str] = None,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Mark a task as pending (uncheck the checkbox).
@@ -278,7 +294,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
         # Find the task
         task = spec_manager.get_task_by_number(effective_spec_id, task_number)
         if not task:
-            return {"status": "error", "message": f"Task {task_number} not found"}
+            return {
+                "status": "error",
+                "message": f"Task {task_number} not found",
+            }
 
         # Check if task is already pending
         if task.status == "pending":
@@ -314,7 +333,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
             }
 
         except Exception as e:
-            return {"status": "error", "message": f"Error unchecking task: {str(e)}"}
+            return {
+                "status": "error",
+                "message": f"Error unchecking task: {str(e)}",
+            }
 
     @mcp.tool()
     async def get_task_details(
@@ -336,7 +358,10 @@ def setup_planning_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> No
         # Find the task
         task = spec_manager.get_task_by_number(spec_id, task_number)
         if not task:
-            return {"status": "error", "message": f"Task {task_number} not found"}
+            return {
+                "status": "error",
+                "message": f"Task {task_number} not found",
+            }
 
         # Build subtasks info
         subtasks_info = []

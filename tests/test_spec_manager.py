@@ -55,7 +55,10 @@ def test_add_user_story(temp_spec_dir):
     spec = manager.create_specification("Test Feature", "A test feature")
 
     story = manager.add_user_story(
-        spec.id, "developer", "to write clean code", "the codebase remains maintainable"
+        spec.id,
+        "developer",
+        "to write clean code",
+        "the codebase remains maintainable",
     )
 
     assert story.id == "US-001"

@@ -240,7 +240,10 @@ class TestProjectWizard:
                 spec.id, "user", "log into system", "access protected features"
             )
             wizard.spec_manager.add_ears_requirement(
-                spec.id, story.id, "WHEN user enters credentials", "authenticate user"
+                spec.id,
+                story.id,
+                "WHEN user enters credentials",
+                "authenticate user",
             )
 
             # Add design

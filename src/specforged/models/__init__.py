@@ -3,14 +3,14 @@ Data models for SpecForge MCP server.
 """
 
 from .core import (
-    UserMode,
-    WorkflowPhase,
-    SpecStatus,
-    ModeClassification,
     EARSRequirement,
-    UserStory,
-    Task,
+    ModeClassification,
     Specification,
+    SpecStatus,
+    Task,
+    UserMode,
+    UserStory,
+    WorkflowPhase,
 )
 
 __all__ = [

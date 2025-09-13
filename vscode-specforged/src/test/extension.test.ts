@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import * as sinon from 'sinon';
 
 suite('Extension Activation Tests', () => {
     test('Extension should activate without errors', async () => {

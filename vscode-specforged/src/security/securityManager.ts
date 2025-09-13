@@ -1,6 +1,6 @@
 /**
  * Security manager for the SpecForge VS Code extension.
- * 
+ *
  * Provides centralized security controls, rate limiting, and audit logging
  * for all MCP operations initiated from the extension.
  */
@@ -69,7 +69,7 @@ export class SecurityManager {
         this.securityEvents = [];
         this.concurrentOperations = 0;
         this.outputChannel = vscode.window.createOutputChannel('SpecForge Security', 'log');
-        
+
         // Register security commands
         this.registerSecurityCommands(context);
 
@@ -204,7 +204,7 @@ export class SecurityManager {
      */
     async trackOperationStart(operation: McpOperation): Promise<void> {
         this.concurrentOperations++;
-        
+
         if (this.config.enableAuditLogging) {
             await this.logSecurityEvent({
                 type: SecurityEventType.SECURITY_ALERT,
@@ -221,16 +221,16 @@ export class SecurityManager {
      */
     async trackOperationComplete(operation: McpOperation, success: boolean, error?: any): Promise<void> {
         this.concurrentOperations = Math.max(0, this.concurrentOperations - 1);
-        
+
         if (this.config.enableAuditLogging) {
             await this.logSecurityEvent({
                 type: SecurityEventType.SECURITY_ALERT,
                 severity: success ? SecuritySeverity.DEBUG : SecuritySeverity.WARNING,
                 message: `Operation ${success ? 'completed' : 'failed'}: ${operation.type}`,
-                details: { 
-                    operation, 
-                    success, 
-                    error: error ? (error instanceof Error ? error.message : error) : undefined 
+                details: {
+                    operation,
+                    success,
+                    error: error ? (error instanceof Error ? error.message : error) : undefined
                 },
                 operation
             });
@@ -244,7 +244,7 @@ export class SecurityManager {
 
     private async checkRateLimit(operation: McpOperation): Promise<{ allowed: boolean; retryAfter: number }> {
         const now = new Date();
-        
+
         // Check if currently blocked
         if (this.rateLimitState.blockedUntil && now < this.rateLimitState.blockedUntil) {
             const retryAfter = Math.ceil((this.rateLimitState.blockedUntil.getTime() - now.getTime()) / 1000);
@@ -261,15 +261,15 @@ export class SecurityManager {
         if (this.rateLimitState.operations.length >= this.config.maxOperationsPerMinute) {
             // Rate limit exceeded
             this.rateLimitState.violationCount++;
-            
+
             // Increase blocking time based on violation count
             const blockDuration = Math.min(
                 300, // Max 5 minutes
                 Math.pow(2, this.rateLimitState.violationCount - 1) * 10 // Exponential backoff
             );
-            
+
             this.rateLimitState.blockedUntil = new Date(now.getTime() + blockDuration * 1000);
-            
+
             return { allowed: false, retryAfter: blockDuration };
         }
 
@@ -281,7 +281,7 @@ export class SecurityManager {
     private cleanupRateLimitState(): void {
         const now = new Date();
         const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
-        
+
         // Clean up old operations
         this.rateLimitState.operations = this.rateLimitState.operations.filter(
             opTime => opTime > oneMinuteAgo
@@ -308,7 +308,7 @@ export class SecurityManager {
         ];
 
         const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(errorMessage));
-        
+
         if (isSuspicious) {
             await this.logSecurityEvent({
                 type: SecurityEventType.SUSPICIOUS_ACTIVITY,
@@ -376,7 +376,7 @@ export class SecurityManager {
 
     private loadSecurityConfig(): SecurityConfig {
         const config = vscode.workspace.getConfiguration('specforge.security');
-        
+
         return {
             enableInputValidation: config.get('enableInputValidation', true),
             enableRateLimiting: config.get('enableRateLimiting', true),
@@ -468,19 +468,19 @@ export class SecurityManager {
                         background-color: var(--vscode-editor-background);
                         color: var(--vscode-editor-foreground);
                     }
-                    
+
                     .header {
                         border-bottom: 1px solid var(--vscode-panel-border);
                         padding-bottom: 10px;
                         margin-bottom: 20px;
                     }
-                    
+
                     .stats {
                         display: flex;
                         gap: 20px;
                         margin-bottom: 20px;
                     }
-                    
+
                     .stat-card {
                         background-color: var(--vscode-panel-background);
                         border: 1px solid var(--vscode-panel-border);
@@ -488,38 +488,38 @@ export class SecurityManager {
                         padding: 15px;
                         min-width: 120px;
                     }
-                    
+
                     .stat-value {
                         font-size: 24px;
                         font-weight: bold;
                         color: var(--vscode-charts-blue);
                     }
-                    
+
                     .stat-label {
                         font-size: 12px;
                         opacity: 0.8;
                         margin-top: 5px;
                     }
-                    
+
                     table {
                         width: 100%;
                         border-collapse: collapse;
                         background-color: var(--vscode-editor-background);
                     }
-                    
+
                     th, td {
                         padding: 12px;
                         text-align: left;
                         border-bottom: 1px solid var(--vscode-panel-border);
                     }
-                    
+
                     th {
                         background-color: var(--vscode-panel-background);
                         font-weight: 600;
                         position: sticky;
                         top: 0;
                     }
-                    
+
                     .severity-badge {
                         padding: 2px 8px;
                         border-radius: 12px;
@@ -527,22 +527,22 @@ export class SecurityManager {
                         font-weight: bold;
                         text-transform: uppercase;
                     }
-                    
+
                     .severity-debug { background-color: #666; color: white; }
                     .severity-info { background-color: #0066cc; color: white; }
                     .severity-warning { background-color: #ff8c00; color: white; }
                     .severity-error { background-color: #dc3545; color: white; }
                     .severity-critical { background-color: #ff0000; color: white; animation: pulse 1s infinite; }
-                    
+
                     @keyframes pulse {
                         0%, 100% { opacity: 1; }
                         50% { opacity: 0.7; }
                     }
-                    
+
                     .event-row:hover {
                         background-color: var(--vscode-list-hoverBackground);
                     }
-                    
+
                     button {
                         background-color: var(--vscode-button-background);
                         color: var(--vscode-button-foreground);
@@ -552,11 +552,11 @@ export class SecurityManager {
                         cursor: pointer;
                         font-size: 11px;
                     }
-                    
+
                     button:hover {
                         background-color: var(--vscode-button-hoverBackground);
                     }
-                    
+
                     .no-events {
                         text-align: center;
                         padding: 40px;
@@ -569,7 +569,7 @@ export class SecurityManager {
                     <h1>SpecForge Security Events</h1>
                     <p>Real-time security monitoring and audit log</p>
                 </div>
-                
+
                 <div class="stats">
                     <div class="stat-card">
                         <div class="stat-value">${this.securityEvents.length}</div>
@@ -588,7 +588,7 @@ export class SecurityManager {
                         <div class="stat-label">Active Operations</div>
                     </div>
                 </div>
-                
+
                 ${events ? `
                     <table>
                         <thead>
@@ -610,13 +610,13 @@ export class SecurityManager {
                         <p>Security monitoring is active and events will appear here as they occur.</p>
                     </div>
                 `}
-                
+
                 <script>
                     function showDetails(eventId) {
                         // In a real implementation, this would show detailed event information
                         console.log('Show details for event:', eventId);
                     }
-                    
+
                     // Auto-refresh every 30 seconds
                     setTimeout(() => {
                         window.location.reload();
@@ -633,7 +633,7 @@ export class SecurityManager {
     getSecurityStats(): any {
         const now = new Date();
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-        
+
         const recentEvents = this.securityEvents.filter(event => event.timestamp > oneHourAgo);
         const eventsByType = recentEvents.reduce((acc, event) => {
             acc[event.type] = (acc[event.type] || 0) + 1;

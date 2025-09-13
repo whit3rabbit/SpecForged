@@ -557,7 +557,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('MCP Dashboard initialized');
             loadDashboardData();
-            
+
             // Set up auto-refresh every 30 seconds
             refreshInterval = setInterval(loadDashboardData, 30000);
         });
@@ -565,7 +565,7 @@
         // Message handling from extension
         window.addEventListener('message', event => {
             const message = event.data;
-            
+
             switch (message.command) {
                 case 'updateData':
                     dashboardData = message.data;
@@ -667,24 +667,24 @@
         // Render statistics
         function renderStats() {
             const { clients, servers, recommendations } = dashboardData;
-            
+
             document.getElementById('total-clients').textContent = clients.length;
-            document.getElementById('configured-clients').textContent = 
+            document.getElementById('configured-clients').textContent =
                 clients.filter(c => c.configExists).length;
-            
+
             document.getElementById('total-servers').textContent = servers.size;
-            document.getElementById('active-servers').textContent = 
+            document.getElementById('active-servers').textContent =
                 Array.from(servers.values()).filter(s => s.isConfigured).length;
-            
+
             const configuredClients = clients.filter(c => c.configExists).length;
-            const progressPercent = clients.length > 0 ? 
+            const progressPercent = clients.length > 0 ?
                 Math.round((configuredClients / clients.length) * 100) : 0;
-            
+
             document.getElementById('setup-progress').textContent = `${progressPercent}%`;
             document.getElementById('progress-fill').style.width = `${progressPercent}%`;
-            
+
             document.getElementById('recommendations-count').textContent = recommendations.length;
-            document.getElementById('high-priority-recs').textContent = 
+            document.getElementById('high-priority-recs').textContent =
                 recommendations.filter(r => r.priority === 'high').length;
         }
 
@@ -693,24 +693,24 @@
             const clientsList = document.getElementById('clients-list');
             const clientsLoading = document.getElementById('clients-loading');
             const clientsEmpty = document.getElementById('clients-empty');
-            
+
             clientsLoading.style.display = 'none';
-            
+
             if (!dashboardData.clients || dashboardData.clients.length === 0) {
                 clientsEmpty.style.display = 'block';
                 clientsList.style.display = 'none';
                 return;
             }
-            
+
             clientsEmpty.style.display = 'none';
             clientsList.style.display = 'block';
-            
+
             clientsList.innerHTML = dashboardData.clients.map(client => {
-                const statusClass = client.isInstalled ? 
+                const statusClass = client.isInstalled ?
                     (client.configExists ? 'configured' : 'warning') : 'offline';
-                const statusText = client.isInstalled ? 
+                const statusText = client.isInstalled ?
                     (client.configExists ? 'Configured' : 'Not configured') : 'Not installed';
-                
+
                 return `
                     <div class="client-item">
                         <div class="client-info">
@@ -746,25 +746,25 @@
             const serversList = document.getElementById('servers-list');
             const serversLoading = document.getElementById('servers-loading');
             const serversEmpty = document.getElementById('servers-empty');
-            
+
             serversLoading.style.display = 'none';
-            
+
             const servers = Array.from(dashboardData.servers.values());
-            
+
             if (servers.length === 0) {
                 serversEmpty.style.display = 'block';
                 serversList.style.display = 'none';
                 return;
             }
-            
+
             serversEmpty.style.display = 'none';
             serversList.style.display = 'block';
-            
+
             serversList.innerHTML = servers.map(server => {
                 const statusClass = server.isConfigured ? 'configured' : 'offline';
-                const clientsText = server.clientsConfigured.length === 1 ? 
+                const clientsText = server.clientsConfigured.length === 1 ?
                     '1 client' : `${server.clientsConfigured.length} clients`;
-                
+
                 return `
                     <div class="server-item">
                         <div class="server-info">
@@ -794,18 +794,18 @@
             const recommendationsList = document.getElementById('recommendations-list');
             const recommendationsLoading = document.getElementById('recommendations-loading');
             const recommendationsEmpty = document.getElementById('recommendations-empty');
-            
+
             recommendationsLoading.style.display = 'none';
-            
+
             if (!dashboardData.recommendations || dashboardData.recommendations.length === 0) {
                 recommendationsEmpty.style.display = 'block';
                 recommendationsList.style.display = 'none';
                 return;
             }
-            
+
             recommendationsEmpty.style.display = 'none';
             recommendationsList.style.display = 'block';
-            
+
             recommendationsList.innerHTML = dashboardData.recommendations.map(rec => {
                 const iconMap = {
                     install_client: '📱',
@@ -813,7 +813,7 @@
                     fix_config: '🔧',
                     upgrade: '⬆️'
                 };
-                
+
                 return `
                     <div class="recommendation-item ${rec.priority}">
                         <div class="recommendation-icon">
@@ -834,13 +834,13 @@
         // Show notification
         function showNotification(type, message) {
             const notifications = document.getElementById('notifications');
-            
+
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
-            
+
             notifications.appendChild(notification);
-            
+
             // Auto-remove after 5 seconds
             setTimeout(() => {
                 notification.remove();

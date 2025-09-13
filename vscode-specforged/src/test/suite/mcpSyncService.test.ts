@@ -74,11 +74,29 @@ suite('McpSyncService Test Suite', () => {
     });
 
     teardown(async () => {
+        // Ensure proper cleanup order and wait for async operations
         if (mcpSyncService) {
             mcpSyncService.dispose();
+            // Wait a bit for async disposal operations to complete
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
         if (notificationManager) {
             notificationManager.dispose();
+        }
+
+        // Clean up test files between tests
+        try {
+            const files = fs.readdirSync(tempDir);
+            for (const file of files) {
+                if (file.endsWith('.json')) {
+                    const filePath = path.join(tempDir, file);
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                    }
+                }
+            }
+        } catch (error) {
+            // Ignore cleanup errors
         }
     });
 
@@ -645,9 +663,9 @@ suite('McpSyncService Test Suite', () => {
         });
 
         test('should handle heartbeat operations', async () => {
-            const heartbeatOp = McpOperationFactory.createHeartbeatOperation('1.0.0', '1.0.0', { 
+            const heartbeatOp = McpOperationFactory.createHeartbeatOperation('1.0.0', '1.0.0', {
                 rootPath: '/test/workspace',
-                specCount: 5 
+                specCount: 5
             });
             await mcpSyncService.queueOperation(heartbeatOp);
 

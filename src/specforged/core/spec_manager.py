@@ -123,7 +123,12 @@ class SpecificationManager:
                         self._ensure_standard_files(
                             spec_dir, self.specs[spec_data["id"]]
                         )
-                    except (json.JSONDecodeError, KeyError, OSError, ValueError) as e:
+                    except (
+                        json.JSONDecodeError,
+                        KeyError,
+                        OSError,
+                        ValueError,
+                    ) as e:
                         print(f"Error loading spec {spec_dir.name}: {e}")
 
         # Load current spec configuration
@@ -598,7 +603,10 @@ class SpecificationManager:
             return False
 
     def _validate_phase_readiness(
-        self, spec_id: str, current_phase: WorkflowPhase, target_phase: WorkflowPhase
+        self,
+        spec_id: str,
+        current_phase: WorkflowPhase,
+        target_phase: WorkflowPhase,
     ) -> bool:
         """Validate that the specification is ready to transition to the target phase"""
         spec = self.specs[spec_id]

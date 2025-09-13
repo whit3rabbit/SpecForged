@@ -284,7 +284,9 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
         }
 
     @mcp.tool()
-    async def list_specifications(ctx: Optional[Context] = None) -> Dict[str, Any]:
+    async def list_specifications(
+        ctx: Optional[Context] = None,
+    ) -> Dict[str, Any]:
         """
         List all available specifications with their current status and phase,
         highlighting the current one.
@@ -469,7 +471,9 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
 
     @mcp.tool()
     async def get_specification_details(
-        spec_id: str, include_content: bool = False, ctx: Optional[Context] = None
+        spec_id: str,
+        include_content: bool = False,
+        ctx: Optional[Context] = None,
     ) -> Dict[str, Any]:
         """
         Get detailed information about a specific specification.
@@ -703,7 +707,10 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             spec_id: The specification identifier
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         spec = spec_manager.specs[spec_id]
 
@@ -806,7 +813,10 @@ def setup_spec_tools(mcp: FastMCP, spec_manager: SpecificationManager) -> None:
             phase: Phase to mark complete ('requirements', 'design', 'planning')
         """
         if spec_id not in spec_manager.specs:
-            return {"status": "error", "message": f"Specification {spec_id} not found"}
+            return {
+                "status": "error",
+                "message": f"Specification {spec_id} not found",
+            }
 
         spec = spec_manager.specs[spec_id]
 

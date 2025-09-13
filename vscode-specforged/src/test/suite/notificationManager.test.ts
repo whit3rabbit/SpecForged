@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import * as sinon from 'sinon';
 import {
     NotificationManager,
     NotificationPreferences,
@@ -27,7 +28,6 @@ suite('NotificationManager Test Suite', () => {
 
     suiteSetup(async () => {
         // Setup sinon for mocking VS Code APIs
-        const sinon = require('sinon');
 
         // Mock VS Code window methods
         mockShowInformationMessage = sinon.stub(vscode.window, 'showInformationMessage');
@@ -43,20 +43,25 @@ suite('NotificationManager Test Suite', () => {
             has: sinon.stub()
         };
 
-        // Setup default configuration values
-        mockConfiguration.get.withArgs('enabled', true).returns(true);
-        mockConfiguration.get.withArgs('showSuccess', true).returns(true);
-        mockConfiguration.get.withArgs('showFailure', true).returns(true);
-        mockConfiguration.get.withArgs('showProgress', true).returns(true);
-        mockConfiguration.get.withArgs('showConflicts', true).returns(true);
-        mockConfiguration.get.withArgs('duration', 5000).returns(5000);
-        mockConfiguration.get.withArgs('enableSounds', true).returns(true);
-        mockConfiguration.get.withArgs('enableBadges', true).returns(true);
-        mockConfiguration.get.withArgs('quietHours.enabled', false).returns(false);
-        mockConfiguration.get.withArgs('quietHours.startTime', '22:00').returns('22:00');
-        mockConfiguration.get.withArgs('quietHours.endTime', '08:00').returns('08:00');
-        mockConfiguration.get.withArgs('priorityFilter', 'LOW').returns('LOW');
-        mockConfiguration.get.withArgs('operationTypeFilters', sinon.match.array).returns(Object.values(McpOperationType));
+        // Setup default configuration values with proper fallback behavior
+        mockConfiguration.get.callsFake((key: string, defaultValue: any) => {
+            switch (key) {
+                case 'enabled': return defaultValue ?? true;
+                case 'showSuccess': return defaultValue ?? true;
+                case 'showFailure': return defaultValue ?? true;
+                case 'showProgress': return defaultValue ?? true;
+                case 'showConflicts': return defaultValue ?? true;
+                case 'duration': return defaultValue ?? 5000;
+                case 'enableSounds': return defaultValue ?? true;
+                case 'enableBadges': return defaultValue ?? true;
+                case 'quietHours.enabled': return defaultValue ?? false;
+                case 'quietHours.startTime': return defaultValue ?? '22:00';
+                case 'quietHours.endTime': return defaultValue ?? '08:00';
+                case 'priorityFilter': return defaultValue ?? McpOperationPriority.LOW;
+                case 'operationTypeFilters': return defaultValue ?? Object.values(McpOperationType);
+                default: return defaultValue;
+            }
+        });
 
         // Mock workspace configuration
         const originalGetConfiguration = vscode.workspace.getConfiguration;

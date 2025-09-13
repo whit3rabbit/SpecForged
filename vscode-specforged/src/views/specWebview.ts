@@ -2,19 +2,34 @@ import * as vscode from 'vscode';
 import { ParsedSpecification } from '../models/specification';
 import { SpecParser } from '../utils/specParser';
 import { TaskHelper } from '../models/task';
+import { LiveUpdateService, LiveUpdateEvent } from '../services/LiveUpdateService';
+import { McpSyncService } from '../services/mcpSyncService';
+import { McpOperation, McpOperationStatus } from '../models/mcpOperation';
 
 export class SpecWebview {
     private panel: vscode.WebviewPanel | undefined;
     private context: vscode.ExtensionContext;
+    private liveUpdateService: LiveUpdateService | undefined;
+    private mcpSyncService: McpSyncService | undefined;
+    private updateSubscription: vscode.Disposable | undefined;
+    private currentSpec: ParsedSpecification | undefined;
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(
+        context: vscode.ExtensionContext,
+        liveUpdateService?: LiveUpdateService,
+        mcpSyncService?: McpSyncService
+    ) {
         this.context = context;
+        this.liveUpdateService = liveUpdateService;
+        this.mcpSyncService = mcpSyncService;
     }
 
     async showSpecification(spec: ParsedSpecification, activeTab: string = 'requirements') {
         if (this.panel) {
             this.panel.dispose();
         }
+
+        this.currentSpec = spec;
 
         this.panel = vscode.window.createWebviewPanel(
             'specforged.webview',
@@ -29,8 +44,14 @@ export class SpecWebview {
             }
         );
 
+        // Set up panel disposal handling
+        this.panel.onDidDispose(() => {
+            this.dispose();
+        });
+
         this.panel.webview.html = this.generateHtml(spec, activeTab);
         this.setupWebviewMessageHandling(spec);
+        this.setupLiveUpdates(spec);
     }
 
     private setupWebviewMessageHandling(spec: ParsedSpecification) {
@@ -54,11 +75,175 @@ export class SpecWebview {
                             this.panel.webview.html = this.generateHtml(spec, message.tab);
                         }
                         break;
+                    case 'syncSpec':
+                        await this.handleSyncSpec(spec.spec.id);
+                        break;
+                    case 'refreshOperations':
+                        await this.sendOperationUpdate();
+                        break;
+                    case 'cancelOperation':
+                        if (message.operationId) {
+                            await vscode.commands.executeCommand('specforged.cancelOperation', message.operationId);
+                        }
+                        break;
                 }
             },
             undefined,
             this.context.subscriptions
         );
+    }
+
+    private setupLiveUpdates(spec: ParsedSpecification): void {
+        if (!this.liveUpdateService || !this.panel) {
+            return;
+        }
+
+        // Subscribe to live updates for this spec
+        this.updateSubscription = this.liveUpdateService.subscribe(
+            `specwebview-${spec.spec.id}`,
+            async (event: LiveUpdateEvent) => {
+                await this.handleLiveUpdate(event);
+            },
+            (event: LiveUpdateEvent) => {
+                // Filter events relevant to this spec or general events
+                return !event.specId || event.specId === spec.spec.id;
+            }
+        );
+
+        // Send initial operation status
+        this.sendOperationUpdate();
+    }
+
+    private async handleLiveUpdate(event: LiveUpdateEvent): Promise<void> {
+        if (!this.panel) {
+            return;
+        }
+
+        try {
+            // Send the update to the webview
+            await this.panel.webview.postMessage({
+                command: 'liveUpdate',
+                event: event
+            });
+
+            // If it's a spec update event, refresh the content
+            if (event.type === 'spec_updated' && event.specId === this.currentSpec?.spec.id) {
+                // Reload the spec data and refresh the webview
+                // Note: This would need to be connected to the spec provider to get fresh data
+                console.log('Spec updated, should refresh content');
+            }
+
+            // Update operation status for operation events
+            if (event.operationId && (event.type.includes('operation_') || event.type === 'conflict_detected')) {
+                await this.sendOperationUpdate();
+            }
+
+        } catch (error) {
+            console.error('Error handling live update in spec webview:', error);
+        }
+    }
+
+    private async sendOperationUpdate(): Promise<void> {
+        if (!this.panel || !this.mcpSyncService || !this.currentSpec) {
+            return;
+        }
+
+        try {
+            const queue = this.mcpSyncService.getOperationQueue();
+            const syncState = this.mcpSyncService.getSyncState();
+
+            // Filter operations relevant to this spec
+            const specOperations = queue.operations.filter(op => {
+                const params = op.params as any;
+                return params && (params.specId === this.currentSpec!.spec.id);
+            });
+
+            const operationStatus = {
+                serverOnline: syncState.mcpServerOnline,
+                operations: specOperations.map(op => ({
+                    id: op.id,
+                    type: op.type,
+                    status: op.status,
+                    priority: op.priority,
+                    timestamp: op.timestamp,
+                    progress: this.calculateOperationProgress(op),
+                    description: this.getOperationDescription(op),
+                    error: op.error
+                })),
+                lastSync: syncState.lastSync,
+                hasActiveOperations: specOperations.some(op =>
+                    op.status === McpOperationStatus.PENDING ||
+                    op.status === McpOperationStatus.IN_PROGRESS
+                )
+            };
+
+            await this.panel.webview.postMessage({
+                command: 'operationUpdate',
+                data: operationStatus
+            });
+
+        } catch (error) {
+            console.error('Error sending operation update:', error);
+        }
+    }
+
+    private async handleSyncSpec(specId: string): Promise<void> {
+        try {
+            // This would trigger a sync operation for the spec
+            await vscode.commands.executeCommand('specforged.syncSpecs');
+
+            // Show a notification in the webview
+            if (this.panel) {
+                await this.panel.webview.postMessage({
+                    command: 'showNotification',
+                    data: {
+                        type: 'info',
+                        message: 'Synchronization started...'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error syncing spec:', error);
+            if (this.panel) {
+                await this.panel.webview.postMessage({
+                    command: 'showNotification',
+                    data: {
+                        type: 'error',
+                        message: 'Failed to start synchronization'
+                    }
+                });
+            }
+        }
+    }
+
+    private calculateOperationProgress(operation: McpOperation): number {
+        if (operation.status === McpOperationStatus.COMPLETED) {return 100;}
+        if (operation.status === McpOperationStatus.FAILED || operation.status === McpOperationStatus.CANCELLED) {return 0;}
+        if (operation.status === McpOperationStatus.PENDING) {return 0;}
+
+        if (operation.status === McpOperationStatus.IN_PROGRESS && operation.startedAt && operation.estimatedDurationMs) {
+            const elapsed = Date.now() - new Date(operation.startedAt).getTime();
+            return Math.min(95, (elapsed / operation.estimatedDurationMs) * 100);
+        }
+
+        return 50;
+    }
+
+    private getOperationDescription(operation: McpOperation): string {
+        const typeNames: { [key: string]: string } = {
+            'CREATE_SPEC': 'Creating specification',
+            'UPDATE_REQUIREMENTS': 'Updating requirements',
+            'UPDATE_DESIGN': 'Updating design',
+            'UPDATE_TASKS': 'Updating tasks',
+            'UPDATE_TASK_STATUS': 'Updating task status',
+            'ADD_USER_STORY': 'Adding user story',
+            'DELETE_SPEC': 'Deleting specification',
+            'SET_CURRENT_SPEC': 'Setting current specification',
+            'SYNC_STATUS': 'Synchronizing status',
+            'HEARTBEAT': 'Heartbeat'
+        };
+
+        return typeNames[operation.type] || operation.type.replace(/_/g, ' ').toLowerCase();
     }
 
     private generateHtml(spec: ParsedSpecification, activeTab: string): string {
@@ -90,6 +275,23 @@ export class SpecWebview {
                             <span class="status status-${spec.spec.status}">${spec.spec.status.toUpperCase()}</span>
                             <span class="phase">Phase: ${this.formatPhase(spec.spec.phase)}</span>
                             <span class="progress">${this.getProgressBadge(spec)}</span>
+                        </div>
+                        <div id="mcp-status-panel" class="mcp-status-panel">
+                            <div id="server-status" class="server-status">
+                                <span id="server-indicator" class="status-indicator">🔄</span>
+                                <span id="server-text">Checking MCP status...</span>
+                            </div>
+                            <div id="operations-status" class="operations-status" style="display: none;">
+                                <div id="operations-list" class="operations-list"></div>
+                            </div>
+                            <div class="mcp-actions">
+                                <button onclick="syncSpec()" class="btn btn-primary btn-sm">
+                                    <span id="sync-icon">🔄</span> Sync
+                                </button>
+                                <button onclick="refreshOperations()" class="btn btn-secondary btn-sm">
+                                    📊 Status
+                                </button>
+                            </div>
                         </div>
                     </header>
 
@@ -305,6 +507,184 @@ export class SpecWebview {
                 padding: 2px 4px;
                 border-radius: 3px;
                 font-family: var(--vscode-editor-font-family);
+            }
+
+            /* MCP Status Panel Styles */
+            .mcp-status-panel {
+                background-color: var(--vscode-textBlockQuote-background);
+                border: 1px solid var(--vscode-panel-border);
+                border-radius: 8px;
+                padding: 12px;
+                margin-top: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .server-status {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9em;
+            }
+
+            .status-indicator {
+                font-size: 1.2em;
+                transition: all 0.3s ease;
+            }
+
+            .status-indicator.online { color: #4caf50; }
+            .status-indicator.offline { color: #f44336; }
+            .status-indicator.syncing {
+                animation: spin 1s linear infinite;
+                color: #ff9800;
+            }
+
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+
+            .operations-status {
+                flex: 1;
+                margin: 0 15px;
+            }
+
+            .operations-list {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                max-height: 120px;
+                overflow-y: auto;
+            }
+
+            .operation-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 4px 8px;
+                background-color: var(--vscode-editor-background);
+                border-radius: 4px;
+                font-size: 0.8em;
+                border-left: 3px solid transparent;
+            }
+
+            .operation-item.pending { border-left-color: #ffc107; }
+            .operation-item.in-progress { border-left-color: #2196f3; }
+            .operation-item.completed { border-left-color: #4caf50; }
+            .operation-item.failed { border-left-color: #f44336; }
+
+            .operation-icon {
+                font-size: 1em;
+                min-width: 16px;
+            }
+
+            .operation-description {
+                flex: 1;
+                truncate: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+
+            .operation-progress {
+                font-size: 0.7em;
+                color: var(--vscode-descriptionForeground);
+            }
+
+            .operation-actions {
+                display: flex;
+                gap: 4px;
+            }
+
+            .mcp-actions {
+                display: flex;
+                gap: 8px;
+            }
+
+            .btn {
+                background-color: var(--vscode-button-background);
+                color: var(--vscode-button-foreground);
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.8em;
+                transition: background-color 0.2s ease;
+            }
+
+            .btn:hover {
+                background-color: var(--vscode-button-hoverBackground);
+            }
+
+            .btn-primary {
+                background-color: var(--vscode-textLink-foreground);
+                color: white;
+            }
+
+            .btn-primary:hover {
+                opacity: 0.9;
+            }
+
+            .btn-secondary {
+                background-color: var(--vscode-button-secondaryBackground);
+                color: var(--vscode-button-secondaryForeground);
+            }
+
+            .btn-secondary:hover {
+                background-color: var(--vscode-button-secondaryHoverBackground);
+            }
+
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 0.75em;
+            }
+
+            .btn-xs {
+                padding: 2px 6px;
+                font-size: 0.7em;
+            }
+
+            /* Notification styles */
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 16px;
+                border-radius: 4px;
+                color: white;
+                font-size: 0.9em;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .notification.info { background-color: #2196f3; }
+            .notification.success { background-color: #4caf50; }
+            .notification.warning { background-color: #ff9800; }
+            .notification.error { background-color: #f44336; }
+
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .mcp-status-panel {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .operations-status {
+                    margin: 10px 0;
+                }
+
+                .mcp-actions {
+                    justify-content: center;
+                }
             }
         `;
     }
@@ -543,7 +923,193 @@ export class SpecWebview {
     private getWebviewScript(): string {
         return `
             const vscode = acquireVsCodeApi();
+            let currentOperations = [];
+            let serverStatus = null;
 
+            // Message handling from extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+
+                switch (message.command) {
+                    case 'liveUpdate':
+                        handleLiveUpdate(message.event);
+                        break;
+                    case 'operationUpdate':
+                        handleOperationUpdate(message.data);
+                        break;
+                    case 'showNotification':
+                        showNotification(message.data.type, message.data.message);
+                        break;
+                }
+            });
+
+            function handleLiveUpdate(event) {
+                console.log('Live update received:', event);
+
+                // Handle different event types
+                switch (event.type) {
+                    case 'operation_started':
+                        showNotification('info', 'Operation started: ' + (event.data.operation.description || event.data.operation.type));
+                        break;
+                    case 'operation_completed':
+                        showNotification('success', 'Operation completed successfully');
+                        break;
+                    case 'operation_failed':
+                        showNotification('error', 'Operation failed: ' + (event.data.notification?.message || 'Unknown error'));
+                        break;
+                    case 'operation_progress':
+                        // Update progress indicators
+                        updateOperationProgress(event.operationId, event.data);
+                        break;
+                    case 'sync_status_changed':
+                        updateServerStatus(event.data.currentState);
+                        break;
+                    case 'conflict_detected':
+                        showNotification('warning', 'Conflict detected: ' + event.data.notification?.message);
+                        break;
+                }
+
+                // Request fresh operation data after any operation event
+                if (event.type.includes('operation_') || event.type === 'sync_status_changed') {
+                    refreshOperations();
+                }
+            }
+
+            function handleOperationUpdate(data) {
+                serverStatus = data;
+                currentOperations = data.operations;
+
+                // Update server status indicator
+                updateServerStatusUI(data.serverOnline, data.lastSync);
+
+                // Update operations list
+                updateOperationsList(data.operations);
+
+                // Show/hide operations status based on activity
+                const operationsStatus = document.getElementById('operations-status');
+                if (data.operations.length > 0) {
+                    operationsStatus.style.display = 'block';
+                } else {
+                    operationsStatus.style.display = 'none';
+                }
+            }
+
+            function updateServerStatusUI(online, lastSync) {
+                const indicator = document.getElementById('server-indicator');
+                const text = document.getElementById('server-text');
+
+                if (online) {
+                    indicator.textContent = '✅';
+                    indicator.className = 'status-indicator online';
+                    text.textContent = 'MCP Server Online';
+                    if (lastSync) {
+                        const time = new Date(lastSync);
+                        const ago = getTimeAgo(time);
+                        text.textContent += ' • Last sync: ' + ago;
+                    }
+                } else {
+                    indicator.textContent = '❌';
+                    indicator.className = 'status-indicator offline';
+                    text.textContent = 'MCP Server Offline';
+                }
+            }
+
+            function updateOperationsList(operations) {
+                const list = document.getElementById('operations-list');
+                list.innerHTML = '';
+
+                if (operations.length === 0) {
+                    list.innerHTML = '<div class="no-operations">No active operations</div>';
+                    return;
+                }
+
+                operations.forEach(op => {
+                    const item = document.createElement('div');
+                    item.className = 'operation-item ' + op.status.replace('_', '-');
+
+                    const icon = getOperationIcon(op.status);
+                    const description = op.description || op.type;
+                    const progress = op.progress || 0;
+
+                    let progressHtml = '';
+                    if (op.status === 'in_progress' && progress > 0) {
+                        progressHtml = \`<div class="operation-progress">\${progress}%</div>\`;
+                    }
+
+                    let actionsHtml = '';
+                    if (op.status === 'failed' || op.status === 'in_progress') {
+                        actionsHtml = \`
+                            <div class="operation-actions">
+                                \${op.status === 'failed' ? '<button onclick="retryOperation(\\\"' + op.id + '\\\")" class="btn btn-xs">Retry</button>' : ''}
+                                \${op.status === 'in_progress' ? '<button onclick="cancelOperation(\\\"' + op.id + '\\\")" class="btn btn-xs">Cancel</button>' : ''}
+                            </div>
+                        \`;
+                    }
+
+                    item.innerHTML = \`
+                        <span class="operation-icon">\${icon}</span>
+                        <span class="operation-description" title="\${description}">\${description}</span>
+                        \${progressHtml}
+                        \${actionsHtml}
+                    \`;
+
+                    list.appendChild(item);
+                });
+            }
+
+            function getOperationIcon(status) {
+                switch (status) {
+                    case 'pending': return '⏳';
+                    case 'in_progress': return '🔄';
+                    case 'completed': return '✅';
+                    case 'failed': return '❌';
+                    case 'cancelled': return '🚫';
+                    default: return '⚪';
+                }
+            }
+
+            function updateOperationProgress(operationId, progressData) {
+                const operations = document.querySelectorAll('.operation-item');
+                operations.forEach(item => {
+                    if (item.dataset.operationId === operationId) {
+                        const progressEl = item.querySelector('.operation-progress');
+                        if (progressEl && progressData.progress !== undefined) {
+                            progressEl.textContent = progressData.progress + '%';
+                        }
+                    }
+                });
+            }
+
+            function getTimeAgo(date) {
+                const now = new Date();
+                const diff = now.getTime() - date.getTime();
+                const minutes = Math.floor(diff / 60000);
+
+                if (minutes < 1) return 'just now';
+                if (minutes < 60) return minutes + 'm ago';
+
+                const hours = Math.floor(minutes / 60);
+                if (hours < 24) return hours + 'h ago';
+
+                const days = Math.floor(hours / 24);
+                return days + 'd ago';
+            }
+
+            function showNotification(type, message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification ' + type;
+                notification.textContent = message;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 4000);
+            }
+
+            // Existing functions
             function switchTab(tab) {
                 vscode.postMessage({
                     command: 'switchTab',
@@ -565,12 +1131,61 @@ export class SpecWebview {
                     fileType: fileType
                 });
             }
+
+            // New MCP functions
+            function syncSpec() {
+                const syncIcon = document.getElementById('sync-icon');
+                const serverIndicator = document.getElementById('server-indicator');
+
+                // Show syncing state
+                syncIcon.className = 'syncing';
+                serverIndicator.className = 'status-indicator syncing';
+                serverIndicator.textContent = '🔄';
+
+                vscode.postMessage({
+                    command: 'syncSpec'
+                });
+            }
+
+            function refreshOperations() {
+                vscode.postMessage({
+                    command: 'refreshOperations'
+                });
+            }
+
+            function cancelOperation(operationId) {
+                vscode.postMessage({
+                    command: 'cancelOperation',
+                    operationId: operationId
+                });
+            }
+
+            function retryOperation(operationId) {
+                // This would need to be implemented in the extension
+                vscode.postMessage({
+                    command: 'retryOperation',
+                    operationId: operationId
+                });
+            }
+
+            // Initialize - request current status
+            document.addEventListener('DOMContentLoaded', () => {
+                refreshOperations();
+            });
         `;
     }
 
     dispose(): void {
+        if (this.updateSubscription) {
+            this.updateSubscription.dispose();
+            this.updateSubscription = undefined;
+        }
+
         if (this.panel) {
             this.panel.dispose();
+            this.panel = undefined;
         }
+
+        this.currentSpec = undefined;
     }
 }

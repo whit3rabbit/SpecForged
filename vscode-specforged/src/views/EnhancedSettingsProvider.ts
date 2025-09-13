@@ -50,7 +50,7 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
     ) {
         this.featureFlagService = getFeatureFlagService(context);
         this.validationService = getConfigurationValidationService(context, this.featureFlagService);
-        
+
         // Load UI preferences
         this.showAdvanced = context.globalState.get('settings.showAdvanced', false);
     }
@@ -233,7 +233,7 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('specforged');
             await config.update(key, undefined, vscode.ConfigurationTarget.Global);
-            
+
             const settingDef = this._getSettingDefinitions().find(s => s.key === key);
             this._showNotification('success', `Reset ${settingDef?.label || key} to default`);
             await this._refreshData();
@@ -289,7 +289,7 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
         try {
             const config = vscode.workspace.getConfiguration('specforged');
             const settings = this._getSettingDefinitions();
-            
+
             const exportData = {
                 timestamp: new Date().toISOString(),
                 version: vscode.extensions.getExtension('specforged.vscode-specforged')?.packageJSON.version,
@@ -314,7 +314,7 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
 
             if (uri) {
                 await vscode.workspace.fs.writeFile(
-                    uri, 
+                    uri,
                     Buffer.from(JSON.stringify(exportData, null, 2), 'utf8')
                 );
                 this._showNotification('success', 'Settings exported successfully');
@@ -359,15 +359,15 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
             if (action === 'Preview') {
                 // Show preview of settings that will be imported
                 const settingNames = Object.keys(importData.settings);
-                const preview = settingNames.slice(0, 10).join(', ') + 
+                const preview = settingNames.slice(0, 10).join(', ') +
                     (settingNames.length > 10 ? ` and ${settingNames.length - 10} more` : '');
-                
+
                 const confirmAction = await vscode.window.showInformationMessage(
                     `Preview: Will import ${settingNames.length} settings including: ${preview}`,
                     { modal: true },
                     'Import', 'Cancel'
                 );
-                
+
                 if (confirmAction !== 'Import') {
                     return;
                 }
@@ -387,7 +387,7 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
                 }
             }
 
-            this._showNotification('success', 
+            this._showNotification('success',
                 `Imported ${imported} settings` + (failed > 0 ? `, ${failed} failed` : '')
             );
             await this._refreshData();
@@ -398,11 +398,11 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
 
     private _getCurrentValues(config: vscode.WorkspaceConfiguration, settings: SettingDefinition[]): Record<string, any> {
         const values: Record<string, any> = {};
-        
+
         for (const setting of settings) {
             values[setting.key] = config.get(setting.key);
         }
-        
+
         return values;
     }
 
@@ -972,10 +972,10 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
     <script>
         const vscode = acquireVsCodeApi();
         let currentData = null;
-        
+
         // Request initial data
         vscode.postMessage({ command: 'loadData' });
-        
+
         // Handle messages from extension
         window.addEventListener('message', event => {
             const message = event.data;
@@ -990,17 +990,17 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
                 // ... other message handlers
             }
         });
-        
+
         function updateUI() {
             if (!currentData) return;
             renderCategoryTabs();
             renderSettings();
         }
-        
+
         function renderCategoryTabs() {
             const container = document.getElementById('categoryTabs');
             container.innerHTML = '';
-            
+
             currentData.categories
                 .sort((a, b) => a.order - b.order)
                 .forEach(category => {
@@ -1011,35 +1011,35 @@ export class EnhancedSettingsProvider implements vscode.WebviewViewProvider {
                     container.appendChild(tab);
                 });
         }
-        
+
         function renderSettings() {
             const container = document.getElementById('settingsContent');
             container.innerHTML = '';
-            
+
             // Group settings by category and render
             // Implementation would handle filtering, search, validation display, etc.
         }
-        
+
         function toggleAdvanced() {
             vscode.postMessage({ command: 'toggleAdvanced', show: !currentData.showAdvanced });
         }
-        
+
         function validateConfig() {
             vscode.postMessage({ command: 'validateConfiguration' });
         }
-        
+
         function exportSettings() {
             vscode.postMessage({ command: 'exportSettings' });
         }
-        
+
         function importSettings() {
             vscode.postMessage({ command: 'importSettings' });
         }
-        
+
         function setCategory(categoryId) {
             vscode.postMessage({ command: 'setCategory', category: categoryId });
         }
-        
+
         function showNotification(type, message) {
             // Show notification in UI
         }

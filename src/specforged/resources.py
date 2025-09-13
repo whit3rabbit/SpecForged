@@ -3,6 +3,7 @@ MCP resources for SpecForge server.
 """
 
 from pathlib import Path
+
 from mcp.server.fastmcp import FastMCP
 
 

@@ -6,7 +6,7 @@ Advanced MCP ecosystem management with unified configuration, auto-discovery, an
 
 **The SpecForged MCP server runs completely independently of this VS Code extension.** This extension provides enhanced management and visualization, but the core server functionality works standalone:
 
-- ✅ **Standalone Installation**: `pipx install specforged` 
+- ✅ **Standalone Installation**: `pipx install specforged`
 - ✅ **Independent Operation**: `specforged serve` (no VS Code required)
 - ✅ **Multiple Clients**: Works with Claude Desktop, Cursor, Windsurf, etc.
 - ✅ **Docker Deployment**: `docker run -p 8080:8080 specforged/specforged`
@@ -18,19 +18,24 @@ Advanced MCP ecosystem management with unified configuration, auto-discovery, an
 
 ## 🚀 Quick Start for Developers
 
-### One-Command Setup
+### Using the Build System (Recommended)
+
 ```bash
-# From the vscode-specforged directory
+# Show all available commands
+make help
+
+# One-command setup and build
+make install
+make dev
+
+# Or use the automated setup script
 ./scripts/dev-setup.sh
 ```
 
-This script will:
-- ✅ Check all prerequisites
-- ✅ Install dependencies
-- ✅ Compile TypeScript
-- ✅ Set up VS Code configuration
-- ✅ Create test configurations
-- ✅ Verify MCP server availability
+The project includes a comprehensive build system:
+- ✅ **Makefile**: `make build`, `make test`, `make package`
+- ✅ **Build Script**: `./scripts/build.sh production`
+- ✅ **npm Scripts**: `npm run bundle`, `npm test`
 
 ### Manual Development Setup
 
@@ -38,13 +43,15 @@ This script will:
 # Install dependencies
 npm install
 
-# Compile TypeScript
-npm run compile
+# Build for development
+npm run bundle-dev
 
 # Launch extension in VS Code
 code .
 # Press F5 to open Extension Development Host
 ```
+
+📖 **See [BUILD.md](./BUILD.md) for detailed build instructions and troubleshooting.**
 
 ## 🔗 Extension vs Standalone Server
 
@@ -60,7 +67,7 @@ This VS Code extension **enhances** the standalone SpecForged MCP server with:
 The standalone SpecForged server provides full functionality:
 - 📋 **Complete MCP Tools**: All specification management capabilities
 - 🌐 **Multiple Protocols**: stdio, HTTP, WebSocket support
-- ⚙️ **Configuration Management**: YAML config files and CLI commands  
+- ⚙️ **Configuration Management**: YAML config files and CLI commands
 - 🔧 **CLI Interface**: `specforged init`, `serve`, `status`, `config` commands
 - 🐳 **Production Deployment**: Docker containers with health checks
 

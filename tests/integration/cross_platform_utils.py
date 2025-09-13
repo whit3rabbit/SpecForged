@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Union
 
 import pytest
 
@@ -148,7 +148,7 @@ class ProcessManager:
                     process.kill()
                     process.wait(timeout=2.0)
                     return True
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             return False
 
 
@@ -193,14 +193,14 @@ class FileSystemUtils:
                                 FileSystemUtils._make_writable_recursive(dir_path)
                                 shutil.rmtree(dir_path)
                                 return True
-                            except:
+                            except (OSError, PermissionError, FileNotFoundError):
                                 return False
             else:
                 # On Unix-like systems
                 shutil.rmtree(dir_path)
                 return True
 
-        except Exception:
+        except (OSError, PermissionError, FileNotFoundError):
             return False
 
     @staticmethod
@@ -213,7 +213,7 @@ class FileSystemUtils:
                 path.chmod(0o777)
                 for child in path.iterdir():
                     FileSystemUtils._make_writable_recursive(child)
-        except:
+        except (OSError, PermissionError):
             pass
 
     @staticmethod
@@ -224,12 +224,13 @@ class FileSystemUtils:
 
             free_bytes = ctypes.c_ulonglong(0)
             ctypes.windll.kernel32.GetDiskFreeSpaceExW(
-                ctypes.c_wchar_p(str(path)), ctypes.pointer(free_bytes), None, None
+                ctypes.c_wchar_p(str(path)),
+                ctypes.pointer(free_bytes),
+                None,
+                None,
             )
             return free_bytes.value
         else:
-            import statvfs
-
             stat = os.statvfs(str(path))
             return stat.f_bavail * stat.f_frsize
 
@@ -258,7 +259,7 @@ class FileSystemUtils:
 
             return not case_insensitive
 
-        except:
+        except (OSError, PermissionError):
             # Default assumption based on platform
             return not PlatformInfo.is_windows()
 
@@ -331,7 +332,7 @@ class NetworkUtils:
                     result = sock.connect_ex((host, port))
                     if result == 0:
                         return True
-            except:
+            except (OSError, socket.error):
                 pass
 
             time.sleep(0.1)
@@ -421,7 +422,7 @@ class IntegrationTestHelper:
         for process in self.processes:
             try:
                 ProcessManager.terminate_process(process)
-            except:
+            except (OSError, subprocess.SubprocessError):
                 pass
         self.processes.clear()
 
@@ -429,7 +430,7 @@ class IntegrationTestHelper:
         for temp_dir in self.temp_dirs:
             try:
                 FileSystemUtils.safe_remove_directory(temp_dir)
-            except:
+            except (OSError, PermissionError):
                 pass
         self.temp_dirs.clear()
 

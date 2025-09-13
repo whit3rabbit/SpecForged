@@ -2,7 +2,7 @@
   "name": "vscode-specforged",
   "displayName": "SpecForged Enhanced",
   "description": "Advanced MCP ecosystem management with unified configuration, auto-discovery, and seamless integration across Cursor, Windsurf, Claude, and more",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "publisher": "specforged",
   "icon": "icon.png",
   "repository": {
@@ -36,6 +36,7 @@
     "automation"
   ],
   "activationEvents": [
+    "onStartupFinished",
     "workspaceContains:**/.specifications/**",
     "workspaceContains:**/specifications/**",
     "onCommand:specforged.initialize",
@@ -43,6 +44,9 @@
     "onCommand:specforged.discoverMcpEcosystem",
     "onCommand:specforged.quickMcpSetup",
     "onCommand:specforged.openMcpDashboard",
+    "onView:specforged.mcpDashboard",
+    "onView:specforged.settings",
+    "onView:specforged.specifications",
     "onFileSystem:mcp"
   ],
   "main": "./out/extension.js",
@@ -91,7 +95,7 @@
         {
           "id": "specforged",
           "title": "SpecForged",
-          "icon": "$(book)"
+          "icon": "./logo.svg"
         }
       ]
     },
@@ -899,6 +903,38 @@
           "default": true,
           "description": "Show notifications for MCP operations and status changes"
         },
+        "specforged.statusBar.showOperationCount": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show operation count in status bar"
+        },
+        "specforged.statusBar.showServerStatus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show MCP server status in status bar"
+        },
+        "specforged.statusBar.showProgressIndicator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show progress indicator for running operations"
+        },
+        "specforged.statusBar.showConflictCount": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show conflict count in status bar"
+        },
+        "specforged.statusBar.autoHide": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-hide status bar when no operations are active"
+        },
+        "specforged.statusBar.refreshInterval": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 1000,
+          "maximum": 30000,
+          "description": "Status bar refresh interval in milliseconds"
+        },
         "specforged.quickSetupPreferences": {
           "type": "object",
           "properties": {
@@ -1426,6 +1462,18 @@
             "Production environment with optimized settings"
           ],
           "description": "Runtime environment configuration"
+        },
+        "specforged.fileOps.backupEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic backups for MCP sync files before overwriting (only created when content changes)."
+        },
+        "specforged.fileOps.maxBackups": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Maximum number of backup files to keep per MCP sync file. Set to 0 to disable retention."
         }
       }
     }

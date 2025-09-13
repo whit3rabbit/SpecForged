@@ -124,3 +124,43 @@ jobs:
         name: dist-files
         path: dist/
         retention-days: 7
+
+  docker-smoke:
+    name: Docker Compose Smoke
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    timeout-minutes: 20
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Prepare environment
+      run: |
+        cp .env.example .env
+
+    - name: Build images (Makefile)
+      run: make build
+
+    - name: Start stack (production profile)
+      run: make prod-up
+
+    - name: Wait for health endpoint
+      shell: bash
+      run: |
+        set -euo pipefail
+        for i in {1..30}; do
+          if curl -fsS http://localhost:8080/health > /dev/null; then
+            echo "Health check OK"; exit 0; fi
+          echo "Waiting for server... ($i)"; sleep 2;
+        done
+        echo "Server did not become healthy in time" >&2; exit 1
+
+    - name: Show container status
+      if: always()
+      run: |
+        docker ps -a
+        docker logs specforged-server || true
+
+    - name: Tear down
+      if: always()
+      run: make down

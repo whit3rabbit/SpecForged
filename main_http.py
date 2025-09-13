@@ -78,7 +78,7 @@ async def health_check(request: Request):
         )
 
 
-async def main():
+def main():
     """Run SpecForge as HTTP server for cloud deployment"""
 
     # Create the MCP server
@@ -89,7 +89,7 @@ async def main():
     if queue_processor:
         try:
             print("Processing initial operation queue...")
-            await queue_processor.process_operation_queue()
+            asyncio.run(queue_processor.process_operation_queue())
             print("✓ Initial queue processing complete")
         except Exception as e:
             print(f"⚠ Warning: Initial queue processing failed: {e}")
@@ -129,4 +129,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

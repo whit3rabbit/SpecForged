@@ -2,35 +2,33 @@
 Test suite for comprehensive configuration and settings management system.
 """
 
-import pytest
 import json
-import yaml
-from pathlib import Path
-from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
-from tempfile import TemporaryDirectory
 import os
+from datetime import datetime, timezone
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import Mock, patch
 
-# Import the configuration system modules
-from src.specforged.config.schema import (
-    UnifiedConfig,
-    ConfigVersion,
-    FeatureFlag,
-    NotificationConfig,
-    QueueConfig,
-    PerformanceConfig,
-    SecurityConfig,
-    VSCodeExtensionConfig,
-    MCPServerConfig,
-    ConfigurationValidator,
-    CONFIGURATION_PROFILES,
-)
+import pytest
+from pydantic import ValidationError
+
 from src.specforged.config.manager import (
     ConfigurationManager,
     ConfigurationMigrator,
     FeatureFlagManager,
-    MigrationResult,
-    get_config_manager,
+)
+
+# Import the configuration system modules
+from src.specforged.config.schema import (
+    CONFIGURATION_PROFILES,
+    ConfigurationValidator,
+    ConfigVersion,
+    FeatureFlag,
+    NotificationConfig,
+    PerformanceConfig,
+    QueueConfig,
+    UnifiedConfig,
+    VSCodeExtensionConfig,
 )
 
 
@@ -62,7 +60,7 @@ class TestConfigurationSchema:
             name="test_feature",
             enabled=True,
             rollout_percentage=50.0,
-            target_groups=["beta"],
+            target_groups=["beta_users"],
             conditions={},
             metadata={},
             created_at=datetime.now(timezone.utc).isoformat(),
@@ -113,7 +111,8 @@ class TestConfigurationSchema:
 
         # Invalid config - warning threshold >= limit
         with pytest.raises(
-            ValueError, match="memory_warning_threshold_mb must be less"
+            ValidationError,
+            match="Memory warning threshold must be less than memory limit",
         ):
             PerformanceConfig(memory_limit_mb=100, memory_warning_threshold_mb=100)
 
@@ -142,8 +141,11 @@ class TestConfigurationSchema:
 class TestConfigurationValidator:
     """Test configuration validation system."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
         self.validator = ConfigurationValidator()
+        yield
 
     def test_config_validation_success(self):
         """Test successful configuration validation."""
@@ -168,7 +170,10 @@ class TestConfigurationValidator:
         config_data = {
             "version": "2.0.0",
             "created_at": "invalid-date",  # Invalid date format
-            "mcp_server": {"name": "", "version": "1.0.0"},  # Invalid empty name
+            "mcp_server": {
+                "name": "",
+                "version": "1.0.0",
+            },  # Invalid empty name
         }
 
         is_valid, errors = validator.validate_config(config_data, UnifiedConfig)
@@ -216,8 +221,11 @@ class TestConfigurationValidator:
 class TestConfigurationMigrator:
     """Test configuration migration system."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
         self.migrator = ConfigurationMigrator()
+        yield
 
     def test_no_migration_needed(self):
         """Test when no migration is needed."""
@@ -274,12 +282,13 @@ class TestConfigurationMigrator:
 class TestFeatureFlagManager:
     """Test feature flag management system."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
         self.temp_dir = TemporaryDirectory()
         self.config_manager = Mock()
         self.feature_manager = FeatureFlagManager(self.config_manager)
-
-    def tearDown(self):
+        yield
         self.temp_dir.cleanup()
 
     def test_feature_flag_creation(self):
@@ -294,7 +303,7 @@ class TestFeatureFlagManager:
             "test_feature",
             enabled=True,
             rollout_percentage=25.0,
-            target_groups=["beta"],
+            target_groups=["beta_users"],
         )
 
         assert success is True
@@ -303,7 +312,7 @@ class TestFeatureFlagManager:
         flag = config.feature_flags["test_feature"]
         assert flag.enabled is True
         assert flag.rollout_percentage == 25.0
-        assert "beta" in flag.target_groups
+        assert "beta_users" in flag.target_groups
 
     def test_feature_flag_evaluation(self):
         """Test feature flag evaluation logic."""
@@ -312,7 +321,7 @@ class TestFeatureFlagManager:
             name="test_feature",
             enabled=True,
             rollout_percentage=50.0,
-            target_groups=["beta"],
+            target_groups=["beta_users"],
             conditions={},
             metadata={},
             created_at=datetime.now(timezone.utc).isoformat(),
@@ -326,7 +335,7 @@ class TestFeatureFlagManager:
         self.feature_manager.set_user_context(
             {
                 "userId": "test-user",
-                "groups": ["beta"],
+                "groups": ["beta_users"],
                 "environment": "development",
                 "version": "1.0.0",
             }
@@ -395,12 +404,13 @@ class TestFeatureFlagManager:
 class TestConfigurationManager:
     """Test the main configuration manager."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
         self.temp_dir = TemporaryDirectory()
         self.config_dir = Path(self.temp_dir.name) / ".specforged"
         self.config_manager = ConfigurationManager(self.config_dir)
-
-    def tearDown(self):
+        yield
         self.temp_dir.cleanup()
 
     def test_config_creation_and_loading(self):
@@ -533,27 +543,27 @@ class TestConfigurationManager:
 
     def test_configuration_validation_integration(self):
         """Test integration with validation system."""
-        # Create config with issues
-        config = UnifiedConfig(
-            created_at=datetime.now(timezone.utc).isoformat(),
-            environment="production",
-            vscode_extension=VSCodeExtensionConfig(
-                debug_mode=True
-            ),  # Issue: debug in prod
-            performance=PerformanceConfig(
-                memory_limit_mb=100,
-                memory_warning_threshold_mb=120,  # Issue: threshold > limit
-            ),
-            mcp_server={
-                "name": "validation-test-server",
-                "version": "1.0.0",
-                "description": "Validation test server",
-            },
-        )
-
-        # This should fail validation due to threshold > limit
-        with pytest.raises(ValueError):
-            self.config_manager.save_config(config)
+        # Test that config creation fails with invalid threshold > limit
+        with pytest.raises(
+            ValidationError,
+            match="Memory warning threshold must be less than memory limit",
+        ):
+            UnifiedConfig(
+                created_at=datetime.now(timezone.utc).isoformat(),
+                environment="production",
+                vscode_extension=VSCodeExtensionConfig(
+                    debug_mode=True
+                ),  # Issue: debug in prod
+                performance=PerformanceConfig(
+                    memory_limit_mb=100,
+                    memory_warning_threshold_mb=120,  # Issue: threshold > limit
+                ),
+                mcp_server={
+                    "name": "validation-test-server",
+                    "version": "1.0.0",
+                    "description": "Validation test server",
+                },
+            )
 
     @patch.dict(os.environ, {"SPECFORGE_DEBUG": "true", "SPECFORGE_LOG_LEVEL": "debug"})
     def test_environment_variable_override(self):
@@ -568,10 +578,11 @@ class TestConfigurationManager:
 class TestConfigurationIntegration:
     """Integration tests for the configuration system."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
         self.temp_dir = TemporaryDirectory()
-
-    def tearDown(self):
+        yield
         self.temp_dir.cleanup()
 
     def test_full_configuration_lifecycle(self):
@@ -664,7 +675,7 @@ class TestConfigurationIntegration:
                 f"perf_test_flag_{i}",
                 enabled=True,
                 rollout_percentage=float(i * 2),  # 0-98%
-                target_groups=["beta" if i % 2 == 0 else "alpha"],
+                target_groups=["beta_users" if i % 2 == 0 else "developers"],
             )
 
         # Test rapid flag evaluation
@@ -674,7 +685,7 @@ class TestConfigurationIntegration:
 
         for i in range(100):
             for j in range(25):  # Test 25 flags, 100 times each
-                enabled = flag_manager.is_enabled(f"perf_test_flag_{j}")
+                flag_manager.is_enabled(f"perf_test_flag_{j}")
                 # Result doesn't matter, just testing performance
 
         elapsed = time.time() - start_time

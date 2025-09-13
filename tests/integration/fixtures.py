@@ -7,29 +7,25 @@ complex integration test scenarios.
 
 import asyncio
 import json
-import os
 import shutil
 import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock
 
 import pytest
-from pydantic import BaseModel
 
 from src.specforged.core.queue_processor import (
     Operation,
     OperationQueue,
     OperationResult,
-    OperationStatus,
     OperationType,
     QueueProcessor,
     SyncState,
 )
 from src.specforged.core.spec_manager import SpecificationManager
-from src.specforged.models.core import Specification, UserStory, WorkflowPhase
+from src.specforged.models.core import Specification
 
 
 class IntegrationTestWorkspace:
@@ -109,7 +105,10 @@ class IntegrationTestWorkspace:
         return []
 
     async def simulate_extension_operation(
-        self, operation_type: OperationType, params: Dict[str, Any], priority: int = 5
+        self,
+        operation_type: OperationType,
+        params: Dict[str, Any],
+        priority: int = 5,
     ) -> str:
         """Simulate an operation coming from the VS Code extension."""
         operation_id = f"ext_{int(time.time() * 1000)}_{len(self.processed_operations)}"
@@ -127,7 +126,11 @@ class IntegrationTestWorkspace:
         return operation_id
 
     async def simulate_file_modification(
-        self, spec_id: str, file_name: str, new_content: str, delay_seconds: float = 0
+        self,
+        spec_id: str,
+        file_name: str,
+        new_content: str,
+        delay_seconds: float = 0,
     ) -> None:
         """Simulate external file modification (e.g., user editing files directly)."""
         if delay_seconds > 0:
